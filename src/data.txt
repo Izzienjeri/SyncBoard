@@ -1,6 +1,51 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-07-31 18:15:35
-# Files Included: 16
+# Date and Time: 2025-07-31 22:24:24
+# Files Included: 26
+
+# === lib/mock-data.ts ===
+```ts
+export const salesData = [
+    { name: "Jan", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Feb", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Mar", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Apr", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "May", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Jun", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Jul", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Aug", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Sep", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Oct", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Nov", total: Math.floor(Math.random() * 5000) + 1000 },
+    { name: "Dec", total: Math.floor(Math.random() * 5000) + 1000 },
+  ];
+  
+  export const bestSellersData = [
+      {
+          name: "Fjallraven - Foldsack No. 1",
+          sales: 1250,
+          revenue: 137487.50,
+          image: "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
+      },
+      {
+          name: "Mens Casual Premium Slim Fit T-Shirts",
+          sales: 980,
+          revenue: 21754,
+          image: "https://fakestoreapi.com/img/71-3HjGNDUL._AC_SY879._SX._UX._SY._UY_.jpg",
+      },
+      {
+          name: "John Hardy Women's Legends Necklace",
+          sales: 450,
+          revenue: 314550,
+          image: "https://fakestoreapi.com/img/71pWzhdJNwL._AC_UL640_QL65_ML3_.jpg"
+      },
+      {
+          name: "WD 2TB Elements Portable Hard Drive",
+          sales: 820,
+          revenue: 53218,
+          image: "https://fakestoreapi.com/img/61IBBVJvSDL._AC_SY879_.jpg",
+      }
+  ];
+```
 
 # === lib/utils.ts ===
 ```ts
@@ -10,6 +55,12 @@ import { twMerge } from "tailwind-merge";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 ```
 
 # === lib/api.ts ===
@@ -157,11 +208,11 @@ export async function deleteProduct(productId: number): Promise<Product> {
   --radius: 0.75rem;
   --background: oklch(0.99 0.005 240);
   --foreground: oklch(0.1 0.03 250);
-  --card: oklch(1 0 0 / 0.6); /* Semi-transparent card */
+  --card: oklch(1 0 0 / 0.7);
   --card-foreground: oklch(0.1 0.03 250);
-  --popover: oklch(1 0 0);
+  --popover: oklch(1 0 0 / 0.8);
   --popover-foreground: oklch(0.1 0.03 250);
-  --primary: oklch(0.60 0.18 265); /* Vibrant purple/blue */
+  --primary: oklch(0.60 0.18 265);
   --primary-foreground: oklch(0.99 0.005 240);
   --secondary: oklch(0.92 0.03 260);
   --secondary-foreground: oklch(0.1 0.03 250);
@@ -170,24 +221,24 @@ export async function deleteProduct(productId: number): Promise<Product> {
   --accent: oklch(0.95 0.02 260);
   --accent-foreground: oklch(0.09 0.08 265);
   --destructive: oklch(0.65 0.22 20);
-  --border: oklch(0.1 0.03 250 / 0.1); /* Subtle border */
+  --border: oklch(0.1 0.03 250 / 0.15);
   --input: oklch(0.1 0.03 250 / 0.05);
   --ring: oklch(0.60 0.18 265);
-  --chart-1: oklch(0.7 0.15 290); /* Pink */
-  --chart-2: oklch(0.75 0.18 200); /* Cyan */
-  --chart-3: oklch(0.65 0.2 260); /* Blue */
-  --chart-4: oklch(0.8 0.18 150); /* Green */
-  --chart-5: oklch(0.8 0.2 80); /* Yellow */
+  --chart-1: oklch(0.7 0.15 290);
+  --chart-2: oklch(0.75 0.18 200);
+  --chart-3: oklch(0.65 0.2 260);
+  --chart-4: oklch(0.8 0.18 150);
+  --chart-5: oklch(0.8 0.2 80);
 }
 
 .dark {
   --background: oklch(0.08 0.02 250);
   --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.12 0.03 260 / 0.5); /* Semi-transparent dark card */
+  --card: oklch(0.12 0.03 260 / 0.6);
   --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.05 0.02 250);
+  --popover: oklch(0.05 0.02 250 / 0.8);
   --popover-foreground: oklch(0.95 0.01 240);
-  --primary: oklch(0.7 0.2 275); /* Vibrant magenta */
+  --primary: oklch(0.7 0.2 275);
   --primary-foreground: oklch(0.98 0.01 275);
   --secondary: oklch(0.2 0.05 270);
   --secondary-foreground: oklch(0.95 0.01 240);
@@ -196,14 +247,9 @@ export async function deleteProduct(productId: number): Promise<Product> {
   --accent: oklch(0.2 0.05 270);
   --accent-foreground: oklch(0.95 0.01 240);
   --destructive: oklch(0.7 0.2 25);
-  --border: oklch(1 1 1 / 0.1); /* White/transparent border */
+  --border: oklch(1 1 1 / 0.15);
   --input: oklch(1 1 1 / 0.08);
   --ring: oklch(0.75 0.22 280);
-  --chart-1: oklch(0.7 0.15 290);
-  --chart-2: oklch(0.75 0.18 200);
-  --chart-3: oklch(0.65 0.2 260);
-  --chart-4: oklch(0.8 0.18 150);
-  --chart-5: oklch(0.8 0.2 80);
 }
 
 @layer base {
@@ -212,16 +258,19 @@ export async function deleteProduct(productId: number): Promise<Product> {
   }
   body {
     @apply text-foreground antialiased;
-    background-color: oklch(var(--background)); /* Fallback */
-    background-image: radial-gradient(at 27% 37%, hsl(var(--primary) / 0.1) 0px, transparent 50%),
-      radial-gradient(at 97% 21%, hsl(var(--chart-2) / 0.1) 0px, transparent 50%),
-      radial-gradient(at 52% 99%, hsl(var(--chart-3) / 0.1) 0px, transparent 50%),
-      radial-gradient(at 10% 29%, hsl(var(--chart-4) / 0.1) 0px, transparent 50%),
-      radial-gradient(at 97% 96%, hsl(var(--chart-5) / 0.1) 0px, transparent 50%),
-      radial-gradient(at 33% 50%, hsl(var(--ring) / 0.1) 0px, transparent 50%),
-      radial-gradient(at 79% 53%, hsl(var(--destructive) / 0.1) 0px, transparent 50%);
+    background-color: oklch(var(--background));
+    background: linear-gradient(300deg, hsl(var(--primary)/.15), hsl(var(--chart-2)/.15), hsl(var(--chart-4)/.15));
+    background-size: 400% 400%;
+    animation: gradient-animation 15s ease infinite;
   }
 }
+
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 
 @layer utilities {
   .text-gradient {
@@ -229,6 +278,9 @@ export async function deleteProduct(productId: number): Promise<Product> {
   }
   .button-gradient {
     @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30;
+  }
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-xl border;
   }
 }
 ```
@@ -283,21 +335,254 @@ export default function RootLayout({
 
 # === app/page.tsx ===
 ```tsx
+import { PageHeader } from "@/components/shared/page-header";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  DollarSign,
+  Users,
+  CreditCard,
+  Activity,
+  Package,
+} from "lucide-react";
+import { SalesChart } from "@/components/dashboard/sales-chart";
+import { BestSellers } from "@/components/dashboard/best-sellers";
+
+export default function DashboardHomePage() {
+  return (
+    <div className="flex flex-col gap-8">
+      <PageHeader title="Dashboard" description="Your business at a glance." />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">$45,231.89</div>
+            <p className="text-xs text-muted-foreground">
+              +20.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Customers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+2350</div>
+            <p className="text-xs text-muted-foreground">
+              +180.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Sales</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+12,234</div>
+            <p className="text-xs text-muted-foreground">
+              +19% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pending Orders
+            </CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+573</div>
+            <p className="text-xs text-muted-foreground">
+              +20 since last hour
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-1 lg:col-span-4 glass-card">
+          <CardHeader>
+            <CardTitle>Sales Overview</CardTitle>
+            <CardDescription>Daily, weekly, and monthly sales.</CardDescription>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <SalesChart />
+          </CardContent>
+        </Card>
+        <Card className="col-span-1 lg:col-span-3 glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Best-selling Products
+            </CardTitle>
+            <CardDescription>
+              Your top-performing products this month.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BestSellers />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+```
+
+# === app/(dashboard)/layout.tsx ===
+```tsx
+"use client";
+
+import { Sidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { cn } from "@/lib/utils";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { isOpen } = useSidebar();
+
+  return (
+    <div className="flex min-h-screen w-full">
+      <Sidebar />
+      <div
+        className={cn(
+          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
+          isOpen ? "lg:ml-64" : "lg:ml-20"
+        )}
+      >
+        <Header />
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
+    </div>
+  );
+}
+```
+
+# === app/(dashboard)/customers/page.tsx ===
+```tsx
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users } from "lucide-react";
+
+export default function CustomersPage() {
+  return (
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Customer Management"
+        description="View customer profiles and order history."
+      />
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Coming Soon!
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            This section is under construction. Soon you&apos;ll be able to manage
+            all your customer data from here.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+# === app/(dashboard)/analytics/page.tsx ===
+```tsx
+// app/(dashboard)/analytics/page.tsx
+
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3 } from "lucide-react";
+
+export default function AnalyticsPage() {
+  return (
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Analytics & Reports"
+        description="Deep dive into your sales, products, and customer data."
+      />
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Coming Soon!
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            This section is under construction. Advanced analytics and reporting
+            features will be available here soon.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+# === app/(dashboard)/payments/page.tsx ===
+```tsx
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CreditCard } from "lucide-react";
+
+export default function PaymentsPage() {
+  return (
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Payments & Transactions"
+        description="View payment history, status, and process refunds."
+      />
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Coming Soon!
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            This section is under construction. Soon you&apos;ll be able to manage
+            all your financial transactions and reports from here.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+# === app/(dashboard)/products/page.tsx ===
+```tsx
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
-import {
-  DndContext,
-  closestCenter,
-  type DragEndEvent,
-} from "@dnd-kit/core";
+import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
-import { PageHeader } from "@/components/shared/page-header";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -330,13 +615,19 @@ import { ProductSchema } from "@/validators/product.schema";
 
 const ITEMS_PER_PAGE = 10;
 
-export default function DashboardPage() {
+export default function ProductsPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(
+    undefined
+  );
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-  const [previewProduct, setPreviewProduct] = useState<Product | undefined>(undefined);
+  const [previewProduct, setPreviewProduct] = useState<Product | undefined>(
+    undefined
+  );
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
+  const [productToDelete, setProductToDelete] = useState<Product | undefined>(
+    undefined
+  );
 
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -344,7 +635,12 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const { data: products, error, isLoading, mutate } = useSWR("https://fakestoreapi.com/products", getProducts);
+  const {
+    data: products,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR("https://fakestoreapi.com/products", getProducts);
 
   useEffect(() => {
     if (products) {
@@ -362,8 +658,8 @@ export default function DashboardPage() {
         product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
-    
-    if (sortBy !== 'custom') {
+
+    if (sortBy !== "custom") {
       const [key, order] = sortBy.split("-");
       processedProducts.sort((a, b) => {
         const valA = key === "price" ? a.price : a.title.toLowerCase();
@@ -379,21 +675,24 @@ export default function DashboardPage() {
 
   const paginatedProducts = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    return filteredAndSortedProducts.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE
+    );
   }, [filteredAndSortedProducts, currentPage]);
 
   const handleSuccess = () => mutate();
-  
+
   const handleOpenCreateModal = () => {
     setEditingProduct(undefined);
     setIsFormModalOpen(true);
   };
-  
+
   const handleOpenEditModal = (product: Product) => {
     setEditingProduct(product);
     setIsFormModalOpen(true);
   };
-  
+
   const handleOpenPreviewModal = (product: Product) => {
     setPreviewProduct(product);
     setIsPreviewModalOpen(true);
@@ -420,11 +719,16 @@ export default function DashboardPage() {
     }
   };
 
-  const handleInlineUpdate = async (productId: number, data: Partial<ProductSchema>) => {
+  const handleInlineUpdate = async (
+    productId: number,
+    data: Partial<ProductSchema>
+  ) => {
     const originalProducts = [...displayProducts];
-    const updatedProducts = displayProducts.map(p => p.id === productId ? { ...p, ...data } : p);
+    const updatedProducts = displayProducts.map((p) =>
+      p.id === productId ? { ...p, ...data } : p
+    );
     setDisplayProducts(updatedProducts);
-    
+
     try {
       await updateProduct(productId, data);
       toast.success("Product updated successfully!");
@@ -443,26 +747,33 @@ export default function DashboardPage() {
         const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
-      setSortBy('custom');
+      setSortBy("custom");
       setCurrentPage(1);
     }
   };
 
   const renderContent = () => {
     if (isLoading) return <ProductTableSkeleton />;
-    if (error) return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Failed to load products. Please try again.</AlertDescription>
-      </Alert>
-    );
-    if (paginatedProducts.length === 0 && debouncedSearchTerm) return (
-      <div className="text-center py-10 border rounded-lg bg-card backdrop-blur-xl text-card-foreground">
-        <h3 className="text-xl font-medium">No Products Found</h3>
-        <p className="text-muted-foreground">Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.</p>
-      </div>
-    );
+    if (error)
+      return (
+        <Alert variant="destructive" className="glass-card">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load products. Please try again.
+          </AlertDescription>
+        </Alert>
+      );
+    if (paginatedProducts.length === 0 && debouncedSearchTerm)
+      return (
+        <div className="text-center py-10 glass-card rounded-lg">
+          <h3 className="text-xl font-medium">No Products Found</h3>
+          <p className="text-muted-foreground">
+            Your search for &quot;{debouncedSearchTerm}&quot; did not match any
+            products.
+          </p>
+        </div>
+      );
     return (
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <ProductTable
@@ -478,19 +789,24 @@ export default function DashboardPage() {
 
   return (
     <>
-      <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
-          <PageHeader title="SyncBoard" description="Modern product inventory management." />
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <ThemeToggle />
-            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto button-gradient">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+            <p className="text-muted-foreground">
+              Manage your product inventory.
+            </p>
           </div>
+          <Button
+            onClick={handleOpenCreateModal}
+            className="w-full md:w-auto button-gradient"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
         </div>
 
-        <div className="p-4 rounded-lg border bg-card backdrop-blur-xl flex flex-col md:flex-row items-center gap-4 mb-6">
+        <div className="p-4 rounded-lg flex flex-col md:flex-row items-center gap-4 glass-card">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -505,7 +821,9 @@ export default function DashboardPage() {
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="custom" disabled={sortBy !== 'custom'}>Custom Order</SelectItem>
+              <SelectItem value="custom" disabled={sortBy !== "custom"}>
+                Custom Order
+              </SelectItem>
               <SelectItem value="title-asc">Title (A-Z)</SelectItem>
               <SelectItem value="title-desc">Title (Z-A)</SelectItem>
               <SelectItem value="price-asc">Price (Low to High)</SelectItem>
@@ -519,25 +837,41 @@ export default function DashboardPage() {
           {filteredAndSortedProducts.length > ITEMS_PER_PAGE && (
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE)}
+              totalPages={Math.ceil(
+                filteredAndSortedProducts.length / ITEMS_PER_PAGE
+              )}
               onPageChange={setCurrentPage}
             />
           )}
         </div>
-      </main>
+      </div>
 
-      <ProductFormModal isOpen={isFormModalOpen} onOpenChange={setIsFormModalOpen} product={editingProduct} onSuccess={handleSuccess} />
-      <ProductPreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} product={previewProduct} />
-      
+      <ProductFormModal
+        isOpen={isFormModalOpen}
+        onOpenChange={setIsFormModalOpen}
+        product={editingProduct}
+        onSuccess={handleSuccess}
+      />
+      <ProductPreviewModal
+        isOpen={isPreviewModalOpen}
+        onOpenChange={setIsPreviewModalOpen}
+        product={previewProduct}
+      />
+
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-card/90 backdrop-blur-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete &quot;{productToDelete?.title}&quot;.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{productToDelete?.title}&quot;.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDeleteProduct}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -563,6 +897,31 @@ export const productSchema = z.object({
 });
 
 export type ProductSchema = z.infer<typeof productSchema>;
+```
+
+# === hooks/use-sidebar.ts ===
+```ts
+import { create } from "zustand";
+
+interface SidebarState {
+  isOpen: boolean;
+  toggle: () => void;
+  setOpen: (isOpen: boolean) => void;
+}
+
+// Set initial state based on window width for better UX on larger screens
+const getInitialState = () => {
+    if (typeof window !== 'undefined') {
+        return window.innerWidth > 1024; // lg breakpoint
+    }
+    return true;
+};
+
+export const useSidebar = create<SidebarState>((set) => ({
+  isOpen: getInitialState(),
+  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+  setOpen: (isOpen) => set({ isOpen }),
+}));
 ```
 
 # === hooks/use-debounce.ts ===
@@ -688,6 +1047,113 @@ export function ThemeToggle() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+```
+
+# === components/dashboard/best-sellers.tsx ===
+```tsx
+import Image from "next/image";
+import { bestSellersData } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/utils";
+
+export function BestSellers() {
+  return (
+    <div className="space-y-4">
+      {bestSellersData.map((item) => (
+        <div key={item.name} className="flex items-center gap-4">
+          <div className="relative h-12 w-12 flex-shrink-0">
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              sizes="48px"
+              className="rounded-md object-cover"
+            />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium leading-none">{item.name}</p>
+            <p className="text-sm text-muted-foreground">
+              {item.sales} sales
+            </p>
+          </div>
+          <div className="font-medium">{formatCurrency(item.revenue)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+# === components/dashboard/sales-chart.tsx ===
+```tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts";
+import { useTheme } from "next-themes";
+import { salesData } from "@/lib/mock-data";
+
+export function SalesChart() {
+  // We need the theme to trigger re-renders and get the correct colors.
+  // `resolvedTheme` is better than `theme` because it gives you 'light' or 'dark',
+  // even if the user's setting is 'system'.
+  const { resolvedTheme } = useTheme();
+  const [primaryColor, setPrimaryColor] = useState("#8884d8"); // A default color
+
+  // This effect runs when the component mounts and whenever the theme changes.
+  useEffect(() => {
+    // We need to wait for the component to mount to safely access `window`.
+    // Then we get the computed style of the --primary CSS variable.
+    const computedColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+    // Recharts expects a valid color string (like 'oklch(0.7 0.2 275)' or '#ffffff')
+    // We need to convert the oklch value from the variable into something the `fill` prop understands.
+    // The simplest way is to read the HSL version provided in the CSS.
+    if (resolvedTheme === 'dark') {
+      setPrimaryColor('hsl(275, 70%, 70%)'); // Manually match the oklch intent
+    } else {
+      setPrimaryColor('hsl(265, 60%, 60%)'); // Manually match the oklch intent
+    }
+  }, [resolvedTheme]);
+
+  return (
+    <ResponsiveContainer width="100%" height={350}>
+      <BarChart data={salesData}>
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <XAxis
+          dataKey="name"
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+        />
+        <YAxis
+          stroke="hsl(var(--muted-foreground))"
+          fontSize={12}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(value) => `$${value}`}
+        />
+        <Tooltip
+          cursor={{ fill: "hsl(var(--muted) / 0.5)" }}
+          contentStyle={{
+            background: "hsl(var(--popover))",
+            borderColor: "hsl(var(--border))",
+            borderRadius: "var(--radius-md)",
+          }}
+        />
+        {/* Use the state variable for the fill color */}
+        <Bar dataKey="total" fill={primaryColor} radius={[4, 4, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
   );
 }
 ```
@@ -1206,210 +1672,217 @@ export function ProductTableSkeleton() {
 }
 ```
 
-# === src/components/features/product/product-table.tsx ===
+# === components/layout/header.tsx ===
 ```tsx
 "use client";
 
-import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Pencil, Trash2, GripVertical, Eye } from "lucide-react";
-import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Menu, Package, Bell, MessageSquare, AlertCircle, LayoutDashboard, Users, CreditCard, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Product } from "@/types/product.types";
-import { ProductSchema } from "@/validators/product.schema";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { useSidebar } from "@/hooks/use-sidebar";
 import { cn } from "@/lib/utils";
 
-const formatCurrency = (amount: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+const navLinks = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/products", label: "Products", icon: Package },
+  { href: "/customers", label: "Customers", icon: Users },
+  { href: "/payments", label: "Payments", icon: CreditCard },
+];
 
-// Sortable Row Component
-function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpdate }: { product: Product; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 'auto' };
+const notifications = [
+    { icon: Package, title: "New Order #1234", description: "From John Doe, 1 minute ago" },
+    { icon: AlertCircle, title: "Low Inventory Alert", description: "T-Shirt (Red, M) is low on stock", isWarning: true },
+    { icon: MessageSquare, title: "New Customer Query", description: "Regarding order #1229" },
+    { icon: Package, title: "Refund Request", description: "For order #1201" },
+]
 
-  const [editingCell, setEditingCell] = useState<{ field: "title" | "price"; value: string } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+export function Header() {
+  const { toggle } = useSidebar();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, [editingCell]);
-
-  const handleSave = () => {
-    if (!editingCell) return;
-    const { field, value } = editingCell;
-
-    if (field === 'title') {
-      const newTitle = value.trim();
-      if (newTitle === '' || newTitle === product.title) {
-        setEditingCell(null);
-        return;
-      }
-      onInlineUpdate(product.id, { title: newTitle });
-    } else if (field === 'price') {
-      const newPrice = parseFloat(value);
-      if (isNaN(newPrice) || newPrice <= 0 || newPrice === product.price) {
-        setEditingCell(null);
-        return;
-      }
-      onInlineUpdate(product.id, { price: newPrice });
-    }
-    
-    setEditingCell(null);
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') setEditingCell(null);
-  };
-
-  const renderEditableCell = (field: "title" | "price") => {
-    const isEditing = editingCell?.field === field;
-    const value = field === 'title' ? product.title : product.price;
-
-    return (
-      <div onClick={() => !editingCell && setEditingCell({ field, value: String(value) })} className="cursor-pointer">
-        {isEditing ? (
-          <Input
-            ref={inputRef}
-            type={field === 'price' ? 'number' : 'text'}
-            value={editingCell.value}
-            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
-            onBlur={handleSave}
-            onKeyDown={handleKeyDown}
-            className={cn("h-8", field === 'price' && 'text-right')}
-          />
-        ) : (
-          <span className="flex items-center gap-2">
-            {field === 'title' ? product.title : formatCurrency(product.price)}
-            <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </span>
-        )}
-      </div>
-    );
-  };
-
-  // Mobile Card View
   return (
-    <div ref={setNodeRef} style={style} className="md:table-row relative block border-b md:border-b-0 last:border-b-0 group bg-card hover:bg-muted/50" >
-      {/* Desktop Table Cells */}
-      <TableCell className="hidden md:table-cell w-[50px] pl-2">
-        <div {...attributes} {...listeners} className="cursor-grab py-4">
-          <GripVertical className="h-5 w-5 text-muted-foreground" />
-        </div>
-      </TableCell>
-      <TableCell className="hidden md:table-cell w-[80px]">
-        <div className="relative h-12 w-12">
-          <Image
-            src={product.image}
-            alt={product.title}
-            fill
-            sizes="48px"
-            className="rounded-md object-cover"
-          />
-        </div>
-      </TableCell>
-      <TableCell className="hidden md:table-cell font-medium">{renderEditableCell('title')}</TableCell>
-      <TableCell className="hidden md:table-cell"><Badge variant="secondary">{product.category}</Badge></TableCell>
-      <TableCell className="hidden md:table-cell text-right w-[120px]">{renderEditableCell('price')}</TableCell>
-      <TableCell className="hidden md:table-cell text-right w-[100px]">{product.rating.rate.toFixed(2)}</TableCell>
-      <TableCell className="hidden md:table-cell w-[50px]">
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-      </TableCell>
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/50 px-4 backdrop-blur-lg sm:px-6">
+      <Button variant="outline" size="icon" className="shrink-0 hidden lg:flex" onClick={toggle}>
+        <Menu className="h-5 w-5" />
+        <span className="sr-only">Toggle sidebar</span>
+      </Button>
 
-      {/* Mobile Card Layout */}
-      <div className="md:hidden p-4 space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="relative h-16 w-16 flex-shrink-0">
-                <Image
-                    src={product.image}
-                    alt={product.title}
-                    fill
-                    sizes="64px"
-                    className="rounded-lg object-cover"
-                />
+      <Sheet>
+        <SheetTrigger asChild>
+             <Button variant="outline" size="icon" className="shrink-0 lg:hidden" >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="flex flex-col p-0">
+             <div className="flex h-16 items-center justify-between border-b px-6">
+                <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
+                    <Package className="h-7 w-7 text-primary" />
+                    <span className="text-xl">SyncBoard</span>
+                </Link>
             </div>
-            <div>
-              <div className="font-bold text-base mb-1">{renderEditableCell('title')}</div>
-              <Badge variant="outline">{product.category}</Badge>
-            </div>
-          </div>
-          <div {...attributes} {...listeners} className="cursor-grab p-2">
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </div>
-        <div className="flex justify-between items-center text-sm">
-          <div className="font-medium text-lg">{renderEditableCell('price')}</div>
-          <div className="text-muted-foreground">Rating: {product.rating.rate.toFixed(2)}</div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+            
+            <nav className="flex-1 space-y-2 p-4">
+              {navLinks.map((link) => {
+                const isActive = (link.href === "/" && pathname === "/") || (link.href !== "/" && pathname.startsWith(link.href));
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted",
+                      isActive && "bg-primary/10 text-primary"
+                    )}
+                  >
+                    <link.icon className="h-5 w-5" />
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+        </SheetContent>
+      </Sheet>
+      
+      <div className="flex w-full items-center justify-end gap-4">
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" size="icon" className="relative">
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                    </span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0">
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Notifications</CardTitle>
+                        <CardDescription>You have 4 unread messages.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-2">
+                        <div className="flex flex-col gap-1">
+                            {notifications.map((item, index) => (
+                                <div key={index} className="flex items-start gap-3 rounded-md p-2 hover:bg-muted transition-colors cursor-pointer">
+                                    <item.icon className={cn("h-5 w-5 mt-1 flex-shrink-0", item.isWarning && "text-destructive")}/>
+                                    <div>
+                                        <p className="font-semibold text-sm">{item.title}</p>
+                                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </PopoverContent>
+        </Popover>
+
+        <ThemeToggle />
       </div>
-    </div>
+    </header>
   );
 }
+```
 
-// Main Table Component
-export function ProductTable({ products, ...props }: { products: Product[]; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
+# === components/layout/sidebar.tsx ===
+```tsx
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Package,
+  Users,
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+  BarChart3,
+} from "lucide-react";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
+
+const navLinks = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/analytics", label: "Analytics", icon: BarChart3, isGroup: true },
+  { href: "/products", label: "Products", icon: Package },
+  { href: "/customers", label: "Customers", icon: Users, isGroup: true },
+  { href: "/payments", label: "Payments", icon: CreditCard, isGroup: true },
+];
+
+export function Sidebar() {
+  const { isOpen, toggle } = useSidebar();
+  const pathname = usePathname();
+
   return (
-    <div className="rounded-lg border">
-      <Table className="hidden md:table">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]"><span className="sr-only">Drag Handle</span></TableHead>
-            <TableHead className="w-[80px]">Image</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right w-[120px]">Price</TableHead>
-            <TableHead className="text-right w-[100px]">Rating</TableHead>
-            <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
-            {products.length > 0 ? (
-              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
-            ) : (
-              <TableRow><TableCell colSpan={7} className="h-24 text-center">No products to display.</TableCell></TableRow>
-            )}
-          </SortableContext>
-        </TableBody>
-      </Table>
-      <div className="md:hidden grid grid-cols-1 divide-y">
-        <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
-            {products.length > 0 ? (
-              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
-            ) : (
-              <div className="p-10 text-center">No products to display.</div>
-            )}
-        </SortableContext>
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background/50 backdrop-blur-lg transition-all duration-300 ease-in-out lg:flex",
+        isOpen ? "w-64" : "w-20"
+      )}
+    >
+      <div className="flex h-16 items-center justify-between border-b px-6">
+        <Link href="/" className={cn("flex items-center gap-2 font-bold tracking-tight", !isOpen && "justify-center")}>
+          <Package className="h-7 w-7 text-primary" />
+          <span className={cn("text-xl", !isOpen && "hidden")}>SyncBoard</span>
+        </Link>
+        <Button variant="ghost" size="icon" className="hidden lg:flex" onClick={toggle}>
+            {isOpen ? <ChevronLeft className="h-5 w-5"/> : <ChevronRight className="h-5 w-5"/>}
+        </Button>
       </div>
-    </div>
+      <nav className="flex-1 space-y-2 p-4">
+        <TooltipProvider delayDuration={0}>
+          {navLinks.map((link) => {
+            const isActive = (link.href === "/" && pathname === "/") || (link.href !== "/" && pathname.startsWith(link.href));
+            const content = (
+                <Link
+                  href={link.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted",
+                    isActive && "bg-primary/10 text-primary",
+                    !isOpen && "justify-center"
+                  )}
+                >
+                  <link.icon className="h-5 w-5" />
+                  <span className={cn("font-medium", !isOpen && "hidden")}>{link.label}</span>
+                </Link>
+            );
+
+            return (
+              <div key={link.href}>
+                {link.isGroup && <div className={cn("h-4", !isOpen && "hidden")}></div>}
+                {isOpen ? (
+                    content
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>{content}</TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{link.label}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            );
+          })}
+        </TooltipProvider>
+      </nav>
+    </aside>
   );
 }
 ```
