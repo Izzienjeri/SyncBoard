@@ -40,7 +40,6 @@ const defaultValues: ProductSchema = {
   title: "",
   description: "",
   price: 0,
-  stock: 0,
 };
 
 export function ProductFormModal({
@@ -58,7 +57,6 @@ export function ProductFormModal({
           title: product.title,
           description: product.description || "",
           price: product.price,
-          stock: product.stock,
         }
       : defaultValues,
   });
@@ -75,7 +73,6 @@ export function ProductFormModal({
           title: product.title,
           description: product.description || "",
           price: product.price,
-          stock: product.stock,
         });
       } else {
         reset(defaultValues);
@@ -123,7 +120,7 @@ export function ProductFormModal({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. iPhone 15 Pro" {...field} />
+                    <Input placeholder="e.g. Classic T-Shirt" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,45 +143,25 @@ export function ProductFormModal({
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="999.99"
-                        {...field}
-                        value={field.value as number | string}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stock</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="100"
-                        {...field}
-                        value={field.value as number | string}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="19.99"
+                      {...field}
+                      value={field.value as number | string}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button
                 type="button"

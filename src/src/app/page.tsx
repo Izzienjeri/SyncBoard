@@ -3,8 +3,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import useSWR from "swr";
-import { AlertTriangle, PlusCircle, Search } from "lucide-react";
+import useSWRInfinite from "swr/infinite";
+import { AlertTriangle, PlusCircle, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/shared/page-header";
@@ -36,6 +36,8 @@ import { getProducts, deleteProduct } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Product } from "@/types/product.types";
 
+const PAGE_SIZE = 10;
+
 export default function DashboardPage() {
   // State for modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -48,13 +50,26 @@ export default function DashboardPage() {
   const [sortBy, setSortBy] = useState("title-asc");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // SWR hook for fetching all products. Fake Store API doesn't support pagination.
+  // SWR hook for infinite loading (pagination)
+  const getKey = (pageIndex: number, previousPageData: any) => {
+    if (previousPageData && !previousPageData.products.length) return null; // Reached the end
+    const skip = pageIndex * PAGE_SIZE;
+    return `https://dummyjson.com/products?limit=${PAGE_SIZE}&skip=${skip}`;
+  };
+
   const {
-    data: products,
+    data,
     error,
-    isLoading,
+    size,
+    setSize,
     mutate,
-  } = useSWR("https://fakestoreapi.com/products", getProducts);
+    isLoading: isLoadingInitial,
+    isValidating,
+  } = useSWRInfinite(getKey, getProducts);
+
+  const products = data ? data.flatMap((page) => page.products) : [];
+  const isLoadingMore = isValidating && size > 1;
+  const isReachingEnd = data && data[data.length - 1]?.products.length < PAGE_SIZE;
 
   const filteredAndSortedProducts = useMemo(() => {
     if (!products) return [];
@@ -104,20 +119,21 @@ export default function DashboardPage() {
   };
 
   const handleDeleteProduct = async () => {
-    if (!productToDelete || !products) return;
+    if (!productToDelete || !data) return;
 
-    const originalData = [...products];
+    const originalData = [...data];
 
     // Optimistic UI update
-    const optimisticData = products.filter((p) => p.id !== productToDelete.id);
+    const optimisticData = data.map((page) => ({
+      ...page,
+      products: page.products.filter((p) => p.id !== productToDelete.id),
+    }));
     mutate(optimisticData, { revalidate: false });
 
     try {
       await deleteProduct(productToDelete.id);
       toast.success(`Product "${productToDelete.title}" deleted successfully!`);
-    } catch (err) {
-      // FIX: Log the actual error to use the variable and aid debugging.
-      console.error("Failed to delete product:", err);
+    } catch (error) {
       toast.error("Failed to delete product. Restoring data.");
       mutate(originalData, { revalidate: false }); // Revert on error
     } finally {
@@ -127,7 +143,7 @@ export default function DashboardPage() {
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoadingInitial) {
       return <ProductTableSkeleton />;
     }
     if (error) {
@@ -141,12 +157,12 @@ export default function DashboardPage() {
         </Alert>
       );
     }
-    if (products && products.length > 0 && filteredAndSortedProducts.length === 0) {
+    if (products.length > 0 && filteredAndSortedProducts.length === 0) {
       return (
         <div className="text-center py-10 border rounded-md">
           <h3 className="text-xl font-medium">No Products Found</h3>
           <p className="text-muted-foreground">
-            Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.
+            Your search for "{debouncedSearchTerm}" did not match any products.
           </p>
         </div>
       );
@@ -200,7 +216,27 @@ export default function DashboardPage() {
           </Select>
         </div>
 
-        <div className="space-y-6">{renderContent()}</div>
+        <div className="space-y-6">
+          {renderContent()}
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setSize(size + 1)}
+              disabled={isLoadingMore || isReachingEnd}
+              variant="outline"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading...
+                </>
+              ) : isReachingEnd ? (
+                "No More Products"
+              ) : (
+                "Load More"
+              )}
+            </Button>
+          </div>
+        </div>
       </main>
 
       <ProductFormModal
@@ -215,7 +251,7 @@ export default function DashboardPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              product &quot;{productToDelete?.title}&quot;.
+              product "{productToDelete?.title}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,4 +1,4 @@
-// src/components/features/product/product-table.tsx (Corrected)
+// src/components/features/product/product-table.tsx
 
 "use client";
 
@@ -44,7 +44,6 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
           <TableRow>
             <TableHead className="w-[80px]">Image</TableHead>
             <TableHead>Title</TableHead>
-            {/* FIX: Updated headers for new data structure */}
             <TableHead>Brand</TableHead>
             <TableHead className="text-right w-[100px]">Price</TableHead>
             <TableHead className="text-right w-[100px]">Stock</TableHead>
@@ -58,7 +57,6 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
           {products.map((product) => (
             <TableRow key={product.id}>
               <TableCell>
-                {/* FIX: Use 'thumbnail' instead of 'image' */}
                 <Image
                   src={product.thumbnail}
                   alt={product.title}
@@ -68,12 +66,9 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                 />
               </TableCell>
               <TableCell className="font-medium">{product.title}</TableCell>
-              {/* FIX: Use 'brand' instead of 'category' */}
               <TableCell className="text-muted-foreground">{product.brand}</TableCell>
               <TableCell className="text-right">{formatCurrency(product.price)}</TableCell>
-              {/* FIX: Display the new 'stock' data */}
               <TableCell className="text-right">{product.stock}</TableCell>
-              {/* FIX: Access 'rating' directly as it is now a number */}
               <TableCell className="text-right">{product.rating.toFixed(2)}</TableCell>
               <TableCell>
                 <DropdownMenu>

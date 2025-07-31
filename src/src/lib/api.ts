@@ -1,11 +1,18 @@
-// lib/api.ts
+// src/lib/api.ts
 
 import { Product } from "@/types/product.types";
 import { ProductSchema } from "@/validators/product.schema";
 
-const API_BASE_URL = "https://fakestoreapi.com";
+export interface ProductsApiResponse {
+  products: Product[];
+  total: number;
+  skip: number;
+  limit: number;
+}
 
-export async function getProducts(url: string): Promise<Product[]> {
+const API_BASE_URL = "https://dummyjson.com";
+
+export async function getProducts(url: string): Promise<ProductsApiResponse> {
   try {
     const res = await fetch(url);
 
@@ -13,10 +20,11 @@ export async function getProducts(url: string): Promise<Product[]> {
       throw new Error("Failed to fetch products");
     }
 
-    const data: Product[] = await res.json();
+    const data: ProductsApiResponse = await res.json();
     return data;
   } catch (error) {
     console.error("API Error:", error);
+    // In a real app, you might want to log this to a service like Sentry
     throw new Error("Could not retrieve products. Please try again later.");
   }
 }
@@ -24,15 +32,10 @@ export async function getProducts(url: string): Promise<Product[]> {
 export async function createProduct(productData: ProductSchema): Promise<Product> {
   console.log("Simulating CREATE request with:", productData);
   try {
-    const payload = {
-      ...productData,
-      image: "https://i.pravatar.cc",
-      category: "electronic",
-    };
-    const res = await fetch(`${API_BASE_URL}/products`, {
+    const res = await fetch(`${API_BASE_URL}/products/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(productData),
     });
 
     if (!res.ok) {
@@ -40,6 +43,7 @@ export async function createProduct(productData: ProductSchema): Promise<Product
     }
 
     const newProduct: Product = await res.json();
+    // The API returns the new product with a new ID (e.g., 101)
     console.log("Simulated CREATE response:", newProduct);
     return newProduct;
   } catch (error) {
@@ -55,7 +59,7 @@ export async function updateProduct(
   console.log(`Simulating UPDATE request for ID ${productId} with:`, productData);
   try {
     const res = await fetch(`${API_BASE_URL}/products/${productId}`, {
-      method: "PUT",
+      method: "PUT", // or PATCH
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(productData),
     });
@@ -63,7 +67,7 @@ export async function updateProduct(
     if (!res.ok) {
       throw new Error("Failed to update product");
     }
-
+    
     const updatedProduct: Product = await res.json();
     console.log("Simulated UPDATE response:", updatedProduct);
     return updatedProduct;
@@ -84,6 +88,7 @@ export async function deleteProduct(productId: number): Promise<Product> {
       throw new Error("Failed to delete product");
     }
 
+    // The API returns the deleted product object
     const deletedProduct: Product = await res.json();
     console.log("Simulated DELETE response:", deletedProduct);
     return deletedProduct;
