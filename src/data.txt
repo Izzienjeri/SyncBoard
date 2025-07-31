@@ -1,5 +1,5 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-07-31 17:43:33
+# Date and Time: 2025-07-31 18:15:35
 # Files Included: 16
 
 # === lib/utils.ts ===
@@ -126,14 +126,6 @@ export async function deleteProduct(productId: number): Promise<Product> {
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -162,72 +154,56 @@ export async function deleteProduct(productId: number): Promise<Product> {
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.75rem;
+  --background: oklch(0.99 0.005 240);
+  --foreground: oklch(0.1 0.03 250);
+  --card: oklch(1 0 0 / 0.6); /* Semi-transparent card */
+  --card-foreground: oklch(0.1 0.03 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --popover-foreground: oklch(0.1 0.03 250);
+  --primary: oklch(0.60 0.18 265); /* Vibrant purple/blue */
+  --primary-foreground: oklch(0.99 0.005 240);
+  --secondary: oklch(0.92 0.03 260);
+  --secondary-foreground: oklch(0.1 0.03 250);
+  --muted: oklch(0.95 0.02 260);
+  --muted-foreground: oklch(0.45 0.04 255);
+  --accent: oklch(0.95 0.02 260);
+  --accent-foreground: oklch(0.09 0.08 265);
+  --destructive: oklch(0.65 0.22 20);
+  --border: oklch(0.1 0.03 250 / 0.1); /* Subtle border */
+  --input: oklch(0.1 0.03 250 / 0.05);
+  --ring: oklch(0.60 0.18 265);
+  --chart-1: oklch(0.7 0.15 290); /* Pink */
+  --chart-2: oklch(0.75 0.18 200); /* Cyan */
+  --chart-3: oklch(0.65 0.2 260); /* Blue */
+  --chart-4: oklch(0.8 0.18 150); /* Green */
+  --chart-5: oklch(0.8 0.2 80); /* Yellow */
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: oklch(0.08 0.02 250);
+  --foreground: oklch(0.95 0.01 240);
+  --card: oklch(0.12 0.03 260 / 0.5); /* Semi-transparent dark card */
+  --card-foreground: oklch(0.95 0.01 240);
+  --popover: oklch(0.05 0.02 250);
+  --popover-foreground: oklch(0.95 0.01 240);
+  --primary: oklch(0.7 0.2 275); /* Vibrant magenta */
+  --primary-foreground: oklch(0.98 0.01 275);
+  --secondary: oklch(0.2 0.05 270);
+  --secondary-foreground: oklch(0.95 0.01 240);
+  --muted: oklch(0.2 0.05 270 / 0.5);
+  --muted-foreground: oklch(0.65 0.05 260);
+  --accent: oklch(0.2 0.05 270);
+  --accent-foreground: oklch(0.95 0.01 240);
+  --destructive: oklch(0.7 0.2 25);
+  --border: oklch(1 1 1 / 0.1); /* White/transparent border */
+  --input: oklch(1 1 1 / 0.08);
+  --ring: oklch(0.75 0.22 280);
+  --chart-1: oklch(0.7 0.15 290);
+  --chart-2: oklch(0.75 0.18 200);
+  --chart-3: oklch(0.65 0.2 260);
+  --chart-4: oklch(0.8 0.18 150);
+  --chart-5: oklch(0.8 0.2 80);
 }
 
 @layer base {
@@ -235,7 +211,24 @@ export async function deleteProduct(productId: number): Promise<Product> {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground antialiased;
+    background-color: oklch(var(--background)); /* Fallback */
+    background-image: radial-gradient(at 27% 37%, hsl(var(--primary) / 0.1) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsl(var(--chart-2) / 0.1) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsl(var(--chart-3) / 0.1) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, hsl(var(--chart-4) / 0.1) 0px, transparent 50%),
+      radial-gradient(at 97% 96%, hsl(var(--chart-5) / 0.1) 0px, transparent 50%),
+      radial-gradient(at 33% 50%, hsl(var(--ring) / 0.1) 0px, transparent 50%),
+      radial-gradient(at 79% 53%, hsl(var(--destructive) / 0.1) 0px, transparent 50%);
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-secondary;
+  }
+  .button-gradient {
+    @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30;
   }
 }
 ```
@@ -338,7 +331,6 @@ import { ProductSchema } from "@/validators/product.schema";
 const ITEMS_PER_PAGE = 10;
 
 export default function DashboardPage() {
-  // Modal States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -346,7 +338,6 @@ export default function DashboardPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
 
-  // Data & Filtering States
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("title-asc");
@@ -366,14 +357,12 @@ export default function DashboardPage() {
 
     let processedProducts = [...displayProducts];
 
-    // Filtering
     if (debouncedSearchTerm) {
       processedProducts = processedProducts.filter((product) =>
         product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
     
-    // Sorting (unless custom order is active)
     if (sortBy !== 'custom') {
       const [key, order] = sortBy.split("-");
       processedProducts.sort((a, b) => {
@@ -393,7 +382,6 @@ export default function DashboardPage() {
     return filteredAndSortedProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredAndSortedProducts, currentPage]);
 
-  // Handlers
   const handleSuccess = () => mutate();
   
   const handleOpenCreateModal = () => {
@@ -435,15 +423,15 @@ export default function DashboardPage() {
   const handleInlineUpdate = async (productId: number, data: Partial<ProductSchema>) => {
     const originalProducts = [...displayProducts];
     const updatedProducts = displayProducts.map(p => p.id === productId ? { ...p, ...data } : p);
-    setDisplayProducts(updatedProducts); // Optimistic update
+    setDisplayProducts(updatedProducts);
     
     try {
       await updateProduct(productId, data);
       toast.success("Product updated successfully!");
-      mutate(updatedProducts, { revalidate: false }); // Update SWR cache
-    } catch (error) {
+      mutate(updatedProducts, { revalidate: false });
+    } catch {
       toast.error("Failed to update product.");
-      setDisplayProducts(originalProducts); // Revert on failure
+      setDisplayProducts(originalProducts);
     }
   };
 
@@ -455,8 +443,8 @@ export default function DashboardPage() {
         const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
-      setSortBy('custom'); // Switch to custom sort
-      setCurrentPage(1); // Reset to first page after reorder
+      setSortBy('custom');
+      setCurrentPage(1);
     }
   };
 
@@ -470,9 +458,9 @@ export default function DashboardPage() {
       </Alert>
     );
     if (paginatedProducts.length === 0 && debouncedSearchTerm) return (
-      <div className="text-center py-10 border rounded-lg bg-card text-card-foreground">
+      <div className="text-center py-10 border rounded-lg bg-card backdrop-blur-xl text-card-foreground">
         <h3 className="text-xl font-medium">No Products Found</h3>
-        <p className="text-muted-foreground">Your search for "{debouncedSearchTerm}" did not match any products.</p>
+        <p className="text-muted-foreground">Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.</p>
       </div>
     );
     return (
@@ -495,19 +483,19 @@ export default function DashboardPage() {
           <PageHeader title="SyncBoard" description="Modern product inventory management." />
           <div className="flex items-center gap-2 w-full md:w-auto">
             <ThemeToggle />
-            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto">
+            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto button-gradient">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Product
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+        <div className="p-4 rounded-lg border bg-card backdrop-blur-xl flex flex-col md:flex-row items-center gap-4 mb-6">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by product title..."
-              className="pl-10"
+              className="pl-10 bg-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -542,10 +530,10 @@ export default function DashboardPage() {
       <ProductPreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} product={previewProduct} />
       
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-card/90 backdrop-blur-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete "{productToDelete?.title}".</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete &quot;{productToDelete?.title}&quot;.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -651,7 +639,9 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className={cn("space-y-2", className)} {...props}>
-      <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        <span className="text-gradient">{title}</span>
+      </h1>
       {description && <p className="text-muted-foreground">{description}</p>}
     </div>
   );
@@ -807,7 +797,7 @@ export function ProductFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit Product" : "Add New Product"}
@@ -878,7 +868,7 @@ export function ProductFormModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="button-gradient">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -929,35 +919,29 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
+    if (editingCell) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
   }, [editingCell]);
 
   const handleSave = () => {
     if (!editingCell) return;
     const { field, value } = editingCell;
-  
-    if (field === "title") {
-      const trimmed = value.trim();
-      if (trimmed === "" || trimmed === product.title) {
-        setEditingCell(null);
-        return;
+
+    if (field === 'title') {
+      const newTitle = value.trim();
+      if (newTitle !== '' && newTitle !== product.title) {
+        onInlineUpdate(product.id, { title: newTitle });
       }
-      onInlineUpdate(product.id, { title: trimmed });
-      setEditingCell(null);
-    }
-  
-    if (field === "price") {
-      const parsed = parseFloat(value);
-      if (isNaN(parsed) || parsed <= 0 || parsed === product.price) {
-        setEditingCell(null);
-        return;
+    } else if (field === 'price') {
+      const newPrice = parseFloat(value);
+      if (!isNaN(newPrice) && newPrice > 0 && newPrice !== product.price) {
+        onInlineUpdate(product.id, { price: newPrice });
       }
-      onInlineUpdate(product.id, { price: parsed });
-      setEditingCell(null);
     }
+    setEditingCell(null);
   };
-  
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleSave();
@@ -969,7 +953,7 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
     const value = field === 'title' ? product.title : product.price;
 
     return (
-      <div onClick={() => !editingCell && setEditingCell({ field, value: String(value) })} className="cursor-pointer">
+      <div onClick={() => !isDragging && !editingCell && setEditingCell({ field, value: String(value) })} className="cursor-pointer">
         {isEditing ? (
           <Input
             ref={inputRef}
@@ -978,7 +962,8 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
             onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
-            className={cn("h-8", field === 'price' && 'text-right')}
+            className={cn("h-8 bg-transparent", field === 'price' && 'text-right')}
+            onClick={(e) => e.stopPropagation()} // Prevent triggering the parent div's onClick
           />
         ) : (
           <span className="flex items-center gap-2">
@@ -990,10 +975,9 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
     );
   };
 
-  // Mobile Card View
   return (
-    <div ref={setNodeRef} style={style} className="md:table-row relative block border-b md:border-b-0 last:border-b-0 group bg-card hover:bg-muted/50" >
-      {/* Desktop Table Cells */}
+    <tr ref={setNodeRef} style={style} className={cn("group bg-transparent hover:bg-muted/50 transition-colors", isDragging && "bg-primary/20 shadow-xl shadow-primary/20 ring-2 ring-primary/50")}>
+      {/* Desktop Table Cells (hidden on mobile) */}
       <TableCell className="hidden md:table-cell w-[50px] pl-2">
         <div {...attributes} {...listeners} className="cursor-grab py-4">
           <GripVertical className="h-5 w-5 text-muted-foreground" />
@@ -1001,13 +985,7 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
       </TableCell>
       <TableCell className="hidden md:table-cell w-[80px]">
         <div className="relative h-12 w-12">
-          <Image
-            src={product.image}
-            alt={product.title}
-            fill
-            sizes="48px"
-            className="rounded-md object-cover"
-          />
+          <Image src={product.image} alt={product.title} fill sizes="48px" className="rounded-md object-cover" />
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell font-medium">{renderEditableCell('title')}</TableCell>
@@ -1016,12 +994,7 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
       <TableCell className="hidden md:table-cell text-right w-[100px]">{product.rating.rate.toFixed(2)}</TableCell>
       <TableCell className="hidden md:table-cell w-[50px]">
          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
@@ -1031,59 +1004,58 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
           </DropdownMenu>
       </TableCell>
 
-      {/* Mobile Card Layout */}
-      <div className="md:hidden p-4 space-y-3">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="relative h-16 w-16 flex-shrink-0">
-                <Image
-                    src={product.image}
-                    alt={product.title}
-                    fill
-                    sizes="64px"
-                    className="rounded-lg object-cover"
-                />
+      {/* Mobile Card Layout (inside a single cell, visible only on mobile) */}
+      <TableCell className="md:hidden p-0" colSpan={7}>
+        <div className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="relative h-16 w-16 flex-shrink-0">
+                  <Image src={product.image} alt={product.title} fill sizes="64px" className="rounded-lg object-cover" />
+              </div>
+              <div>
+                <div className="font-bold text-base mb-1">{renderEditableCell('title')}</div>
+                <Badge variant="outline">{product.category}</Badge>
+              </div>
             </div>
-            <div>
-              <div className="font-bold text-base mb-1">{renderEditableCell('title')}</div>
-              <Badge variant="outline">{product.category}</Badge>
+            <div {...attributes} {...listeners} className="cursor-grab p-2">
+              <GripVertical className="h-5 w-5 text-muted-foreground" />
             </div>
           </div>
-          <div {...attributes} {...listeners} className="cursor-grab p-2">
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
+          <div className="flex justify-between items-center text-sm">
+            <div className="font-medium text-lg">{renderEditableCell('price')}</div>
+            <div className="text-muted-foreground">Rating: {product.rating.rate.toFixed(2)}</div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <div className="font-medium text-lg">{renderEditableCell('price')}</div>
-          <div className="text-muted-foreground">Rating: {product.rating.rate.toFixed(2)}</div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </div>
+      </TableCell>
+    </tr>
   );
 }
 
-// Main Table Component
+// Main Table Component (Simplified)
 export function ProductTable({ products, ...props }: { products: Product[]; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
   return (
-    <div className="rounded-lg border">
-      <Table className="hidden md:table">
+    <div className="rounded-lg border bg-card backdrop-blur-xl overflow-hidden">
+      <Table>
         <TableHeader>
+          {/* These headers will be hidden on mobile by the responsive nature of the cells below */}
           <TableRow>
-            <TableHead className="w-[50px]"><span className="sr-only">Drag Handle</span></TableHead>
-            <TableHead className="w-[80px]">Image</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right w-[120px]">Price</TableHead>
-            <TableHead className="text-right w-[100px]">Rating</TableHead>
-            <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+            <TableHead className="hidden md:table-cell w-[50px]"><span className="sr-only">Drag Handle</span></TableHead>
+            <TableHead className="hidden md:table-cell w-[80px]">Image</TableHead>
+            <TableHead className="hidden md:table-cell">Title</TableHead>
+            <TableHead className="hidden md:table-cell">Category</TableHead>
+            <TableHead className="hidden md:table-cell text-right w-[120px]">Price</TableHead>
+            <TableHead className="hidden md:table-cell text-right w-[100px]">Rating</TableHead>
+            <TableHead className="hidden md:table-cell w-[50px]"><span className="sr-only">Actions</span></TableHead>
+            {/* A dummy header for mobile view to prevent layout shifts, but it has no content */}
+            <TableHead className="md:hidden"><span className="sr-only">Product</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -1096,15 +1068,6 @@ export function ProductTable({ products, ...props }: { products: Product[]; onEd
           </SortableContext>
         </TableBody>
       </Table>
-      <div className="md:hidden grid grid-cols-1 divide-y">
-        <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
-            {products.length > 0 ? (
-              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
-            ) : (
-              <div className="p-10 text-center">No products to display.</div>
-            )}
-        </SortableContext>
-      </div>
     </div>
   );
 }
@@ -1133,14 +1096,14 @@ export function ProductPreviewModal({ isOpen, onOpenChange, product }: ProductPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle>Product Details</DialogTitle>
         </DialogHeader>
         <div className="mt-4 space-y-6">
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="flex-shrink-0">
-              <div className="relative h-[150px] w-[150px]">
+              <div className="relative h-[150px] w-[150px] p-1 bg-gradient-to-br from-primary to-secondary rounded-xl">
                 <Image
                   src={product.image}
                   alt={product.title}

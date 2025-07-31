@@ -19,14 +19,14 @@ export function ProductPreviewModal({ isOpen, onOpenChange, product }: ProductPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle>Product Details</DialogTitle>
         </DialogHeader>
         <div className="mt-4 space-y-6">
           <div className="flex flex-col sm:flex-row gap-6">
             <div className="flex-shrink-0">
-              <div className="relative h-[150px] w-[150px]">
+              <div className="relative h-[150px] w-[150px] p-1 bg-gradient-to-br from-primary to-secondary rounded-xl">
                 <Image
                   src={product.image}
                   alt={product.title}

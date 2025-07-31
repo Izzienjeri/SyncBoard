@@ -69,7 +69,7 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
             onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
-            className={cn("h-8", field === 'price' && 'text-right')}
+            className={cn("h-8 bg-transparent", field === 'price' && 'text-right')}
             onClick={(e) => e.stopPropagation()} // Prevent triggering the parent div's onClick
           />
         ) : (
@@ -83,7 +83,7 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
   };
 
   return (
-    <tr ref={setNodeRef} style={style} className={cn("group bg-card hover:bg-muted/50", isDragging && "bg-muted")}>
+    <tr ref={setNodeRef} style={style} className={cn("group bg-transparent hover:bg-muted/50 transition-colors", isDragging && "bg-primary/20 shadow-xl shadow-primary/20 ring-2 ring-primary/50")}>
       {/* Desktop Table Cells (hidden on mobile) */}
       <TableCell className="hidden md:table-cell w-[50px] pl-2">
         <div {...attributes} {...listeners} className="cursor-grab py-4">
@@ -149,7 +149,7 @@ function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpda
 // Main Table Component (Simplified)
 export function ProductTable({ products, ...props }: { products: Product[]; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
   return (
-    <div className="rounded-lg border">
+    <div className="rounded-lg border bg-card backdrop-blur-xl overflow-hidden">
       <Table>
         <TableHeader>
           {/* These headers will be hidden on mobile by the responsive nature of the cells below */}

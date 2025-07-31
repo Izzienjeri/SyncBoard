@@ -13,7 +13,9 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className={cn("space-y-2", className)} {...props}>
-      <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        <span className="text-gradient">{title}</span>
+      </h1>
       {description && <p className="text-muted-foreground">{description}</p>}
     </div>
   );

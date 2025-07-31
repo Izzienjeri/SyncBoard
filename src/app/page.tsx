@@ -33,8 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-// NOTE: I've updated this import path to match your corrected file structure
-import { ProductTable } from "@/components/features/product/product-table"; 
+import { ProductTable } from "@/components/features/product/product-table";
 import { ProductTableSkeleton } from "@/components/features/product/product-table-skeleton";
 import { ProductFormModal } from "@/components/features/product/product-form-modal";
 import { ProductPreviewModal } from "@/components/features/product/product-preview-modal";
@@ -47,7 +46,6 @@ import { ProductSchema } from "@/validators/product.schema";
 const ITEMS_PER_PAGE = 10;
 
 export default function DashboardPage() {
-  // Modal States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -55,14 +53,12 @@ export default function DashboardPage() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
 
-  // Data & Filtering States
   const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("title-asc");
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // The 'error' variable is used in renderContent, so we keep it here.
   const { data: products, error, isLoading, mutate } = useSWR("https://fakestoreapi.com/products", getProducts);
 
   useEffect(() => {
@@ -76,14 +72,12 @@ export default function DashboardPage() {
 
     let processedProducts = [...displayProducts];
 
-    // Filtering
     if (debouncedSearchTerm) {
       processedProducts = processedProducts.filter((product) =>
         product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
     
-    // Sorting (unless custom order is active)
     if (sortBy !== 'custom') {
       const [key, order] = sortBy.split("-");
       processedProducts.sort((a, b) => {
@@ -103,7 +97,6 @@ export default function DashboardPage() {
     return filteredAndSortedProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredAndSortedProducts, currentPage]);
 
-  // Handlers
   const handleSuccess = () => mutate();
   
   const handleOpenCreateModal = () => {
@@ -145,15 +138,15 @@ export default function DashboardPage() {
   const handleInlineUpdate = async (productId: number, data: Partial<ProductSchema>) => {
     const originalProducts = [...displayProducts];
     const updatedProducts = displayProducts.map(p => p.id === productId ? { ...p, ...data } : p);
-    setDisplayProducts(updatedProducts); // Optimistic update
+    setDisplayProducts(updatedProducts);
     
     try {
       await updateProduct(productId, data);
       toast.success("Product updated successfully!");
-      mutate(updatedProducts, { revalidate: false }); // Update SWR cache
-    } catch { // The error variable is not needed here
+      mutate(updatedProducts, { revalidate: false });
+    } catch {
       toast.error("Failed to update product.");
-      setDisplayProducts(originalProducts); // Revert on failure
+      setDisplayProducts(originalProducts);
     }
   };
 
@@ -165,8 +158,8 @@ export default function DashboardPage() {
         const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
-      setSortBy('custom'); // Switch to custom sort
-      setCurrentPage(1); // Reset to first page after reorder
+      setSortBy('custom');
+      setCurrentPage(1);
     }
   };
 
@@ -180,7 +173,7 @@ export default function DashboardPage() {
       </Alert>
     );
     if (paginatedProducts.length === 0 && debouncedSearchTerm) return (
-      <div className="text-center py-10 border rounded-lg bg-card text-card-foreground">
+      <div className="text-center py-10 border rounded-lg bg-card backdrop-blur-xl text-card-foreground">
         <h3 className="text-xl font-medium">No Products Found</h3>
         <p className="text-muted-foreground">Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.</p>
       </div>
@@ -205,19 +198,19 @@ export default function DashboardPage() {
           <PageHeader title="SyncBoard" description="Modern product inventory management." />
           <div className="flex items-center gap-2 w-full md:w-auto">
             <ThemeToggle />
-            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto">
+            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto button-gradient">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Product
             </Button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+        <div className="p-4 rounded-lg border bg-card backdrop-blur-xl flex flex-col md:flex-row items-center gap-4 mb-6">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by product title..."
-              className="pl-10"
+              className="pl-10 bg-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -252,7 +245,7 @@ export default function DashboardPage() {
       <ProductPreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} product={previewProduct} />
       
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-card/90 backdrop-blur-xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>This will permanently delete &quot;{productToDelete?.title}&quot;.</AlertDialogDescription>

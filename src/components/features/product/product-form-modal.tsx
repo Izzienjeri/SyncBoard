@@ -101,7 +101,7 @@ export function ProductFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle>
             {isEditMode ? "Edit Product" : "Add New Product"}
@@ -172,7 +172,7 @@ export function ProductFormModal({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className="button-gradient">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
