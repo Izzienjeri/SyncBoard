@@ -1,29 +1,18 @@
-"use client";
-
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { useSidebar } from "@/hooks/use-sidebar";
-import { cn } from "@/lib/utils";
+import { StudentDashboardSidebar } from "@/components/dashboard/student-sidebar";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isOpen } = useSidebar();
-
   return (
-    <div className="flex min-h-screen w-full">
-      <Sidebar />
-      <div
-        className={cn(
-          "flex flex-1 flex-col transition-all duration-300 ease-in-out",
-          isOpen ? "lg:ml-64" : "lg:ml-20"
-        )}
-      >
-        <Header />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+    <main className="min-h-screen w-full bg-gradient-to-br from-blue-500 to-indigo-600 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-7xl rounded-2xl bg-card p-6 shadow-xl lg:p-8 flex flex-col lg:flex-row gap-8">
+        <StudentDashboardSidebar />
+        <div className="flex-1 flex flex-col gap-8">
+          {children}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

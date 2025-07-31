@@ -9,7 +9,6 @@ export function CustomerTableSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Avatar</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
@@ -19,7 +18,6 @@ export function CustomerTableSkeleton() {
         <TableBody>
           {skeletonRows.map((_, index) => (
             <TableRow key={index}>
-              <TableCell><Skeleton className="h-10 w-10 rounded-full" /></TableCell>
               <TableCell><Skeleton className="h-4 w-32" /></TableCell>
               <TableCell><Skeleton className="h-4 w-48" /></TableCell>
               <TableCell><Skeleton className="h-4 w-40" /></TableCell>

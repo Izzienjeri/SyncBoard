@@ -9,9 +9,9 @@ interface StatCardProps {
 
 export function StatCard({ title, value, change, isNegative = false }: StatCardProps) {
   return (
-    <div className="bg-gray-100 rounded-lg text-center py-4 px-4">
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="text-2xl font-bold text-gray-800 my-1">{value}</p>
+    <div className="bg-muted/50 rounded-lg p-4">
+      <p className="text-sm text-muted-foreground">{title}</p>
+      <p className="text-2xl font-bold text-foreground my-1">{value}</p>
       <p
         className={cn(
           "text-xs font-semibold",

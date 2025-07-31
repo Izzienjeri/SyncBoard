@@ -26,13 +26,13 @@ const GradeDistributionChart = () => (
   <div className="h-56"> {/* Set a fixed height for the chart area */}
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={gradeData} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
-        <XAxis dataKey="grade" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-        <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+        <XAxis dataKey="grade" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
         <Tooltip
-          cursor={{ fill: 'rgba(128, 128, 128, 0.1)' }}
+          cursor={{ fill: 'hsl(var(--muted))' }}
           contentStyle={{
-            backgroundColor: 'white',
-            border: '1px solid #e2e8f0',
+            backgroundColor: 'hsl(var(--card))',
+            border: '1px solid hsl(var(--border))',
             borderRadius: '0.5rem',
           }}
           formatter={(value: number) => [value, "Students"]}
@@ -57,13 +57,13 @@ const TopSubjectsList = () => (
     </TableHeader>
     <TableBody>
       {topSubjectsData.sort((a, b) => b.averageScore - a.averageScore).map((subject) => (
-        <TableRow key={subject.name} className="hover:bg-gray-50 text-sm">
+        <TableRow key={subject.name} className="hover:bg-muted/50 text-sm">
           <TableCell className="font-medium">{subject.name}</TableCell>
           <TableCell className="text-right">
             <Badge variant="secondary" className={
-                subject.averageScore >= 90 ? "bg-green-100 text-green-800" :
-                subject.averageScore >= 80 ? "bg-blue-100 text-blue-800" :
-                "bg-yellow-100 text-yellow-800"
+                subject.averageScore >= 90 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" :
+                subject.averageScore >= 80 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" :
+                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
             }>
                 {subject.averageScore}%
             </Badge>
@@ -76,7 +76,7 @@ const TopSubjectsList = () => (
 
 export function CampaignsTable() {
   return (
-    <div className="rounded-lg border bg-white p-4 h-full flex flex-col gap-4">
+    <div className="rounded-lg border bg-card p-4 h-full flex flex-col gap-4">
       <div>
         <h3 className="font-semibold text-lg mb-2">Grade Distribution</h3>
         <GradeDistributionChart />

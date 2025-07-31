@@ -98,13 +98,8 @@ function SortableCourseRow({ course, onEdit, onDelete, onPreview, onInlineUpdate
   );
 }
 
-export function CourseTable({ courses, onEdit, onDelete, onInlineUpdate }: { courses: Course[]; onEdit: (c: Course) => void; onDelete: (c: Course) => void; onInlineUpdate: (id: number, data: Partial<CourseSchema>) => void; }) {
-  // A preview modal would be implemented here if needed
-  const handlePreview = (course: Course) => {
-      // Logic to open a preview modal
-      console.log("Previewing course:", course)
-  }
-
+export function CourseTable({ courses, onEdit, onDelete, onInlineUpdate, onPreview }: { courses: Course[]; onEdit: (c: Course) => void; onDelete: (c: Course) => void; onInlineUpdate: (id: number, data: Partial<CourseSchema>) => void; onPreview: (c: Course) => void; }) {
+  
   return (
     <div className="rounded-lg border bg-card backdrop-blur-xl overflow-hidden">
       <Table>
@@ -122,7 +117,7 @@ export function CourseTable({ courses, onEdit, onDelete, onInlineUpdate }: { cou
         <TableBody>
           <SortableContext items={courses.map(c => c.id)} strategy={verticalListSortingStrategy}>
             {courses.length > 0 ? (
-              courses.map((course) => <SortableCourseRow key={course.id} course={course} onEdit={onEdit} onDelete={onDelete} onPreview={handlePreview} onInlineUpdate={onInlineUpdate} />)
+              courses.map((course) => <SortableCourseRow key={course.id} course={course} onEdit={onEdit} onDelete={onDelete} onPreview={onPreview} onInlineUpdate={onInlineUpdate} />)
             ) : (
               <TableRow><TableCell colSpan={7} className="h-24 text-center">No courses to display.</TableCell></TableRow>
             )}

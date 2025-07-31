@@ -9,6 +9,7 @@ const navItems = [
   { href: "/students", icon: Users, label: "Students" },
   { href: "/teachers", icon: UserSquare, label: "Teachers" },
   { href: "/courses", icon: BookOpen, label: "Courses" },
+  { href: "/enrollments", icon: ClipboardCheck, label: "Enrollments" },
 ];
 
 export function StudentDashboardSidebar() {
@@ -17,30 +18,32 @@ export function StudentDashboardSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-56 flex-shrink-0">
       <div className="flex items-center gap-2 mb-8">
-        <div className="p-2 bg-indigo-500 rounded-lg">
-          <BookOpen className="h-6 w-6 text-white" />
+        <div className="p-2 bg-primary rounded-lg">
+          <BookOpen className="h-6 w-6 text-primary-foreground" />
         </div>
         <span className="text-xl font-bold">EduDash</span>
       </div>
       <nav className="flex flex-col gap-2 flex-grow">
-        {navItems.map((item) => (
+        {navItems.map((item) => {
+          const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
+          return (
           <Link
             key={item.label}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 transition-all hover:bg-gray-100 hover:text-gray-900",
-              (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))) && "bg-gray-100 font-semibold text-gray-900"
+              "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+              isActive && "bg-muted font-semibold text-foreground"
             )}
           >
             <item.icon className="h-5 w-5" />
             {item.label}
           </Link>
-        ))}
+        )})}
       </nav>
       <div className="mt-auto">
          <Link
             href="#"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-gray-600 transition-all hover:bg-gray-100 hover:text-gray-900"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
           >
             <LifeBuoy className="h-5 w-5" />
             Support

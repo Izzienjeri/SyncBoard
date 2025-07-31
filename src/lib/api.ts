@@ -32,6 +32,20 @@ export async function getTotalStudents(): Promise<number> {
   }
 }
 
+export async function getTotalCourses(): Promise<number> {
+  try {
+    const res = await fetch(`${DUMMY_JSON_URL}/products?limit=0`);
+    if (!res.ok) {
+      return 194; // fallback from dummyjson total
+    }
+    const data = await res.json();
+    return data.total;
+  } catch (e) {
+    console.error("Failed to get total courses:", e);
+    return 194; // fallback
+  }
+}
+
 export async function getCourses(url: string): Promise<Course[]> {
   try {
     const res = await fetch(url);

@@ -21,6 +21,7 @@ import { Course } from "@/types/course.types";
 import { CourseSchema } from "@/validators/course.schema";
 import { PageHeader } from "@/components/shared/page-header";
 import { Pagination } from "@/components/ui/pagination";
+import { CoursePreviewModal } from "@/components/features/course/course-preview-modal";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -29,6 +30,10 @@ export default function CoursesPage() {
   const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState<Course | undefined>(undefined);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewingCourse, setPreviewingCourse] = useState<Course | undefined>(
+    undefined
+  );
 
   const [displayCourses, setDisplayCourses] = useState<Course[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -87,6 +92,11 @@ export default function CoursesPage() {
   const handleOpenDeleteAlert = (course: Course) => {
     setCourseToDelete(course);
     setIsDeleteAlertOpen(true);
+  };
+
+  const handleOpenPreviewModal = (course: Course) => {
+    setPreviewingCourse(course);
+    setIsPreviewModalOpen(true);
   };
 
   const handleDeleteCourse = async () => {
@@ -150,7 +160,7 @@ export default function CoursesPage() {
     );
     return (
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <CourseTable courses={paginatedCourses} onEdit={handleOpenEditModal} onDelete={handleOpenDeleteAlert} onInlineUpdate={handleInlineUpdate} />
+        <CourseTable courses={paginatedCourses} onEdit={handleOpenEditModal} onDelete={handleOpenDeleteAlert} onInlineUpdate={handleInlineUpdate} onPreview={handleOpenPreviewModal} />
       </DndContext>
     );
   };
@@ -186,6 +196,7 @@ export default function CoursesPage() {
         </div>
       </div>
       <CourseFormModal isOpen={isFormModalOpen} onOpenChange={setIsFormModalOpen} course={editingCourse} onSuccess={handleSuccess} />
+      <CoursePreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} course={previewingCourse} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-card/90 backdrop-blur-xl">
           <AlertDialogHeader>
