@@ -1,6 +1,5 @@
-// src/app/page.tsx
 
-"use client"; // This page now uses client-side hooks
+"use client";
 
 import useSWR from "swr";
 import { AlertTriangle, PlusCircle } from "lucide-react";
@@ -13,8 +12,6 @@ import { ProductTableSkeleton } from "@/components/features/product/product-tabl
 import { getProducts } from "@/lib/api";
 
 export default function DashboardPage() {
-  // Use SWR to fetch data. The key '/products' is a unique identifier for this request.
-  // SWR will automatically use the fetcher function `getProducts` to get the data.
   const { data: products, error, isLoading } = useSWR("/products", getProducts);
 
   const renderContent = () => {
@@ -66,7 +63,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="space-y-6">
-        {/* We will add filtering/sorting controls here later */}
         {renderContent()}
       </div>
     </main>
