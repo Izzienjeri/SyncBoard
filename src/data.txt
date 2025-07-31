@@ -1,3 +1,128 @@
+Excellent. Let's begin building the foundation for **SyncBoard**.
+
+This first phase is all about creating a robust and scalable architecture. We won't see much on the screen by the end, but we will have a clean, organized, and professional project structure ready for feature development.
+
+I will walk you through the setup, file creation, and provide a Git commit message for each logical step, as if I were building this in a real development environment.
+
+---
+
+### **Step 1: Project Initialization & Dependency Setup**
+
+First, we'll create the Next.js application and install our core dependencies. We'll use the Next.js App Router, TypeScript, and Tailwind CSS templates. We will then initialize `shadcn/ui`.
+
+**💻 Terminal Commands:**
+
+```bash
+# 1. Create the Next.js project
+npx create-next-app@latest syncboard --typescript --tailwind --eslint --app --src-dir N --import-alias "@/*"
+
+# 2. Navigate into the project directory
+cd syncboard
+
+# 3. Initialize shadcn/ui
+npx shadcn-ui@latest init
+# You will be prompted with a few questions. Choose the following:
+# Would you like to use TypeScript (recommended)? › yes
+# Which style would you like to use? › Default
+# Which color would you like to use as base color? › Slate
+# Where is your global CSS file? › app/globals.css
+# Do you want to use CSS variables for colors? › yes
+# Where is your tailwind.config.ts located? › tailwind.config.ts
+# Configure the import alias for components: › @/components
+# Configure the import alias for utils: › @/lib/utils
+# Are you using React Server Components? › yes
+# Write configuration to components.json. Proceed? › yes
+
+# 4. Install other essential packages
+npm install lucide-react sonner
+```
+
+---
+
+#### **Commit 1: Initial Setup**
+
+This first commit captures the project's boilerplate and core tooling configuration.
+
+```bash
+git init
+git add .
+git commit -m "feat: Initialize project with Next.js, Tailwind, and shadcn/ui
+
+- Scaffolds a new Next.js 14 application using the App Router.
+- Configures TypeScript, ESLint, and Tailwind CSS.
+- Initializes shadcn/ui for the component library foundation.
+- Installs lucide-react for icons and sonner for toast notifications."
+```
+
+---
+
+### **Step 2: Establishing a Clean Folder Structure**
+
+A well-organized project is a maintainable project. We'll create our planned directories now, even if they're empty. We use `.gitkeep` files to ensure Git tracks these empty directories.
+
+**💻 Terminal Commands:**
+
+```bash
+mkdir -p components/features/product components/shared hooks types validators
+touch components/features/product/.gitkeep
+touch components/shared/.gitkeep
+touch hooks/.gitkeep
+touch types/.gitkeep
+touch validators/.gitkeep
+```
+
+Your project structure should now look something like this:
+
+```
+syncboard/
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── features/
+│   │   └── product/
+│   │       └── .gitkeep
+│   ├── shared/
+│   │   └── .gitkeep
+│   └── ui/
+│       # (shadcn will add components here later)
+├── hooks/
+│   └── .gitkeep
+├── lib/
+│   └── utils.ts
+├── types/
+│   └── .gitkeep
+├── validators/
+│   └── .gitkeep
+├── public/
+├── package.json
+└── tsconfig.json
+```
+
+---
+
+#### **Commit 2: Folder Structure**
+
+This commit establishes our architectural blueprint.
+
+```bash
+git add .
+git commit -m "chore: Establish application folder structure
+
+Creates a scalable directory structure to separate concerns:
+- components/features: For feature-specific, complex components.
+- components/shared: For generic, reusable components across features.
+- hooks: For custom React hooks.
+- types: For TypeScript type and interface definitions.
+- validators: For Zod validation schemas."
+```
+
+---
+
+### **Step 3: Defining Core Types**
+
+Type safety is non-negotiable. Our first type will be for the `Product` we'll be fetching from DummyJSON. This ensures that from the API layer to the component props, our data shape is consistent and predictable.
 
 **📄 Create file `types/product.types.ts`:**
 
@@ -25,7 +150,24 @@ export type ProductFormData = Omit<Product, 'id' | 'rating'>;
 
 ```
 
+---
 
+#### **Commit 3: Core Type Definition**
+
+```bash
+git add .
+git commit -m "feat: Define core Product type definitions
+
+- Creates the main `Product` interface based on the DummyJSON API response.
+- Adds a `ProductFormData` type for use in our create/edit forms,
+  demonstrating a separation between read-only data and mutable data."
+```
+
+---
+
+### **Step 4: Configuring the Root Layout & Providers**
+
+The root layout is the shell for our entire application. We'll set up global styles, fonts, and crucial providers for theming (dark/light mode) and notifications (toasts).
 
 **🔄 Update file `app/layout.tsx`:**
 
@@ -93,6 +235,25 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
 }
 ```
 
+---
+
+#### **Commit 4: Root Layout**
+
+```bash
+git add .
+git commit -m "feat: Configure root layout with theme and toast providers
+
+- Implements `next-themes` for system-aware dark/light mode toggling.
+- Integrates `sonner` for clean, centered toast notifications.
+- Sets up the Inter font and base body styles for a consistent look
+  and feel across the application."
+```
+
+---
+
+### **Step 5: Creating the Initial Page Shell**
+
+Finally, let's create a minimal shell for our main dashboard page. This gives us a visible starting point. We'll also create our first shared component, a `PageHeader`, to promote reusability from the very beginning.
 
 **📄 Create file `components/shared/page-header.tsx`:**
 
