@@ -1,4 +1,3 @@
-
 import { Product } from "@/types/product.types";
 
 interface ProductsApiResponse {
@@ -25,4 +24,3 @@ export async function getProducts(): Promise<Product[]> {
     throw new Error("Could not retrieve products. Please try again later.");
   }
 }
-
