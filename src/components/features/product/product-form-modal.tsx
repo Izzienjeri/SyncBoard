@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -52,9 +51,16 @@ export function ProductFormModal({
 }: ProductFormModalProps) {
   const isEditMode = !!product;
 
-  const form = useForm<ProductSchema>({
+  const form = useForm({
     resolver: zodResolver(productSchema),
-    defaultValues: isEditMode ? product : defaultValues,
+    defaultValues: isEditMode && product
+      ? {
+          title: product.title,
+          description: product.description || "",
+          price: product.price,
+          stock: product.stock,
+        }
+      : defaultValues,
   });
 
   const {
@@ -64,13 +70,22 @@ export function ProductFormModal({
 
   useEffect(() => {
     if (isOpen) {
-      reset(isEditMode ? product : defaultValues);
+      if (isEditMode && product) {
+        reset({
+          title: product.title,
+          description: product.description || "",
+          price: product.price,
+          stock: product.stock,
+        });
+      } else {
+        reset(defaultValues);
+      }
     }
   }, [isOpen, product, isEditMode, reset]);
 
-  async function onSubmit(data: ProductSchema) {
+  const onSubmit = async (data: ProductSchema) => {
     try {
-      if (isEditMode) {
+      if (isEditMode && product) {
         await updateProduct(product.id, data);
         toast.success("Product updated successfully!");
       } else {
@@ -84,13 +99,15 @@ export function ProductFormModal({
         error instanceof Error ? error.message : "An unknown error occurred."
       );
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Product" : "Add New Product"}</DialogTitle>
+          <DialogTitle>
+            {isEditMode ? "Edit Product" : "Add New Product"}
+          </DialogTitle>
           <DialogDescription>
             {isEditMode
               ? "Make changes to the product details."
@@ -119,7 +136,11 @@ export function ProductFormModal({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Product description..." {...field} />
+                    <Textarea
+                      placeholder="Product description..."
+                      {...field}
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,7 +154,13 @@ export function ProductFormModal({
                   <FormItem>
                     <FormLabel>Price</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="999.99" {...field} />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="999.99"
+                        {...field}
+                        value={field.value as number | string}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,14 +173,18 @@ export function ProductFormModal({
                   <FormItem>
                     <FormLabel>Stock</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="100" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="100"
+                        {...field}
+                        value={field.value as number | string}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
             <DialogFooter>
               <Button
                 type="button"
