@@ -1,5 +1,3 @@
-// src/app/page.tsx
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -37,18 +35,19 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { Product } from "@/types/product.types";
 
 export default function DashboardPage() {
-  // State for modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(
+    undefined
+  );
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
+  const [productToDelete, setProductToDelete] = useState<Product | undefined>(
+    undefined
+  );
 
-  // State for filtering and sorting
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("title-asc");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // SWR hook for fetching all products. Fake Store API doesn't support pagination.
   const {
     data: products,
     error,
@@ -61,7 +60,9 @@ export default function DashboardPage() {
 
     const filtered = debouncedSearchTerm
       ? products.filter((product) =>
-          product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+          product.title
+            .toLowerCase()
+            .includes(debouncedSearchTerm.toLowerCase())
         )
       : products;
 
@@ -85,7 +86,6 @@ export default function DashboardPage() {
     return sorted;
   }, [products, debouncedSearchTerm, sortBy]);
 
-  // CRUD Handlers
   const handleOpenCreateModal = () => {
     setEditingProduct(undefined);
     setIsFormModalOpen(true);
@@ -95,36 +95,32 @@ export default function DashboardPage() {
     setIsFormModalOpen(true);
   };
   const handleSuccess = () => {
-    mutate(); // Revalidate data after create/update
+    mutate();
   };
 
   const handleOpenDeleteAlert = (product: Product) => {
     setProductToDelete(product);
     setIsDeleteAlertOpen(true);
   };
-
   const handleDeleteProduct = async () => {
     if (!productToDelete || !products) return;
-
+  
     const originalData = [...products];
-
-    // Optimistic UI update
     const optimisticData = products.filter((p) => p.id !== productToDelete.id);
     mutate(optimisticData, { revalidate: false });
-
+  
     try {
       await deleteProduct(productToDelete.id);
       toast.success(`Product "${productToDelete.title}" deleted successfully!`);
-    } catch (err) {
-      // FIX: Log the actual error to use the variable and aid debugging.
-      console.error("Failed to delete product:", err);
+    } catch {
       toast.error("Failed to delete product. Restoring data.");
-      mutate(originalData, { revalidate: false }); // Revert on error
+      mutate(originalData, { revalidate: false });
     } finally {
       setIsDeleteAlertOpen(false);
       setProductToDelete(undefined);
     }
   };
+  
 
   const renderContent = () => {
     if (isLoading) {
@@ -141,12 +137,17 @@ export default function DashboardPage() {
         </Alert>
       );
     }
-    if (products && products.length > 0 && filteredAndSortedProducts.length === 0) {
+    if (
+      products &&
+      products.length > 0 &&
+      filteredAndSortedProducts.length === 0
+    ) {
       return (
         <div className="text-center py-10 border rounded-md">
           <h3 className="text-xl font-medium">No Products Found</h3>
           <p className="text-muted-foreground">
-            Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.
+            Your search for &quot;{debouncedSearchTerm}&quot; did not match any
+            products.
           </p>
         </div>
       );

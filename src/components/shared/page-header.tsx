@@ -5,7 +5,12 @@ interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   description?: string;
 }
 
-export function PageHeader({ title, description, className, ...props }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  className,
+  ...props
+}: PageHeaderProps) {
   return (
     <div className={cn("space-y-2", className)} {...props}>
       <h1 className="text-3xl font-bold tracking-tight">{title}</h1>

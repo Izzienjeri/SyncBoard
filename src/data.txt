@@ -1,21 +1,19 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-07-31 15:58:20
-# Files Included: 18
+# Date and Time: 2025-07-31 16:17:50
+# Files Included: 14
 
 # === lib/utils.ts ===
 ```ts
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 ```
 
 # === lib/api.ts ===
 ```ts
-// lib/api.ts
-
 import { Product } from "@/types/product.types";
 import { ProductSchema } from "@/validators/product.schema";
 
@@ -24,21 +22,19 @@ const API_BASE_URL = "https://fakestoreapi.com";
 export async function getProducts(url: string): Promise<Product[]> {
   try {
     const res = await fetch(url);
-
     if (!res.ok) {
       throw new Error("Failed to fetch products");
     }
-
     const data: Product[] = await res.json();
     return data;
-  } catch (error) {
-    console.error("API Error:", error);
+  } catch {
     throw new Error("Could not retrieve products. Please try again later.");
   }
 }
 
-export async function createProduct(productData: ProductSchema): Promise<Product> {
-  console.log("Simulating CREATE request with:", productData);
+export async function createProduct(
+  productData: ProductSchema
+): Promise<Product> {
   try {
     const payload = {
       ...productData,
@@ -56,10 +52,8 @@ export async function createProduct(productData: ProductSchema): Promise<Product
     }
 
     const newProduct: Product = await res.json();
-    console.log("Simulated CREATE response:", newProduct);
     return newProduct;
-  } catch (error) {
-    console.error("API Error:", error);
+  } catch {
     throw new Error("Could not create the product.");
   }
 }
@@ -68,7 +62,6 @@ export async function updateProduct(
   productId: number,
   productData: Partial<ProductSchema>
 ): Promise<Product> {
-  console.log(`Simulating UPDATE request for ID ${productId} with:`, productData);
   try {
     const res = await fetch(`${API_BASE_URL}/products/${productId}`, {
       method: "PUT",
@@ -81,16 +74,13 @@ export async function updateProduct(
     }
 
     const updatedProduct: Product = await res.json();
-    console.log("Simulated UPDATE response:", updatedProduct);
     return updatedProduct;
-  } catch (error) {
-    console.error("API Error:", error);
+  } catch {
     throw new Error("Could not update the product.");
   }
 }
 
 export async function deleteProduct(productId: number): Promise<Product> {
-  console.log(`Simulating DELETE request for ID ${productId}`);
   try {
     const res = await fetch(`${API_BASE_URL}/products/${productId}`, {
       method: "DELETE",
@@ -101,10 +91,8 @@ export async function deleteProduct(productId: number): Promise<Product> {
     }
 
     const deletedProduct: Product = await res.json();
-    console.log("Simulated DELETE response:", deletedProduct);
     return deletedProduct;
-  } catch (error) {
-    console.error("API Error:", error);
+  } catch {
     throw new Error("Could not delete the product.");
   }
 }
@@ -238,8 +226,6 @@ export async function deleteProduct(productId: number): Promise<Product> {
 
 # === app/layout.tsx ===
 ```tsx
-// src/app/layout.tsx (Optimized)
-
 import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -247,7 +233,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-// --- OPTIMIZATION: Add `display: 'swap'` for non-blocking font loading ---
 const fontSans = FontSans({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -259,11 +244,25 @@ export const metadata: Metadata = {
   description: "A modern dashboard for managing products.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased", fontSans.variable)}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          fontSans.variable
+        )}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
           {children}
           <Toaster position="top-center" richColors />
         </ThemeProvider>
@@ -275,8 +274,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 # === app/page.tsx ===
 ```tsx
-// src/app/page.tsx
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -314,18 +311,19 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { Product } from "@/types/product.types";
 
 export default function DashboardPage() {
-  // State for modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(
+    undefined
+  );
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
+  const [productToDelete, setProductToDelete] = useState<Product | undefined>(
+    undefined
+  );
 
-  // State for filtering and sorting
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("title-asc");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // SWR hook for fetching all products. Fake Store API doesn't support pagination.
   const {
     data: products,
     error,
@@ -338,7 +336,9 @@ export default function DashboardPage() {
 
     const filtered = debouncedSearchTerm
       ? products.filter((product) =>
-          product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+          product.title
+            .toLowerCase()
+            .includes(debouncedSearchTerm.toLowerCase())
         )
       : products;
 
@@ -362,7 +362,6 @@ export default function DashboardPage() {
     return sorted;
   }, [products, debouncedSearchTerm, sortBy]);
 
-  // CRUD Handlers
   const handleOpenCreateModal = () => {
     setEditingProduct(undefined);
     setIsFormModalOpen(true);
@@ -372,36 +371,32 @@ export default function DashboardPage() {
     setIsFormModalOpen(true);
   };
   const handleSuccess = () => {
-    mutate(); // Revalidate data after create/update
+    mutate();
   };
 
   const handleOpenDeleteAlert = (product: Product) => {
     setProductToDelete(product);
     setIsDeleteAlertOpen(true);
   };
-
   const handleDeleteProduct = async () => {
     if (!productToDelete || !products) return;
-
+  
     const originalData = [...products];
-
-    // Optimistic UI update
     const optimisticData = products.filter((p) => p.id !== productToDelete.id);
     mutate(optimisticData, { revalidate: false });
-
+  
     try {
       await deleteProduct(productToDelete.id);
       toast.success(`Product "${productToDelete.title}" deleted successfully!`);
-    } catch (err) {
-      // FIX: Log the actual error to use the variable and aid debugging.
-      console.error("Failed to delete product:", err);
+    } catch {
       toast.error("Failed to delete product. Restoring data.");
-      mutate(originalData, { revalidate: false }); // Revert on error
+      mutate(originalData, { revalidate: false });
     } finally {
       setIsDeleteAlertOpen(false);
       setProductToDelete(undefined);
     }
   };
+  
 
   const renderContent = () => {
     if (isLoading) {
@@ -418,12 +413,17 @@ export default function DashboardPage() {
         </Alert>
       );
     }
-    if (products && products.length > 0 && filteredAndSortedProducts.length === 0) {
+    if (
+      products &&
+      products.length > 0 &&
+      filteredAndSortedProducts.length === 0
+    ) {
       return (
         <div className="text-center py-10 border rounded-md">
           <h3 className="text-xl font-medium">No Products Found</h3>
           <p className="text-muted-foreground">
-            Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.
+            Your search for &quot;{debouncedSearchTerm}&quot; did not match any
+            products.
           </p>
         </div>
       );
@@ -523,7 +523,6 @@ export const productSchema = z.object({
   price: z.coerce.number().positive({
     message: "Price must be a positive number.",
   }),
-  // stock is not a field in the Fake Store API
 });
 
 export type ProductSchema = z.infer<typeof productSchema>;
@@ -531,26 +530,20 @@ export type ProductSchema = z.infer<typeof productSchema>;
 
 # === hooks/use-debounce.ts ===
 ```ts
-// src/hooks/use-debounce.ts
-
 import { useState, useEffect } from "react";
 
 export function useDebounce<T>(value: T, delay: number): T {
-  // State to store the debounced value
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    // Set up a timer to update the debounced value after the specified delay
     const handler = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
-    // Clean up the timer if the value changes before the delay has passed
-    // This is the core of the debounce logic
     return () => {
       clearTimeout(handler);
     };
-  }, [value, delay]); // Only re-call effect if value or delay changes
+  }, [value, delay]);
 
   return debouncedValue;
 }
@@ -558,33 +551,29 @@ export function useDebounce<T>(value: T, delay: number): T {
 
 # === types/product.types.ts ===
 ```ts
-// types/product.types.ts (Updated for dummyjson API)
-
 export interface Product {
   id: number;
   title: string;
-  description: string;
   price: number;
-  discountPercentage: number;
-  rating: number; // Note: this is a number, not an object
-  stock: number;
-  brand: string;
+  description: string;
   category: string;
-  thumbnail: string; // Main image field
-  images: string[];
+  image: string;
+  rating: {
+    rate: number;
+    count: number;
+  };
 }
-
-export type ProductFormData = Omit<Product, "id" | "rating" | "images" | "thumbnail" | "discountPercentage" | "stock" | "brand" | "category" >;
 ```
 
 # === components/theme-provider.tsx ===
 ```tsx
-// src/components/theme-provider.tsx
-
 "use client";
 
 import * as React from "react";
-import { ThemeProvider as NextThemesProvider, type ThemeProviderProps } from "next-themes";
+import {
+  ThemeProvider as NextThemesProvider,
+  type ThemeProviderProps,
+} from "next-themes";
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
@@ -600,7 +589,12 @@ interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   description?: string;
 }
 
-export function PageHeader({ title, description, className, ...props }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  className,
+  ...props
+}: PageHeaderProps) {
   return (
     <div className={cn("space-y-2", className)} {...props}>
       <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
@@ -710,13 +704,14 @@ export function ProductFormModal({
 
   const form = useForm({
     resolver: zodResolver(productSchema),
-    defaultValues: isEditMode && product
-      ? {
-          title: product.title,
-          description: product.description || "",
-          price: product.price,
-        }
-      : defaultValues,
+    defaultValues:
+      isEditMode && product
+        ? {
+            title: product.title,
+            description: product.description || "",
+            price: product.price,
+          }
+        : defaultValues,
   });
 
   const {
@@ -852,8 +847,6 @@ export function ProductFormModal({
 
 # === components/features/product/product-table.tsx ===
 ```tsx
-// src/components/features/product/product-table.tsx (Corrected)
-
 "use client";
 
 import Image from "next/image";
@@ -883,7 +876,11 @@ interface ProductTableProps {
   onDelete: (product: Product) => void;
 }
 
-export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
+export function ProductTable({
+  products,
+  onEdit,
+  onDelete,
+}: ProductTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -898,10 +895,8 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
           <TableRow>
             <TableHead className="w-[80px]">Image</TableHead>
             <TableHead>Title</TableHead>
-            {/* FIX: Updated headers for new data structure */}
-            <TableHead>Brand</TableHead>
+            <TableHead>Category</TableHead>
             <TableHead className="text-right w-[100px]">Price</TableHead>
-            <TableHead className="text-right w-[100px]">Stock</TableHead>
             <TableHead className="text-right w-[100px]">Rating</TableHead>
             <TableHead className="w-[50px]">
               <span className="sr-only">Actions</span>
@@ -912,9 +907,8 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
           {products.map((product) => (
             <TableRow key={product.id}>
               <TableCell>
-                {/* FIX: Use 'thumbnail' instead of 'image' */}
                 <Image
-                  src={product.thumbnail}
+                  src={product.image}
                   alt={product.title}
                   width={48}
                   height={48}
@@ -922,13 +916,15 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                 />
               </TableCell>
               <TableCell className="font-medium">{product.title}</TableCell>
-              {/* FIX: Use 'brand' instead of 'category' */}
-              <TableCell className="text-muted-foreground">{product.brand}</TableCell>
-              <TableCell className="text-right">{formatCurrency(product.price)}</TableCell>
-              {/* FIX: Display the new 'stock' data */}
-              <TableCell className="text-right">{product.stock}</TableCell>
-              {/* FIX: Access 'rating' directly as it is now a number */}
-              <TableCell className="text-right">{product.rating.toFixed(2)}</TableCell>
+              <TableCell className="text-muted-foreground">
+                {product.category}
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(product.price)}
+              </TableCell>
+              <TableCell className="text-right">
+                {product.rating.rate.toFixed(2)}
+              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -975,7 +971,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProductTableSkeleton() {
-  // --- OPTIMIZATION: Match skeleton count to page size to prevent layout shift ---
   const skeletonRows = Array.from({ length: 10 });
 
   return (
@@ -985,9 +980,8 @@ export function ProductTableSkeleton() {
           <TableRow>
             <TableHead className="w-[80px]">Image</TableHead>
             <TableHead>Title</TableHead>
-            <TableHead>Brand</TableHead>
+            <TableHead>Category</TableHead>
             <TableHead className="text-right w-[100px]">Price</TableHead>
-            <TableHead className="text-right w-[100px]">Stock</TableHead>
             <TableHead className="text-right w-[100px]">Rating</TableHead>
             <TableHead className="w-[50px]">
               <span className="sr-only">Actions</span>
@@ -997,542 +991,23 @@ export function ProductTableSkeleton() {
         <TableBody>
           {skeletonRows.map((_, index) => (
             <TableRow key={index}>
-              <TableCell><Skeleton className="h-12 w-12 rounded-md" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-              <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-```
-
-# === src/lib/api.ts ===
-```ts
-// src/lib/api.ts
-
-import { Product } from "@/types/product.types";
-import { ProductSchema } from "@/validators/product.schema";
-
-export interface ProductsApiResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
-}
-
-const API_BASE_URL = "https://dummyjson.com";
-
-export async function getProducts(url: string): Promise<ProductsApiResponse> {
-  try {
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch products");
-    }
-
-    const data: ProductsApiResponse = await res.json();
-    return data;
-  } catch (error) {
-    console.error("API Error:", error);
-    // In a real app, you might want to log this to a service like Sentry
-    throw new Error("Could not retrieve products. Please try again later.");
-  }
-}
-
-export async function createProduct(productData: ProductSchema): Promise<Product> {
-  console.log("Simulating CREATE request with:", productData);
-  try {
-    const res = await fetch(`${API_BASE_URL}/products/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(productData),
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to create product");
-    }
-
-    const newProduct: Product = await res.json();
-    // The API returns the new product with a new ID (e.g., 101)
-    console.log("Simulated CREATE response:", newProduct);
-    return newProduct;
-  } catch (error) {
-    console.error("API Error:", error);
-    throw new Error("Could not create the product.");
-  }
-}
-
-export async function updateProduct(
-  productId: number,
-  productData: Partial<ProductSchema>
-): Promise<Product> {
-  console.log(`Simulating UPDATE request for ID ${productId} with:`, productData);
-  try {
-    const res = await fetch(`${API_BASE_URL}/products/${productId}`, {
-      method: "PUT", // or PATCH
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(productData),
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to update product");
-    }
-    
-    const updatedProduct: Product = await res.json();
-    console.log("Simulated UPDATE response:", updatedProduct);
-    return updatedProduct;
-  } catch (error) {
-    console.error("API Error:", error);
-    throw new Error("Could not update the product.");
-  }
-}
-
-export async function deleteProduct(productId: number): Promise<Product> {
-  console.log(`Simulating DELETE request for ID ${productId}`);
-  try {
-    const res = await fetch(`${API_BASE_URL}/products/${productId}`, {
-      method: "DELETE",
-    });
-
-    if (!res.ok) {
-      throw new Error("Failed to delete product");
-    }
-
-    // The API returns the deleted product object
-    const deletedProduct: Product = await res.json();
-    console.log("Simulated DELETE response:", deletedProduct);
-    return deletedProduct;
-  } catch (error) {
-    console.error("API Error:", error);
-    throw new Error("Could not delete the product.");
-  }
-}
-```
-
-# === src/app/page.tsx ===
-```tsx
-// src/app/page.tsx
-
-"use client";
-
-import { useState, useMemo } from "react";
-import useSWRInfinite from "swr/infinite";
-import { AlertTriangle, PlusCircle, Search, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-
-import { PageHeader } from "@/components/shared/page-header";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ProductTable } from "@/components/features/product/product-table";
-import { ProductTableSkeleton } from "@/components/features/product/product-table-skeleton";
-import { ProductFormModal } from "@/components/features/product/product-form-modal";
-import { getProducts, deleteProduct } from "@/lib/api";
-import { useDebounce } from "@/hooks/use-debounce";
-import { Product } from "@/types/product.types";
-
-const PAGE_SIZE = 10;
-
-export default function DashboardPage() {
-  // State for modals
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
-
-  // State for filtering and sorting
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("title-asc");
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-  // SWR hook for infinite loading (pagination)
-  const getKey = (pageIndex: number, previousPageData: any) => {
-    if (previousPageData && !previousPageData.products.length) return null; // Reached the end
-    const skip = pageIndex * PAGE_SIZE;
-    return `https://dummyjson.com/products?limit=${PAGE_SIZE}&skip=${skip}`;
-  };
-
-  const {
-    data,
-    error,
-    size,
-    setSize,
-    mutate,
-    isLoading: isLoadingInitial,
-    isValidating,
-  } = useSWRInfinite(getKey, getProducts);
-
-  const products = data ? data.flatMap((page) => page.products) : [];
-  const isLoadingMore = isValidating && size > 1;
-  const isReachingEnd = data && data[data.length - 1]?.products.length < PAGE_SIZE;
-
-  const filteredAndSortedProducts = useMemo(() => {
-    if (!products) return [];
-
-    const filtered = debouncedSearchTerm
-      ? products.filter((product) =>
-          product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        )
-      : products;
-
-    const [key, order] = sortBy.split("-");
-    const sorted = [...filtered].sort((a, b) => {
-      let valA, valB;
-
-      if (key === "price") {
-        valA = a.price;
-        valB = b.price;
-      } else {
-        valA = a.title.toLowerCase();
-        valB = b.title.toLowerCase();
-      }
-
-      if (valA < valB) return order === "asc" ? -1 : 1;
-      if (valA > valB) return order === "asc" ? 1 : -1;
-      return 0;
-    });
-
-    return sorted;
-  }, [products, debouncedSearchTerm, sortBy]);
-
-  // CRUD Handlers
-  const handleOpenCreateModal = () => {
-    setEditingProduct(undefined);
-    setIsFormModalOpen(true);
-  };
-  const handleOpenEditModal = (product: Product) => {
-    setEditingProduct(product);
-    setIsFormModalOpen(true);
-  };
-  const handleSuccess = () => {
-    mutate(); // Revalidate data after create/update
-  };
-
-  const handleOpenDeleteAlert = (product: Product) => {
-    setProductToDelete(product);
-    setIsDeleteAlertOpen(true);
-  };
-
-  const handleDeleteProduct = async () => {
-    if (!productToDelete || !data) return;
-
-    const originalData = [...data];
-
-    // Optimistic UI update
-    const optimisticData = data.map((page) => ({
-      ...page,
-      products: page.products.filter((p) => p.id !== productToDelete.id),
-    }));
-    mutate(optimisticData, { revalidate: false });
-
-    try {
-      await deleteProduct(productToDelete.id);
-      toast.success(`Product "${productToDelete.title}" deleted successfully!`);
-    } catch (error) {
-      toast.error("Failed to delete product. Restoring data.");
-      mutate(originalData, { revalidate: false }); // Revert on error
-    } finally {
-      setIsDeleteAlertOpen(false);
-      setProductToDelete(undefined);
-    }
-  };
-
-  const renderContent = () => {
-    if (isLoadingInitial) {
-      return <ProductTableSkeleton />;
-    }
-    if (error) {
-      return (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load products. Please try again later.
-          </AlertDescription>
-        </Alert>
-      );
-    }
-    if (products.length > 0 && filteredAndSortedProducts.length === 0) {
-      return (
-        <div className="text-center py-10 border rounded-md">
-          <h3 className="text-xl font-medium">No Products Found</h3>
-          <p className="text-muted-foreground">
-            Your search for "{debouncedSearchTerm}" did not match any products.
-          </p>
-        </div>
-      );
-    }
-    return (
-      <ProductTable
-        products={filteredAndSortedProducts}
-        onEdit={handleOpenEditModal}
-        onDelete={handleOpenDeleteAlert}
-      />
-    );
-  };
-
-  return (
-    <>
-      <main className="container py-8">
-        <div className="flex justify-between items-start gap-4 mb-6">
-          <PageHeader
-            title="SyncBoard"
-            description="View, filter, and manage your product inventory."
-          />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button onClick={handleOpenCreateModal}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add New Product
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by product title..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="title-asc">Title (A-Z)</SelectItem>
-              <SelectItem value="title-desc">Title (Z-A)</SelectItem>
-              <SelectItem value="price-asc">Price (Low to High)</SelectItem>
-              <SelectItem value="price-desc">Price (High to Low)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-6">
-          {renderContent()}
-          <div className="flex justify-center">
-            <Button
-              onClick={() => setSize(size + 1)}
-              disabled={isLoadingMore || isReachingEnd}
-              variant="outline"
-            >
-              {isLoadingMore ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : isReachingEnd ? (
-                "No More Products"
-              ) : (
-                "Load More"
-              )}
-            </Button>
-          </div>
-        </div>
-      </main>
-
-      <ProductFormModal
-        isOpen={isFormModalOpen}
-        onOpenChange={setIsFormModalOpen}
-        product={editingProduct}
-        onSuccess={handleSuccess}
-      />
-      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              product "{productToDelete?.title}".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteProduct}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Continue
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
-```
-
-# === src/components/shared/theme-toggle.tsx ===
-```tsx
-// src/components/shared/theme-toggle.tsx
-
-"use client";
-
-import * as React from "react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-export function ThemeToggle() {
-  const { setTheme } = useTheme();
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-```
-
-# === src/components/features/product/product-table.tsx ===
-```tsx
-// src/components/features/product/product-table.tsx
-
-"use client";
-
-import Image from "next/image";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Product } from "@/types/product.types";
-
-interface ProductTableProps {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
-}
-
-export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80px]">Image</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Brand</TableHead>
-            <TableHead className="text-right w-[100px]">Price</TableHead>
-            <TableHead className="text-right w-[100px]">Stock</TableHead>
-            <TableHead className="text-right w-[100px]">Rating</TableHead>
-            <TableHead className="w-[50px]">
-              <span className="sr-only">Actions</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id}>
               <TableCell>
-                <Image
-                  src={product.thumbnail}
-                  alt={product.title}
-                  width={48}
-                  height={48}
-                  className="rounded-md object-cover"
-                />
+                <Skeleton className="h-12 w-12 rounded-md" />
               </TableCell>
-              <TableCell className="font-medium">{product.title}</TableCell>
-              <TableCell className="text-muted-foreground">{product.brand}</TableCell>
-              <TableCell className="text-right">{formatCurrency(product.price)}</TableCell>
-              <TableCell className="text-right">{product.stock}</TableCell>
-              <TableCell className="text-right">{product.rating.toFixed(2)}</TableCell>
               <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => onEdit(product)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/40"
-                      onClick={() => onDelete(product)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Skeleton className="h-4 w-48" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-24" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-16 ml-auto" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-16 ml-auto" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-8 w-8" />
               </TableCell>
             </TableRow>
           ))}

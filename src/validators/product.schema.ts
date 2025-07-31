@@ -8,7 +8,6 @@ export const productSchema = z.object({
   price: z.coerce.number().positive({
     message: "Price must be a positive number.",
   }),
-  // stock is not a field in the Fake Store API
 });
 
 export type ProductSchema = z.infer<typeof productSchema>;

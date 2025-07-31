@@ -52,13 +52,14 @@ export function ProductFormModal({
 
   const form = useForm({
     resolver: zodResolver(productSchema),
-    defaultValues: isEditMode && product
-      ? {
-          title: product.title,
-          description: product.description || "",
-          price: product.price,
-        }
-      : defaultValues,
+    defaultValues:
+      isEditMode && product
+        ? {
+            title: product.title,
+            description: product.description || "",
+            price: product.price,
+          }
+        : defaultValues,
   });
 
   const {
