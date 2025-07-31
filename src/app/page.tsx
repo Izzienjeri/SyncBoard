@@ -1,104 +1,51 @@
-import { PageHeader } from "@/components/shared/page-header";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  DollarSign,
-  Users,
-  CreditCard,
-  Activity,
-  Package,
-} from "lucide-react";
-import { SalesChart } from "@/components/dashboard/sales-chart";
-import { BestSellers } from "@/components/dashboard/best-sellers";
+import { StudentDashboardSidebar } from "@/components/dashboard/student-sidebar";
+import { StudentDashboardHeaderBar } from "@/components/dashboard/student-header-bar";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { MediaChart } from "@/components/dashboard/media-chart";
+import { CampaignsTable } from "@/components/dashboard/campaigns-table";
+import { getTotalStudents } from "@/lib/api";
 
-export default function DashboardHomePage() {
+export default async function StudentDashboardPage() {
+  const totalStudents = await getTotalStudents();
+
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader title="Dashboard" description="Your business at a glance." />
+    // 1. Outer Layout: Full screen gradient with padding
+    <main className="min-h-screen w-full bg-gradient-to-br from-blue-500 to-indigo-600 p-8">
+      {/* 2. Card Container: Centered white card with shadow and internal padding */}
+      <div className="mx-auto w-full max-w-7xl rounded-2xl bg-white p-6 shadow-xl lg:p-8 flex gap-8">
+        
+        {/* 3. Sidebar: Vertical navigation inside the card */}
+        <StudentDashboardSidebar />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">
-              +180.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
-            <p className="text-xs text-muted-foreground">
-              +19% from last month
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="glass-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pending Orders
-            </CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">
-              +20 since last hour
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col gap-8">
+          
+          {/* 4. Header Bar: Title, filters, and profile avatar */}
+          <StudentDashboardHeaderBar />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 lg:col-span-4 glass-card">
-          <CardHeader>
-            <CardTitle>Sales Overview</CardTitle>
-            <CardDescription>Daily, weekly, and monthly sales.</CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <SalesChart />
-          </CardContent>
-        </Card>
-        <Card className="col-span-1 lg:col-span-3 glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Best-selling Products
-            </CardTitle>
-            <CardDescription>
-              Your top-performing products this month.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BestSellers />
-          </CardContent>
-        </Card>
+          {/* Stat Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+             <StatCard title="Total Students" value={totalStudents.toString()} change="+5%" />
+             <StatCard title="Pass Rate" value="85.3%" change="-1.2%" isNegative />
+             <StatCard title="Assignments Completed" value="76%" change="+3.4%" />
+             <StatCard title="Avg. Attendance" value="91%" change="This Term" />
+          </div>
+
+          {/* Charts & Tables Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+            <div className="xl:col-span-3">
+              {/* This component is now used for the Monthly Attendance Chart */}
+              <MediaChart /> 
+            </div>
+
+            <div className="xl:col-span-2">
+              {/* This component is now used for Grade Distribution and Top Subjects */}
+              <CampaignsTable /> 
+            </div>
+          </div>
+
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

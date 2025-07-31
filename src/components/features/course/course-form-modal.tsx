@@ -7,95 +7,65 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Product } from "@/types/product.types";
-import { ProductSchema, productSchema } from "@/validators/product.schema";
-import { createProduct, updateProduct } from "@/lib/api";
+import { Course } from "@/types/course.types";
+import { CourseSchema, courseSchema } from "@/validators/course.schema";
+import { createCourse, updateCourse } from "@/lib/api";
 
-interface ProductFormModalProps {
+interface CourseFormModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  product?: Product;
+  course?: Course;
   onSuccess: () => void;
 }
 
-const defaultValues: ProductSchema = {
+const defaultValues: CourseSchema = {
   title: "",
   description: "",
   price: 0,
 };
 
-export function ProductFormModal({
-  isOpen,
-  onOpenChange,
-  product,
-  onSuccess,
-}: ProductFormModalProps) {
-  const isEditMode = !!product;
+export function CourseFormModal({ isOpen, onOpenChange, course, onSuccess }: CourseFormModalProps) {
+  const isEditMode = !!course;
 
   const form = useForm({
-    resolver: zodResolver(productSchema),
-    defaultValues:
-      isEditMode && product
-        ? {
-            title: product.title,
-            description: product.description || "",
-            price: product.price,
-          }
-        : defaultValues,
+    resolver: zodResolver(courseSchema),
+    defaultValues,
+    mode: "onChange",
   });
 
-  const {
-    formState: { isSubmitting },
-    reset,
-  } = form;
+  const { formState: { isSubmitting }, reset } = form;
 
   useEffect(() => {
     if (isOpen) {
-      if (isEditMode && product) {
+      if (isEditMode && course) {
         reset({
-          title: product.title,
-          description: product.description || "",
-          price: product.price,
+          title: course.title,
+          description: course.description || "",
+          price: course.price,
         });
       } else {
         reset(defaultValues);
       }
     }
-  }, [isOpen, product, isEditMode, reset]);
+  }, [isOpen, course, isEditMode, reset]);
 
-  const onSubmit = async (data: ProductSchema) => {
+  const onSubmit = async (data: CourseSchema): Promise<void> => {
     try {
-      if (isEditMode && product) {
-        await updateProduct(product.id, data);
-        toast.success("Product updated successfully!");
+      if (isEditMode && course) {
+        await updateCourse(course.id, data);
+        toast.success("Course updated successfully!");
       } else {
-        await createProduct(data);
-        toast.success("Product created successfully!");
+        await createCourse(data);
+        toast.success("Course created successfully!");
       }
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "An unknown error occurred."
-      );
+      toast.error(error instanceof Error ? error.message : "An unknown error occurred.");
     }
   };
 
@@ -103,13 +73,9 @@ export function ProductFormModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>
-            {isEditMode ? "Edit Product" : "Add New Product"}
-          </DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit Course" : "Add New Course"}</DialogTitle>
           <DialogDescription>
-            {isEditMode
-              ? "Make changes to the product details."
-              : "Fill in the details to create a new product."}
+            {isEditMode ? "Make changes to the course details." : "Fill in the details for a new course."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -121,7 +87,7 @@ export function ProductFormModal({
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Classic T-Shirt" {...field} />
+                    <Input placeholder="e.g. Introduction to Physics" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -134,10 +100,10 @@ export function ProductFormModal({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Product description..."
-                      {...field}
-                      value={field.value || ""}
+                    <Textarea 
+                      placeholder="Course description..." 
+                      {...field} 
+                      value={field.value || ""} 
                     />
                   </FormControl>
                   <FormMessage />
@@ -149,14 +115,15 @@ export function ProductFormModal({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price</FormLabel>
+                  <FormLabel>Tuition Fee</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.01"
-                      placeholder="19.99"
+                      placeholder="499.99"
                       {...field}
-                      value={field.value as number | string}
+                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -181,7 +148,7 @@ export function ProductFormModal({
                 ) : isEditMode ? (
                   "Save Changes"
                 ) : (
-                  "Create Product"
+                  "Create Course"
                 )}
               </Button>
             </DialogFooter>

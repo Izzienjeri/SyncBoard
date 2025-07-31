@@ -2,18 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Package, Bell, MessageSquare, AlertCircle, LayoutDashboard, Users, CreditCard, BarChart3 } from "lucide-react";
+import { Menu, Bell, MessageSquare, AlertCircle, LayoutDashboard, Users, BookOpen, ClipboardCheck, UserSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { useSidebar } from "@/hooks/use-sidebar";
@@ -21,17 +13,17 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/products", label: "Products", icon: Package },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/payments", label: "Payments", icon: CreditCard },
+  { href: "/students", label: "Students", icon: Users },
+  { href: "/teachers", label: "Teachers", icon: UserSquare },
+  { href: "/courses", label: "Courses", icon: BookOpen },
+  { href: "/enrollments", label: "Enrollments", icon: ClipboardCheck },
 ];
 
 const notifications = [
-    { icon: Package, title: "New Order #1234", description: "From John Doe, 1 minute ago" },
-    { icon: AlertCircle, title: "Low Inventory Alert", description: "T-Shirt (Red, M) is low on stock", isWarning: true },
-    { icon: MessageSquare, title: "New Customer Query", description: "Regarding order #1229" },
-    { icon: Package, title: "Refund Request", description: "For order #1201" },
+    { icon: ClipboardCheck, title: "New Enrollment: Physics 101", description: "From Terry Medhurst, 1 minute ago" },
+    { icon: AlertCircle, title: "Low Capacity: CS 101", description: "Only 3 slots remaining", isWarning: true },
+    { icon: MessageSquare, title: "New Parent Query", description: "Regarding student #15" },
+    { icon: ClipboardCheck, title: "Withdrawal Request", description: "For student #22 from Math 202" },
 ]
 
 export function Header() {
@@ -55,8 +47,8 @@ export function Header() {
         <SheetContent side="left" className="flex flex-col p-0">
              <div className="flex h-16 items-center justify-between border-b px-6">
                 <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-                    <Package className="h-7 w-7 text-primary" />
-                    <span className="text-xl">SyncBoard</span>
+                    <BookOpen className="h-7 w-7 text-primary" />
+                    <span className="text-xl">EduDash</span>
                 </Link>
             </div>
             
@@ -96,7 +88,7 @@ export function Header() {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg">Notifications</CardTitle>
-                        <CardDescription>You have 4 unread messages.</CardDescription>
+                        <CardDescription>You have 4 new notifications.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-2">
                         <div className="flex flex-col gap-1">

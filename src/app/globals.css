@@ -39,7 +39,7 @@
   --radius: 0.75rem;
   --background: oklch(0.99 0.005 240);
   --foreground: oklch(0.1 0.03 250);
-  --card: oklch(1 0 0 / 0.7);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.1 0.03 250);
   --popover: oklch(1 0 0 / 0.8);
   --popover-foreground: oklch(0.1 0.03 250);
@@ -65,7 +65,7 @@
 .dark {
   --background: oklch(0.08 0.02 250);
   --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.12 0.03 260 / 0.6);
+  --card: oklch(0.12 0.03 260);
   --card-foreground: oklch(0.95 0.01 240);
   --popover: oklch(0.05 0.02 250 / 0.8);
   --popover-foreground: oklch(0.95 0.01 240);
@@ -92,7 +92,7 @@
     background-color: oklch(var(--background));
     background: linear-gradient(300deg, hsl(var(--primary)/.15), hsl(var(--chart-2)/.15), hsl(var(--chart-4)/.15));
     background-size: 400% 400%;
-    animation: gradient-animation 15s ease infinite;
+    animation: gradient-animation 25s ease infinite;
   }
 }
 
@@ -111,6 +111,6 @@
     @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30;
   }
   .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border;
+    @apply bg-card/80 dark:bg-card/70 backdrop-blur-lg border shadow-lg shadow-black/10 dark:shadow-black/20;
   }
 }
