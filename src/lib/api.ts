@@ -10,7 +10,12 @@ export async function getProducts(url: string): Promise<Product[]> {
       throw new Error("Failed to fetch products");
     }
     const data: Product[] = await res.json();
-    return data;
+    // Mock audit data since the API doesn't provide it
+    return data.map((product) => ({
+      ...product,
+      createdAt: new Date(Date.now() - Math.random() * 1e10).toISOString(),
+      createdBy: "Admin",
+    }));
   } catch {
     throw new Error("Could not retrieve products. Please try again later.");
   }
@@ -36,7 +41,12 @@ export async function createProduct(
     }
 
     const newProduct: Product = await res.json();
-    return newProduct;
+    // Add mocked audit data on creation
+    return {
+      ...newProduct,
+      createdAt: new Date().toISOString(),
+      createdBy: "System",
+    };
   } catch {
     throw new Error("Could not create the product.");
   }
@@ -58,7 +68,13 @@ export async function updateProduct(
     }
 
     const updatedProduct: Product = await res.json();
-    return updatedProduct;
+    // Add mocked audit data on update
+    return {
+      ...updatedProduct,
+      ...productData, // The API returns the old object, so we merge the new data
+      updatedAt: new Date().toISOString(),
+      updatedBy: "System",
+    };
   } catch {
     throw new Error("Could not update the product.");
   }

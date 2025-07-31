@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -27,159 +33,187 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ProductTable } from "@/components/features/product/product-table";
+// NOTE: I've updated this import path to match your corrected file structure
+import { ProductTable } from "@/components/features/product/product-table"; 
 import { ProductTableSkeleton } from "@/components/features/product/product-table-skeleton";
 import { ProductFormModal } from "@/components/features/product/product-form-modal";
-import { getProducts, deleteProduct } from "@/lib/api";
+import { ProductPreviewModal } from "@/components/features/product/product-preview-modal";
+import { Pagination } from "@/components/ui/pagination";
+import { getProducts, deleteProduct, updateProduct } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Product } from "@/types/product.types";
+import { ProductSchema } from "@/validators/product.schema";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function DashboardPage() {
+  // Modal States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(
-    undefined
-  );
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState<Product | undefined>(undefined);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | undefined>(
-    undefined
-  );
+  const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
 
+  // Data & Filtering States
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("title-asc");
+  const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const {
-    data: products,
-    error,
-    isLoading,
-    mutate,
-  } = useSWR("https://fakestoreapi.com/products", getProducts);
+  // The 'error' variable is used in renderContent, so we keep it here.
+  const { data: products, error, isLoading, mutate } = useSWR("https://fakestoreapi.com/products", getProducts);
+
+  useEffect(() => {
+    if (products) {
+      setDisplayProducts(products);
+    }
+  }, [products]);
 
   const filteredAndSortedProducts = useMemo(() => {
-    if (!products) return [];
+    if (!displayProducts) return [];
 
-    const filtered = debouncedSearchTerm
-      ? products.filter((product) =>
-          product.title
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase())
-        )
-      : products;
+    let processedProducts = [...displayProducts];
 
-    const [key, order] = sortBy.split("-");
-    const sorted = [...filtered].sort((a, b) => {
-      let valA, valB;
+    // Filtering
+    if (debouncedSearchTerm) {
+      processedProducts = processedProducts.filter((product) =>
+        product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
+    }
+    
+    // Sorting (unless custom order is active)
+    if (sortBy !== 'custom') {
+      const [key, order] = sortBy.split("-");
+      processedProducts.sort((a, b) => {
+        const valA = key === "price" ? a.price : a.title.toLowerCase();
+        const valB = key === "price" ? b.price : b.title.toLowerCase();
+        if (valA < valB) return order === "asc" ? -1 : 1;
+        if (valA > valB) return order === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
 
-      if (key === "price") {
-        valA = a.price;
-        valB = b.price;
-      } else {
-        valA = a.title.toLowerCase();
-        valB = b.title.toLowerCase();
-      }
+    return processedProducts;
+  }, [displayProducts, debouncedSearchTerm, sortBy]);
 
-      if (valA < valB) return order === "asc" ? -1 : 1;
-      if (valA > valB) return order === "asc" ? 1 : -1;
-      return 0;
-    });
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedProducts, currentPage]);
 
-    return sorted;
-  }, [products, debouncedSearchTerm, sortBy]);
-
+  // Handlers
+  const handleSuccess = () => mutate();
+  
   const handleOpenCreateModal = () => {
     setEditingProduct(undefined);
     setIsFormModalOpen(true);
   };
+  
   const handleOpenEditModal = (product: Product) => {
     setEditingProduct(product);
     setIsFormModalOpen(true);
   };
-  const handleSuccess = () => {
-    mutate();
+  
+  const handleOpenPreviewModal = (product: Product) => {
+    setPreviewProduct(product);
+    setIsPreviewModalOpen(true);
   };
 
   const handleOpenDeleteAlert = (product: Product) => {
     setProductToDelete(product);
     setIsDeleteAlertOpen(true);
   };
+
   const handleDeleteProduct = async () => {
     if (!productToDelete || !products) return;
-  
-    const originalData = [...products];
     const optimisticData = products.filter((p) => p.id !== productToDelete.id);
     mutate(optimisticData, { revalidate: false });
-  
     try {
       await deleteProduct(productToDelete.id);
-      toast.success(`Product "${productToDelete.title}" deleted successfully!`);
+      toast.success(`Product "${productToDelete.title}" deleted.`);
     } catch {
       toast.error("Failed to delete product. Restoring data.");
-      mutate(originalData, { revalidate: false });
+      mutate(products, { revalidate: true });
     } finally {
       setIsDeleteAlertOpen(false);
       setProductToDelete(undefined);
     }
   };
-  
+
+  const handleInlineUpdate = async (productId: number, data: Partial<ProductSchema>) => {
+    const originalProducts = [...displayProducts];
+    const updatedProducts = displayProducts.map(p => p.id === productId ? { ...p, ...data } : p);
+    setDisplayProducts(updatedProducts); // Optimistic update
+    
+    try {
+      await updateProduct(productId, data);
+      toast.success("Product updated successfully!");
+      mutate(updatedProducts, { revalidate: false }); // Update SWR cache
+    } catch { // The error variable is not needed here
+      toast.error("Failed to update product.");
+      setDisplayProducts(originalProducts); // Revert on failure
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setDisplayProducts((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      setSortBy('custom'); // Switch to custom sort
+      setCurrentPage(1); // Reset to first page after reorder
+    }
+  };
 
   const renderContent = () => {
-    if (isLoading) {
-      return <ProductTableSkeleton />;
-    }
-    if (error) {
-      return (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load products. Please try again later.
-          </AlertDescription>
-        </Alert>
-      );
-    }
-    if (
-      products &&
-      products.length > 0 &&
-      filteredAndSortedProducts.length === 0
-    ) {
-      return (
-        <div className="text-center py-10 border rounded-md">
-          <h3 className="text-xl font-medium">No Products Found</h3>
-          <p className="text-muted-foreground">
-            Your search for &quot;{debouncedSearchTerm}&quot; did not match any
-            products.
-          </p>
-        </div>
-      );
-    }
+    if (isLoading) return <ProductTableSkeleton />;
+    if (error) return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>Failed to load products. Please try again.</AlertDescription>
+      </Alert>
+    );
+    if (paginatedProducts.length === 0 && debouncedSearchTerm) return (
+      <div className="text-center py-10 border rounded-lg bg-card text-card-foreground">
+        <h3 className="text-xl font-medium">No Products Found</h3>
+        <p className="text-muted-foreground">Your search for &quot;{debouncedSearchTerm}&quot; did not match any products.</p>
+      </div>
+    );
     return (
-      <ProductTable
-        products={filteredAndSortedProducts}
-        onEdit={handleOpenEditModal}
-        onDelete={handleOpenDeleteAlert}
-      />
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <ProductTable
+          products={paginatedProducts}
+          onEdit={handleOpenEditModal}
+          onDelete={handleOpenDeleteAlert}
+          onPreview={handleOpenPreviewModal}
+          onInlineUpdate={handleInlineUpdate}
+        />
+      </DndContext>
     );
   };
 
   return (
     <>
-      <main className="container py-8">
-        <div className="flex justify-between items-start gap-4 mb-6">
-          <PageHeader
-            title="SyncBoard"
-            description="View, filter, and manage your product inventory."
-          />
-          <div className="flex items-center gap-2">
+      <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+          <PageHeader title="SyncBoard" description="Modern product inventory management." />
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <ThemeToggle />
-            <Button onClick={handleOpenCreateModal}>
+            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add New Product
+              Add Product
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by product title..."
@@ -189,10 +223,11 @@ export default function DashboardPage() {
             />
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full md:w-[220px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="custom" disabled={sortBy !== 'custom'}>Custom Order</SelectItem>
               <SelectItem value="title-asc">Title (A-Z)</SelectItem>
               <SelectItem value="title-desc">Title (Z-A)</SelectItem>
               <SelectItem value="price-asc">Price (Low to High)</SelectItem>
@@ -201,31 +236,31 @@ export default function DashboardPage() {
           </Select>
         </div>
 
-        <div className="space-y-6">{renderContent()}</div>
+        <div className="space-y-6">
+          {renderContent()}
+          {filteredAndSortedProducts.length > ITEMS_PER_PAGE && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE)}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </div>
       </main>
 
-      <ProductFormModal
-        isOpen={isFormModalOpen}
-        onOpenChange={setIsFormModalOpen}
-        product={editingProduct}
-        onSuccess={handleSuccess}
-      />
+      <ProductFormModal isOpen={isFormModalOpen} onOpenChange={setIsFormModalOpen} product={editingProduct} onSuccess={handleSuccess} />
+      <ProductPreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} product={previewProduct} />
+      
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              product &quot;{productToDelete?.title}&quot;.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete &quot;{productToDelete?.title}&quot;.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteProduct}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Continue
+            <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

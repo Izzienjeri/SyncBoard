@@ -1,6 +1,6 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-07-31 16:17:50
-# Files Included: 14
+# Date and Time: 2025-07-31 17:43:33
+# Files Included: 16
 
 # === lib/utils.ts ===
 ```ts
@@ -26,7 +26,12 @@ export async function getProducts(url: string): Promise<Product[]> {
       throw new Error("Failed to fetch products");
     }
     const data: Product[] = await res.json();
-    return data;
+    // Mock audit data since the API doesn't provide it
+    return data.map((product) => ({
+      ...product,
+      createdAt: new Date(Date.now() - Math.random() * 1e10).toISOString(),
+      createdBy: "Admin",
+    }));
   } catch {
     throw new Error("Could not retrieve products. Please try again later.");
   }
@@ -52,7 +57,12 @@ export async function createProduct(
     }
 
     const newProduct: Product = await res.json();
-    return newProduct;
+    // Add mocked audit data on creation
+    return {
+      ...newProduct,
+      createdAt: new Date().toISOString(),
+      createdBy: "System",
+    };
   } catch {
     throw new Error("Could not create the product.");
   }
@@ -74,7 +84,13 @@ export async function updateProduct(
     }
 
     const updatedProduct: Product = await res.json();
-    return updatedProduct;
+    // Add mocked audit data on update
+    return {
+      ...updatedProduct,
+      ...productData, // The API returns the old object, so we merge the new data
+      updatedAt: new Date().toISOString(),
+      updatedBy: "System",
+    };
   } catch {
     throw new Error("Could not update the product.");
   }
@@ -276,10 +292,16 @@ export default function RootLayout({
 ```tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import useSWR from "swr";
 import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
@@ -306,156 +328,182 @@ import {
 import { ProductTable } from "@/components/features/product/product-table";
 import { ProductTableSkeleton } from "@/components/features/product/product-table-skeleton";
 import { ProductFormModal } from "@/components/features/product/product-form-modal";
-import { getProducts, deleteProduct } from "@/lib/api";
+import { ProductPreviewModal } from "@/components/features/product/product-preview-modal";
+import { Pagination } from "@/components/ui/pagination";
+import { getProducts, deleteProduct, updateProduct } from "@/lib/api";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Product } from "@/types/product.types";
+import { ProductSchema } from "@/validators/product.schema";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function DashboardPage() {
+  // Modal States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>(
-    undefined
-  );
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewProduct, setPreviewProduct] = useState<Product | undefined>(undefined);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | undefined>(
-    undefined
-  );
+  const [productToDelete, setProductToDelete] = useState<Product | undefined>(undefined);
 
+  // Data & Filtering States
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("title-asc");
+  const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const {
-    data: products,
-    error,
-    isLoading,
-    mutate,
-  } = useSWR("https://fakestoreapi.com/products", getProducts);
+  const { data: products, error, isLoading, mutate } = useSWR("https://fakestoreapi.com/products", getProducts);
+
+  useEffect(() => {
+    if (products) {
+      setDisplayProducts(products);
+    }
+  }, [products]);
 
   const filteredAndSortedProducts = useMemo(() => {
-    if (!products) return [];
+    if (!displayProducts) return [];
 
-    const filtered = debouncedSearchTerm
-      ? products.filter((product) =>
-          product.title
-            .toLowerCase()
-            .includes(debouncedSearchTerm.toLowerCase())
-        )
-      : products;
+    let processedProducts = [...displayProducts];
 
-    const [key, order] = sortBy.split("-");
-    const sorted = [...filtered].sort((a, b) => {
-      let valA, valB;
+    // Filtering
+    if (debouncedSearchTerm) {
+      processedProducts = processedProducts.filter((product) =>
+        product.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
+    }
+    
+    // Sorting (unless custom order is active)
+    if (sortBy !== 'custom') {
+      const [key, order] = sortBy.split("-");
+      processedProducts.sort((a, b) => {
+        const valA = key === "price" ? a.price : a.title.toLowerCase();
+        const valB = key === "price" ? b.price : b.title.toLowerCase();
+        if (valA < valB) return order === "asc" ? -1 : 1;
+        if (valA > valB) return order === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
 
-      if (key === "price") {
-        valA = a.price;
-        valB = b.price;
-      } else {
-        valA = a.title.toLowerCase();
-        valB = b.title.toLowerCase();
-      }
+    return processedProducts;
+  }, [displayProducts, debouncedSearchTerm, sortBy]);
 
-      if (valA < valB) return order === "asc" ? -1 : 1;
-      if (valA > valB) return order === "asc" ? 1 : -1;
-      return 0;
-    });
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedProducts, currentPage]);
 
-    return sorted;
-  }, [products, debouncedSearchTerm, sortBy]);
-
+  // Handlers
+  const handleSuccess = () => mutate();
+  
   const handleOpenCreateModal = () => {
     setEditingProduct(undefined);
     setIsFormModalOpen(true);
   };
+  
   const handleOpenEditModal = (product: Product) => {
     setEditingProduct(product);
     setIsFormModalOpen(true);
   };
-  const handleSuccess = () => {
-    mutate();
+  
+  const handleOpenPreviewModal = (product: Product) => {
+    setPreviewProduct(product);
+    setIsPreviewModalOpen(true);
   };
 
   const handleOpenDeleteAlert = (product: Product) => {
     setProductToDelete(product);
     setIsDeleteAlertOpen(true);
   };
+
   const handleDeleteProduct = async () => {
     if (!productToDelete || !products) return;
-  
-    const originalData = [...products];
     const optimisticData = products.filter((p) => p.id !== productToDelete.id);
     mutate(optimisticData, { revalidate: false });
-  
     try {
       await deleteProduct(productToDelete.id);
-      toast.success(`Product "${productToDelete.title}" deleted successfully!`);
+      toast.success(`Product "${productToDelete.title}" deleted.`);
     } catch {
       toast.error("Failed to delete product. Restoring data.");
-      mutate(originalData, { revalidate: false });
+      mutate(products, { revalidate: true });
     } finally {
       setIsDeleteAlertOpen(false);
       setProductToDelete(undefined);
     }
   };
-  
+
+  const handleInlineUpdate = async (productId: number, data: Partial<ProductSchema>) => {
+    const originalProducts = [...displayProducts];
+    const updatedProducts = displayProducts.map(p => p.id === productId ? { ...p, ...data } : p);
+    setDisplayProducts(updatedProducts); // Optimistic update
+    
+    try {
+      await updateProduct(productId, data);
+      toast.success("Product updated successfully!");
+      mutate(updatedProducts, { revalidate: false }); // Update SWR cache
+    } catch (error) {
+      toast.error("Failed to update product.");
+      setDisplayProducts(originalProducts); // Revert on failure
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setDisplayProducts((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      setSortBy('custom'); // Switch to custom sort
+      setCurrentPage(1); // Reset to first page after reorder
+    }
+  };
 
   const renderContent = () => {
-    if (isLoading) {
-      return <ProductTableSkeleton />;
-    }
-    if (error) {
-      return (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load products. Please try again later.
-          </AlertDescription>
-        </Alert>
-      );
-    }
-    if (
-      products &&
-      products.length > 0 &&
-      filteredAndSortedProducts.length === 0
-    ) {
-      return (
-        <div className="text-center py-10 border rounded-md">
-          <h3 className="text-xl font-medium">No Products Found</h3>
-          <p className="text-muted-foreground">
-            Your search for &quot;{debouncedSearchTerm}&quot; did not match any
-            products.
-          </p>
-        </div>
-      );
-    }
+    if (isLoading) return <ProductTableSkeleton />;
+    if (error) return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>Failed to load products. Please try again.</AlertDescription>
+      </Alert>
+    );
+    if (paginatedProducts.length === 0 && debouncedSearchTerm) return (
+      <div className="text-center py-10 border rounded-lg bg-card text-card-foreground">
+        <h3 className="text-xl font-medium">No Products Found</h3>
+        <p className="text-muted-foreground">Your search for "{debouncedSearchTerm}" did not match any products.</p>
+      </div>
+    );
     return (
-      <ProductTable
-        products={filteredAndSortedProducts}
-        onEdit={handleOpenEditModal}
-        onDelete={handleOpenDeleteAlert}
-      />
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <ProductTable
+          products={paginatedProducts}
+          onEdit={handleOpenEditModal}
+          onDelete={handleOpenDeleteAlert}
+          onPreview={handleOpenPreviewModal}
+          onInlineUpdate={handleInlineUpdate}
+        />
+      </DndContext>
     );
   };
 
   return (
     <>
-      <main className="container py-8">
-        <div className="flex justify-between items-start gap-4 mb-6">
-          <PageHeader
-            title="SyncBoard"
-            description="View, filter, and manage your product inventory."
-          />
-          <div className="flex items-center gap-2">
+      <main className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
+          <PageHeader title="SyncBoard" description="Modern product inventory management." />
+          <div className="flex items-center gap-2 w-full md:w-auto">
             <ThemeToggle />
-            <Button onClick={handleOpenCreateModal}>
+            <Button onClick={handleOpenCreateModal} className="w-full md:w-auto">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add New Product
+              Add Product
             </Button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1">
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
+          <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by product title..."
@@ -465,10 +513,11 @@ export default function DashboardPage() {
             />
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full md:w-[220px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="custom" disabled={sortBy !== 'custom'}>Custom Order</SelectItem>
               <SelectItem value="title-asc">Title (A-Z)</SelectItem>
               <SelectItem value="title-desc">Title (Z-A)</SelectItem>
               <SelectItem value="price-asc">Price (Low to High)</SelectItem>
@@ -477,31 +526,31 @@ export default function DashboardPage() {
           </Select>
         </div>
 
-        <div className="space-y-6">{renderContent()}</div>
+        <div className="space-y-6">
+          {renderContent()}
+          {filteredAndSortedProducts.length > ITEMS_PER_PAGE && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.ceil(filteredAndSortedProducts.length / ITEMS_PER_PAGE)}
+              onPageChange={setCurrentPage}
+            />
+          )}
+        </div>
       </main>
 
-      <ProductFormModal
-        isOpen={isFormModalOpen}
-        onOpenChange={setIsFormModalOpen}
-        product={editingProduct}
-        onSuccess={handleSuccess}
-      />
+      <ProductFormModal isOpen={isFormModalOpen} onOpenChange={setIsFormModalOpen} product={editingProduct} onSuccess={handleSuccess} />
+      <ProductPreviewModal isOpen={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen} product={previewProduct} />
+      
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              product &quot;{productToDelete?.title}&quot;.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete "{productToDelete?.title}".</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteProduct}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Continue
+            <AlertDialogAction onClick={handleDeleteProduct} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -562,6 +611,11 @@ export interface Product {
     rate: number;
     count: number;
   };
+  // Audit Trail
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 ```
 
@@ -850,110 +904,281 @@ export function ProductFormModal({
 "use client";
 
 import Image from "next/image";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { MoreHorizontal, Pencil, Trash2, GripVertical, Eye } from "lucide-react";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/product.types";
+import { ProductSchema } from "@/validators/product.schema";
+import { cn } from "@/lib/utils";
 
-interface ProductTableProps {
-  products: Product[];
-  onEdit: (product: Product) => void;
-  onDelete: (product: Product) => void;
-}
+const formatCurrency = (amount: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
 
-export function ProductTable({
-  products,
-  onEdit,
-  onDelete,
-}: ProductTableProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+// Sortable Row Component
+function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpdate }: { product: Product; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 'auto' };
+
+  const [editingCell, setEditingCell] = useState<{ field: "title" | "price"; value: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [editingCell]);
+
+  const handleSave = () => {
+    if (!editingCell) return;
+    const { field, value } = editingCell;
+  
+    if (field === "title") {
+      const trimmed = value.trim();
+      if (trimmed === "" || trimmed === product.title) {
+        setEditingCell(null);
+        return;
+      }
+      onInlineUpdate(product.id, { title: trimmed });
+      setEditingCell(null);
+    }
+  
+    if (field === "price") {
+      const parsed = parseFloat(value);
+      if (isNaN(parsed) || parsed <= 0 || parsed === product.price) {
+        setEditingCell(null);
+        return;
+      }
+      onInlineUpdate(product.id, { price: parsed });
+      setEditingCell(null);
+    }
+  };
+  
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') setEditingCell(null);
   };
 
+  const renderEditableCell = (field: "title" | "price") => {
+    const isEditing = editingCell?.field === field;
+    const value = field === 'title' ? product.title : product.price;
+
+    return (
+      <div onClick={() => !editingCell && setEditingCell({ field, value: String(value) })} className="cursor-pointer">
+        {isEditing ? (
+          <Input
+            ref={inputRef}
+            type={field === 'price' ? 'number' : 'text'}
+            value={editingCell.value}
+            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className={cn("h-8", field === 'price' && 'text-right')}
+          />
+        ) : (
+          <span className="flex items-center gap-2">
+            {field === 'title' ? product.title : formatCurrency(product.price)}
+            <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  // Mobile Card View
   return (
-    <div className="rounded-md border">
-      <Table>
+    <div ref={setNodeRef} style={style} className="md:table-row relative block border-b md:border-b-0 last:border-b-0 group bg-card hover:bg-muted/50" >
+      {/* Desktop Table Cells */}
+      <TableCell className="hidden md:table-cell w-[50px] pl-2">
+        <div {...attributes} {...listeners} className="cursor-grab py-4">
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell w-[80px]">
+        <div className="relative h-12 w-12">
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            sizes="48px"
+            className="rounded-md object-cover"
+          />
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell font-medium">{renderEditableCell('title')}</TableCell>
+      <TableCell className="hidden md:table-cell"><Badge variant="secondary">{product.category}</Badge></TableCell>
+      <TableCell className="hidden md:table-cell text-right w-[120px]">{renderEditableCell('price')}</TableCell>
+      <TableCell className="hidden md:table-cell text-right w-[100px]">{product.rating.rate.toFixed(2)}</TableCell>
+      <TableCell className="hidden md:table-cell w-[50px]">
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+      </TableCell>
+
+      {/* Mobile Card Layout */}
+      <div className="md:hidden p-4 space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="relative h-16 w-16 flex-shrink-0">
+                <Image
+                    src={product.image}
+                    alt={product.title}
+                    fill
+                    sizes="64px"
+                    className="rounded-lg object-cover"
+                />
+            </div>
+            <div>
+              <div className="font-bold text-base mb-1">{renderEditableCell('title')}</div>
+              <Badge variant="outline">{product.category}</Badge>
+            </div>
+          </div>
+          <div {...attributes} {...listeners} className="cursor-grab p-2">
+            <GripVertical className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
+        <div className="flex justify-between items-center text-sm">
+          <div className="font-medium text-lg">{renderEditableCell('price')}</div>
+          <div className="text-muted-foreground">Rating: {product.rating.rate.toFixed(2)}</div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main Table Component
+export function ProductTable({ products, ...props }: { products: Product[]; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
+  return (
+    <div className="rounded-lg border">
+      <Table className="hidden md:table">
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]"><span className="sr-only">Drag Handle</span></TableHead>
             <TableHead className="w-[80px]">Image</TableHead>
             <TableHead>Title</TableHead>
             <TableHead>Category</TableHead>
-            <TableHead className="text-right w-[100px]">Price</TableHead>
+            <TableHead className="text-right w-[120px]">Price</TableHead>
             <TableHead className="text-right w-[100px]">Rating</TableHead>
-            <TableHead className="w-[50px]">
-              <span className="sr-only">Actions</span>
-            </TableHead>
+            <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {products.map((product) => (
-            <TableRow key={product.id}>
-              <TableCell>
+          <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            {products.length > 0 ? (
+              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
+            ) : (
+              <TableRow><TableCell colSpan={7} className="h-24 text-center">No products to display.</TableCell></TableRow>
+            )}
+          </SortableContext>
+        </TableBody>
+      </Table>
+      <div className="md:hidden grid grid-cols-1 divide-y">
+        <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            {products.length > 0 ? (
+              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
+            ) : (
+              <div className="p-10 text-center">No products to display.</div>
+            )}
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+```
+
+# === components/features/product/product-preview-modal.tsx ===
+```tsx
+"use client";
+
+import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Product } from "@/types/product.types";
+
+interface ProductPreviewModalProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  product?: Product;
+}
+
+const formatCurrency = (amount: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+const formatDate = (dateString?: string) => dateString ? new Date(dateString).toLocaleString() : 'N/A';
+
+export function ProductPreviewModal({ isOpen, onOpenChange, product }: ProductPreviewModalProps) {
+  if (!product) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Product Details</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 space-y-6">
+          <div className="flex flex-col sm:flex-row gap-6">
+            <div className="flex-shrink-0">
+              <div className="relative h-[150px] w-[150px]">
                 <Image
                   src={product.image}
                   alt={product.title}
-                  width={48}
-                  height={48}
-                  className="rounded-md object-cover"
+                  fill
+                  sizes="150px"
+                  className="rounded-lg object-cover"
                 />
-              </TableCell>
-              <TableCell className="font-medium">{product.title}</TableCell>
-              <TableCell className="text-muted-foreground">
-                {product.category}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(product.price)}
-              </TableCell>
-              <TableCell className="text-right">
-                {product.rating.rate.toFixed(2)}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => onEdit(product)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-900/40"
-                      onClick={() => onDelete(product)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+              </div>
+            </div>
+            <div className="flex-1 space-y-2">
+              <h3 className="text-2xl font-bold">{product.title}</h3>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">{product.category}</Badge>
+                <span className="text-sm text-muted-foreground">
+                  Rating: {product.rating.rate.toFixed(1)} ({product.rating.count} reviews)
+                </span>
+              </div>
+              <p className="text-3xl font-light">{formatCurrency(product.price)}</p>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold text-lg mb-2">Description</h4>
+            <p className="text-muted-foreground">{product.description}</p>
+          </div>
+
+          <div>
+            <h4 className="font-semibold text-lg mb-2">Audit Information</h4>
+            <div className="text-sm text-muted-foreground grid grid-cols-2 gap-2">
+              <span>Created By:</span><span className="font-medium text-foreground">{product.createdBy}</span>
+              <span>Created At:</span><span className="font-medium text-foreground">{formatDate(product.createdAt)}</span>
+              <span>Updated By:</span><span className="font-medium text-foreground">{product.updatedBy || 'N/A'}</span>
+              <span>Updated At:</span><span className="font-medium text-foreground">{formatDate(product.updatedAt)}</span>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
@@ -1013,6 +1238,214 @@ export function ProductTableSkeleton() {
           ))}
         </TableBody>
       </Table>
+    </div>
+  );
+}
+```
+
+# === src/components/features/product/product-table.tsx ===
+```tsx
+"use client";
+
+import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
+import { MoreHorizontal, Pencil, Trash2, GripVertical, Eye } from "lucide-react";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Product } from "@/types/product.types";
+import { ProductSchema } from "@/validators/product.schema";
+import { cn } from "@/lib/utils";
+
+const formatCurrency = (amount: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+
+// Sortable Row Component
+function SortableProductRow({ product, onEdit, onDelete, onPreview, onInlineUpdate }: { product: Product; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: product.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 'auto' };
+
+  const [editingCell, setEditingCell] = useState<{ field: "title" | "price"; value: string } | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, [editingCell]);
+
+  const handleSave = () => {
+    if (!editingCell) return;
+    const { field, value } = editingCell;
+
+    if (field === 'title') {
+      const newTitle = value.trim();
+      if (newTitle === '' || newTitle === product.title) {
+        setEditingCell(null);
+        return;
+      }
+      onInlineUpdate(product.id, { title: newTitle });
+    } else if (field === 'price') {
+      const newPrice = parseFloat(value);
+      if (isNaN(newPrice) || newPrice <= 0 || newPrice === product.price) {
+        setEditingCell(null);
+        return;
+      }
+      onInlineUpdate(product.id, { price: newPrice });
+    }
+    
+    setEditingCell(null);
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSave();
+    if (e.key === 'Escape') setEditingCell(null);
+  };
+
+  const renderEditableCell = (field: "title" | "price") => {
+    const isEditing = editingCell?.field === field;
+    const value = field === 'title' ? product.title : product.price;
+
+    return (
+      <div onClick={() => !editingCell && setEditingCell({ field, value: String(value) })} className="cursor-pointer">
+        {isEditing ? (
+          <Input
+            ref={inputRef}
+            type={field === 'price' ? 'number' : 'text'}
+            value={editingCell.value}
+            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            className={cn("h-8", field === 'price' && 'text-right')}
+          />
+        ) : (
+          <span className="flex items-center gap-2">
+            {field === 'title' ? product.title : formatCurrency(product.price)}
+            <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  // Mobile Card View
+  return (
+    <div ref={setNodeRef} style={style} className="md:table-row relative block border-b md:border-b-0 last:border-b-0 group bg-card hover:bg-muted/50" >
+      {/* Desktop Table Cells */}
+      <TableCell className="hidden md:table-cell w-[50px] pl-2">
+        <div {...attributes} {...listeners} className="cursor-grab py-4">
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell w-[80px]">
+        <div className="relative h-12 w-12">
+          <Image
+            src={product.image}
+            alt={product.title}
+            fill
+            sizes="48px"
+            className="rounded-md object-cover"
+          />
+        </div>
+      </TableCell>
+      <TableCell className="hidden md:table-cell font-medium">{renderEditableCell('title')}</TableCell>
+      <TableCell className="hidden md:table-cell"><Badge variant="secondary">{product.category}</Badge></TableCell>
+      <TableCell className="hidden md:table-cell text-right w-[120px]">{renderEditableCell('price')}</TableCell>
+      <TableCell className="hidden md:table-cell text-right w-[100px]">{product.rating.rate.toFixed(2)}</TableCell>
+      <TableCell className="hidden md:table-cell w-[50px]">
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+      </TableCell>
+
+      {/* Mobile Card Layout */}
+      <div className="md:hidden p-4 space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="relative h-16 w-16 flex-shrink-0">
+                <Image
+                    src={product.image}
+                    alt={product.title}
+                    fill
+                    sizes="64px"
+                    className="rounded-lg object-cover"
+                />
+            </div>
+            <div>
+              <div className="font-bold text-base mb-1">{renderEditableCell('title')}</div>
+              <Badge variant="outline">{product.category}</Badge>
+            </div>
+          </div>
+          <div {...attributes} {...listeners} className="cursor-grab p-2">
+            <GripVertical className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
+        <div className="flex justify-between items-center text-sm">
+          <div className="font-medium text-lg">{renderEditableCell('price')}</div>
+          <div className="text-muted-foreground">Rating: {product.rating.rate.toFixed(2)}</div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => onPreview(product)}><Eye className="mr-2 h-4 w-4" />Quick View</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onEdit(product)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onDelete(product)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main Table Component
+export function ProductTable({ products, ...props }: { products: Product[]; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPreview: (p: Product) => void; onInlineUpdate: (id: number, data: Partial<ProductSchema>) => void; }) {
+  return (
+    <div className="rounded-lg border">
+      <Table className="hidden md:table">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[50px]"><span className="sr-only">Drag Handle</span></TableHead>
+            <TableHead className="w-[80px]">Image</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead className="text-right w-[120px]">Price</TableHead>
+            <TableHead className="text-right w-[100px]">Rating</TableHead>
+            <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            {products.length > 0 ? (
+              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
+            ) : (
+              <TableRow><TableCell colSpan={7} className="h-24 text-center">No products to display.</TableCell></TableRow>
+            )}
+          </SortableContext>
+        </TableBody>
+      </Table>
+      <div className="md:hidden grid grid-cols-1 divide-y">
+        <SortableContext items={products.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            {products.length > 0 ? (
+              products.map((product) => <SortableProductRow key={product.id} product={product} {...props} />)
+            ) : (
+              <div className="p-10 text-center">No products to display.</div>
+            )}
+        </SortableContext>
+      </div>
     </div>
   );
 }
