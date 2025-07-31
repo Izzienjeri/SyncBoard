@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { MediaChart } from "@/components/dashboard/media-chart";
-import { CampaignsTable } from "@/components/dashboard/campaigns-table";
+import { AttendanceChart } from "@/components/dashboard/attendance-chart";
+import { StudentPerformanceSummary } from "@/components/dashboard/student-performance-summary";
 import { getTotalStudents } from "@/lib/api";
 import { Bell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,10 +40,10 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
         <div className="xl:col-span-3">
-          <MediaChart /> 
+          <AttendanceChart /> 
         </div>
         <div className="xl:col-span-2">
-          <CampaignsTable /> 
+          <StudentPerformanceSummary /> 
         </div>
       </div>
     </>
