@@ -1,4 +1,3 @@
-// app/layout.tsx
 
 import type { Metadata } from "next";
 import { Inter as FontSans } from "next/font/google";

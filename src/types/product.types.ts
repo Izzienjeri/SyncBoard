@@ -1,5 +1,3 @@
-// types/product.types.ts
-
 // Based on the structure from DummyJSON API
 export interface Product {
     id: number;
@@ -15,6 +13,5 @@ export interface Product {
     images: string[];
   }
   
-  // We can also define the shape for creating/updating a product.
-  // Often, you don't need to provide an `id` or other read-only fields.
+  // The shape for creating/updating a product.
   export type ProductFormData = Omit<Product, 'id' | 'rating'>;
