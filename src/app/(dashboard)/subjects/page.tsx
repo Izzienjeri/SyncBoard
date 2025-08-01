@@ -33,9 +33,9 @@ const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
 
 export default function SubjectsPage() {
   const [period, setPeriod] = useState<Period>("this_term");
-  // IMPROVEMENT: Added state for pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(9); // Default to 9 for a 3x3 grid
+  // FIX: Default items per page is now 6.
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   
   const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
   const { data: allUsers } = useSWR<User[]>(`https://dummyjson.com/users?limit=200`, async (url: string) => (await fetch(url)).json().then(res => res.users));
@@ -167,8 +167,7 @@ export default function SubjectsPage() {
       </PageHeader>
       
       {renderContent()}
-
-      {/* IMPROVEMENT: Added pagination controls */}
+      
       {subjects && subjects.length > 0 && (
          <TablePaginationControls
             currentPage={currentPage}

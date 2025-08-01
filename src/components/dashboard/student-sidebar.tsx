@@ -11,8 +11,6 @@ const navItems = [
   { href: "/subjects", icon: BookOpen, label: "Subjects" },
 ];
 
-// REVERTED to the original, simpler sidebar component without mobile-specific logic.
-// The responsive behavior is now handled by the layout itself.
 export function StudentDashboardSidebar() {
   const pathname = usePathname();
 
@@ -32,8 +30,9 @@ export function StudentDashboardSidebar() {
             key={item.label}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground flex-shrink-0",
-              isActive && "bg-muted font-semibold text-foreground"
+              "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-secondary hover:text-primary",
+              // FIX: Updated active state to better match the screenshot
+              isActive && "bg-secondary text-primary font-semibold"
             )}
           >
             <item.icon className="h-5 w-5" />

@@ -1,420 +1,240 @@
-Of course! I've implemented your requested UI refinements. Here is a summary of the changes and the updated code.
+Excellent request. Adding "create" functionality is the next logical step to make this prototype more complete. It involves creating new UI components (modals with forms), handling form state and validation, and updating the application's state after a successful creation.
 
-### Summary of Changes
+I'll demonstrate how to add the functionality to create both **new students/teachers** and **new subjects**. We'll follow the existing architectural patterns to ensure the new code integrates seamlessly.
 
-1.  **New Background Gradient:** The animated background has been replaced with the beautiful, static linear gradient you provided. This is applied to the main dashboard layout for a crisp, professional look.
+Here is a breakdown of the required changes, followed by the new and modified code files.
 
-2.  **Pagination for Subjects:** The Subjects page now includes full pagination controls, allowing you to navigate through the list of subjects easily.
+### Strategy for Implementation
 
-3.  **Configurable Rows Per Page:** On all paginated views (Students, Teachers, and Subjects), you can now select how many items you want to see per page (10, 20, 30, 40, or 50). The view and pagination will update accordingly. This is handled by a new, reusable `TablePaginationControls` component to keep the code clean.
-
-4.  **Header Text Style:** The gradient effect on page titles and user names in modals has been removed. They now use the standard text color for better readability and a cleaner aesthetic.
-
-5.  **Table Overflow Fix:** The issue where table content could overlap the card container on small screens has been definitively fixed. The tables are now perfectly contained within their bordered cards, with horizontal scrolling when needed.
+1.  **Add a "Create" Button:** Place an "Add Student," "Add Teacher," or "Add Subject" button in the header of the respective management pages.
+2.  **Create a Form Modal:** Build a new reusable modal component for creation. This modal will contain a form.
+3.  **Use a Form Library (Best Practice):** For the student/teacher form, we'll use `react-hook-form` for state management and `zod` for validation. This is a robust and scalable approach for handling complex forms.
+4.  **Mock the API Call:** Since `dummyjson.com` doesn't support creating new users, we'll create a new mock `addUser` function in `lib/api.ts` that simulates a successful API response. For subjects, we'll directly manipulate the mock data array.
+5.  **Update the UI Optimistically:** After "creating" a new record, we will use SWR's `mutate` function to instantly update the UI, providing a fast and responsive user experience.
 
 ---
 
-### Updated Codebase
+### New and Modified Files
 
-Here are the files that have been modified to implement your requests.
+Here are the necessary code changes.
 
-# === app/globals.css ===
-```css
-@import "tailwindcss";
+#### 1. Update API and Mock Data (`lib/api.ts`)
 
-@custom-variant dark (&:is(.dark *));
+First, let's add a new `addUser` function to our API file. Since we can't actually post to `dummyjson.com`, this function will simulate the creation process.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
+```ts
+// === lib/api.ts (Updated) ===
+import { User, UsersApiResponse } from "@/types/api.types";
+import { allSubjects } from "./mock-data";
 
-:root {
-  --radius: 0.75rem;
-  --background: oklch(0.99 0.005 240);
-  --foreground: oklch(0.1 0.03 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.1 0.03 250);
-  --popover: oklch(1 0 0 / 0.8);
-  --popover-foreground: oklch(0.1 0.03 250);
-  --primary: oklch(0.60 0.18 265);
-  --primary-foreground: oklch(0.99 0.005 240);
-  --secondary: oklch(0.92 0.03 260);
-  --secondary-foreground: oklch(0.1 0.03 250);
-  --muted: oklch(0.95 0.02 260);
-  --muted-foreground: oklch(0.45 0.04 255);
-  --accent: oklch(0.95 0.02 260);
-  --accent-foreground: oklch(0.09 0.08 265);
-  --destructive: oklch(0.65 0.22 20);
-  --border: oklch(0.1 0.03 250 / 0.15);
-  --input: oklch(0.1 0.03 250 / 0.05);
-  --ring: oklch(0.60 0.18 265);
-  --chart-1: oklch(0.7 0.15 290);
-  --chart-2: oklch(0.75 0.18 200);
-  --chart-3: oklch(0.65 0.2 260);
-  --chart-4: oklch(0.8 0.18 150);
-  --chart-5: oklch(0.8 0.2 80);
-}
+const DUMMY_JSON_URL = "https://dummyjson.com";
 
-.dark {
-  --background: oklch(0.08 0.02 250);
-  --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.12 0.03 260);
-  --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.05 0.02 250 / 0.8);
-  --popover-foreground: oklch(0.95 0.01 240);
-  --primary: oklch(0.7 0.2 275);
-  --primary-foreground: oklch(0.98 0.01 275);
-  --secondary: oklch(0.2 0.05 270);
-  --secondary-foreground: oklch(0.95 0.01 240);
-  --muted: oklch(0.2 0.05 270 / 0.5);
-  --muted-foreground: oklch(0.65 0.05 260);
-  --accent: oklch(0.2 0.05 270);
-  --accent-foreground: oklch(0.95 0.01 240);
-  --destructive: oklch(0.7 0.2 25);
-  --border: oklch(1 1 1 / 0.15);
-  --input: oklch(1 1 1 / 0.08);
-  --ring: oklch(0.75 0.22 280);
-}
+// ... (getUsers, updateUser, deleteUser functions remain the same) ...
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply text-foreground antialiased bg-background;
+export async function addUser(userData: Omit<User, 'id' | 'image' | 'address'>): Promise<User> {
+  console.log("Simulating adding user:", userData);
+  try {
+    // In a real app, this would be a POST request.
+    // const res = await fetch(`${YOUR_REAL_API_URL}/users`, {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify(userData),
+    // });
+    // if (!res.ok) throw new Error("Failed to add user");
+    // return await res.json();
+
+    // Mocking the response for dummyjson
+    const res = await fetch(`${DUMMY_JSON_URL}/users/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+    });
+    if (!res.ok) throw new Error("DummyJSON failed to simulate add.");
+    const newUser: User = await res.json();
+    
+    // DummyJSON doesn't return a full user object, so we'll merge and mock parts.
+    return {
+        ...newUser,
+        ...userData,
+        image: `https://i.pravatar.cc/150?u=${newUser.id}`,
+        address: {
+            address: "123 Mock St",
+            city: "Testville",
+            postalCode: "12345",
+            state: "TS",
+        }
+    };
+  } catch(e) {
+    console.error("Add user failed:", e);
+    throw new Error("Could not add the user.");
   }
 }
 
-@layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-secondary;
+
+export async function getTotalStudents(): Promise<number> {
+  return 100;
+}
+
+export async function getTotalTeachers(): Promise<number> {
+  try {
+    const res = await fetch(`${DUMMY_JSON_URL}/users?limit=0`);
+    if (!res.ok) {
+      return 50;
+    }
+    const data: UsersApiResponse = await res.json();
+    return data.total > 100 ? data.total - 100 : 0;
+  } catch (e) {
+    console.error("Failed to get total teachers:", e);
+    return 50;
   }
-  .button-gradient {
-    @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30;
-  }
-  .glass-card {
-    @apply bg-card/80 dark:bg-card/70 backdrop-blur-lg border shadow-lg shadow-black/10 dark:shadow-black/20;
-  }
-  /* IMPROVEMENT: New utility class for the requested background gradient */
-  .background-gradient-custom {
-    background: hsla(191, 75%, 60%, 1);
-    background: linear-gradient(90deg, hsla(191, 75%, 60%, 1) 0%, hsla(248, 87%, 36%, 1) 100%);
-  }
+}
+
+export async function getSubjects(): Promise<string[]> {
+  return Promise.resolve(allSubjects);
 }
 ```
 
-# === app/(dashboard)/layout.tsx ===
-```tsx
-import { StudentDashboardSidebar } from "@/components/dashboard/student-sidebar";
+#### 2. Create the "Add User" Modal and Form
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    // IMPROVEMENT: Applied the new custom gradient class.
-    <main className="min-h-screen w-full p-4 sm:p-6 lg:p-8 background-gradient-custom">
-      <div className="mx-auto w-full max-w-7xl rounded-2xl bg-card/90 p-6 shadow-xl backdrop-blur-lg lg:p-8 flex flex-col lg:flex-row gap-8">
-        <StudentDashboardSidebar />
-        <div className="flex-1 flex flex-col gap-8">
-          {children}
-        </div>
-      </div>
-    </main>
-  );
-}
-```
+This is a new component that uses `react-hook-form` and `zod` for a robust form experience.
 
-# === app/(dashboard)/subjects/page.tsx ===
 ```tsx
+// === NEW FILE: components/features/user/create-user-modal.tsx ===
 "use client";
 
-import { useState } from "react";
-import useSWR from "swr";
-import dynamic from "next/dynamic";
-import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getSubjects } from "@/lib/api";
-import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockTeachers, subjectTeacherMapping, subjectScoreData, Teacher } from "@/lib/mock-data";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { User } from "@/types/api.types";
-import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import type { UserPreviewModalProps } from "@/components/features/user/user-preview-modal";
+import { useState } from "react";
 
-const ManageInstructorsModal = dynamic(() => import("@/components/features/subject/manage-instructors-modal").then(mod => mod.ManageInstructorsModal));
-const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
+const userSchema = z.object({
+  firstName: z.string().min(2, "First name must be at least 2 characters."),
+  lastName: z.string().min(2, "Last name must be at least 2 characters."),
+  email: z.string().email("Please enter a valid email address."),
+  phone: z.string().min(10, "Phone number seems too short."),
+});
 
-type Period = "this_term" | "last_term" | "full_year";
+type UserFormData = z.infer<typeof userSchema>;
 
-const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
-  const initials = teacherName.split(' ').map((n) => n[0]).slice(0, 2).join('');
-  return (
-    <div className="h-8 w-8 rounded-full bg-muted flex-shrink-0 flex items-center justify-center">
-      <span className="text-xs font-semibold text-muted-foreground">{initials}</span>
-    </div>
-  );
-};
+export interface CreateUserModalProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onUserCreated: (newUser: Omit<User, 'id' | 'image' | 'address'>) => void;
+  userType: 'student' | 'teacher';
+}
 
-export default function SubjectsPage() {
-  const [period, setPeriod] = useState<Period>("this_term");
-  // IMPROVEMENT: Added state for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(9); // Default to 9 for a 3x3 grid
-  
-  const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
-  const { data: allUsers } = useSWR<User[]>(`https://dummyjson.com/users?limit=200`, async (url: string) => (await fetch(url)).json().then(res => res.users));
+export function CreateUserModal({ isOpen, onOpenChange, onUserCreated, userType }: CreateUserModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(userSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+    },
+  });
 
-  const [modalState, setModalState] = useState<{
-    manageInstructors: boolean;
-    viewTeacher: boolean;
-    subject: string | null;
-    teacher: User | null;
-  }>({ manageInstructors: false, viewTeacher: false, subject: null, teacher: null });
-  
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page
-  };
-
-  const handleDeleteSubject = (subjectToDelete: string) => {
-    mutate(subjects?.filter(s => s !== subjectToDelete), false);
-    toast.success(`Subject "${subjectToDelete.replace(/-/g, ' ')}" deleted.`);
-  };
-
-  const handleManageInstructors = (subject: string) => {
-    setModalState({ ...modalState, manageInstructors: true, subject });
-  };
-  
-  const handleViewTeacher = (teacherId: number) => {
-    const teacherUser = allUsers?.find(u => u.id === teacherId);
-    if(teacherUser) {
-        setModalState({ ...modalState, viewTeacher: true, teacher: teacherUser });
-    } else {
-        toast.warning("Could not find full details for this teacher.");
-    }
-  };
-
-  const handleSaveInstructors = (subject: string, newTeacherIds: number[]) => {
-    subjectTeacherMapping[subject] = newTeacherIds;
-    mutate(subjects);
-    toast.success(`Instructors for "${subject.replace(/-/g, ' ')}" updated.`);
-  };
-
-  const totalPages = subjects ? Math.ceil(subjects.length / itemsPerPage) : 0;
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: itemsPerPage }).map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
-        </div>
-      );
-    }
-    if (error) {
-      return (
-        <Alert variant="destructive" className="glass-card">
-          <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
-        </Alert>
-      );
-    }
-    if (!subjects || subjects.length === 0) {
-      return (
-        <div className="text-center py-10 glass-card rounded-lg">
-          <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">Could not find any subjects in the catalog.</p>
-        </div>
-      );
-    }
-
-    const paginatedSubjects = subjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {paginatedSubjects.map((subject) => {
-          const meanGradeData = subjectScoreData[period].find(s => s.name === subject);
-          const teacherIds = subjectTeacherMapping[subject] || [];
-          const teachers = teacherIds.map(id => mockTeachers.find(t => t.id === id)).filter(Boolean) as Teacher[];
-
-          return (
-            <Card key={subject} className="glass-card flex flex-col">
-              <CardHeader className="flex-row items-center justify-between">
-                <CardTitle className="capitalize text-lg">{subject.replace(/-/g, ' ')}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </CardHeader>
-              <CardContent className="flex flex-col flex-grow justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Mean Grade ({period.replace(/_/g, ' ')})</p>
-                  <p className="text-3xl font-bold text-primary">{meanGradeData?.averageScore.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-sm font-medium text-muted-foreground">Instructors</p>
-                    <Button variant="outline" size="sm" onClick={() => handleManageInstructors(subject)}>
-                        <Pencil className="h-3 w-3 mr-1.5" /> Manage
-                    </Button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {teachers.length > 0 ? (
-                      teachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-1 -m-1 rounded-md" onClick={() => handleViewTeacher(teacher.id)}>
-                          <TeacherAvatar teacherName={teacher.name} />
-                          <span className="font-medium text-sm">{teacher.name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">No instructors assigned.</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    );
+  const onSubmit = async (data: UserFormData) => {
+    setIsSubmitting(true);
+    await onUserCreated(data);
+    setIsSubmitting(false);
+    form.reset();
+    onOpenChange(false);
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Subjects Overview" description="View details for each subject offered.">
-        <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="this_term">This Term</SelectItem>
-            <SelectItem value="last_term">Last Term</SelectItem>
-            <SelectItem value="full_year">Full Year</SelectItem>
-          </SelectContent>
-        </Select>
-      </PageHeader>
-      
-      {renderContent()}
-
-      {/* IMPROVEMENT: Added pagination controls */}
-      {subjects && subjects.length > 0 && (
-         <TablePaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            totalItems={subjects.length}
-            itemType="subjects"
-            itemsPerPageOptions={[6, 9, 12, 15]}
-         />
-      )}
-      
-      {modalState.manageInstructors && modalState.subject && (
-        <ManageInstructorsModal
-          isOpen={modalState.manageInstructors}
-          onOpenChange={(isOpen) => setModalState({ ...modalState, manageInstructors: isOpen })}
-          subjectName={modalState.subject}
-          allTeachers={mockTeachers}
-          assignedTeacherIds={subjectTeacherMapping[modalState.subject] || []}
-          onSave={(newIds) => handleSaveInstructors(modalState.subject!, newIds)}
-        />
-      )}
-
-      {modalState.viewTeacher && modalState.teacher && (
-        <UserPreviewModal 
-          isOpen={modalState.viewTeacher}
-          onOpenChange={(isOpen) => setModalState({ ...modalState, viewTeacher: isOpen, teacher: null })}
-          user={modalState.teacher}
-        />
-      )}
-    </div>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
+        <DialogHeader>
+          <DialogTitle>Add New {userType === 'student' ? 'Student' : 'Teacher'}</DialogTitle>
+          <DialogDescription>
+            Enter the details below to create a new {userType} profile.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="firstName" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl><Input placeholder="John" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}/>
+                <FormField control={form.control} name="lastName" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl><Input placeholder="Doe" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}/>
+            </div>
+            <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl><Input type="email" placeholder="john.doe@example.com" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}/>
+            <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl><Input placeholder="+1 234 567 890" {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}/>
+            <DialogFooter className="pt-4">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSubmitting} className="button-gradient">
+                {isSubmitting ? 'Saving...' : `Save ${userType === 'student' ? 'Student' : 'Teacher'}`}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 ```
 
-# === components/shared/page-header.tsx ===
+#### 3. Integrate the Create Modal into the User Management Page
+
+Now, we update `UserManagementPage` to include the button and handle the creation logic.
+
 ```tsx
-import { cn } from "@/lib/utils";
-
-interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  description?: string;
-  children?: React.ReactNode;
-}
-
-export function PageHeader({
-  title,
-  description,
-  className,
-  children,
-  ...props
-}: PageHeaderProps) {
-  return (
-    <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4", className)} {...props}>
-      <div className="space-y-2">
-        {/* FIX: Removed text-gradient class */}
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {title}
-        </h1>
-        {description && <p className="text-muted-foreground">{description}</p>}
-      </div>
-      {children && <div className="flex items-center gap-4 w-full md:w-auto justify-end">{children}</div>}
-    </div>
-  );
-}
-```
-
-# === components/features/user/user-management-page.tsx ===
-```tsx
+// === components/features/user/user-management-page.tsx (Updated) ===
 "use client";
 
 import useSWR, { useSWRConfig } from "swr";
 import { useState } from "react";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, PlusCircle } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { UserTable } from "@/components/features/user/user-table";
 import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { TablePaginationControls } from "@/components/shared/table-pagination-controls"; // NEW
-import { getUsers, updateUser, deleteUser, getTotalStudents, getTotalTeachers } from "@/lib/api";
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
+// MODIFIED: Import `addUser`
+import { getUsers, updateUser, deleteUser, addUser, getTotalStudents, getTotalTeachers } from "@/lib/api";
 import { User, UsersApiResponse } from "@/types/api.types";
+import { Button } from "@/components/ui/button"; // NEW
 import type { UserPreviewModalProps } from "./user-preview-modal";
+// NEW: Import the create modal
+import type { CreateUserModalProps } from "./create-user-modal";
 
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
+// NEW: Dynamically import the create modal
+const CreateUserModal = dynamic<CreateUserModalProps>(() => import("@/components/features/user/create-user-modal").then(mod => mod.CreateUserModal));
+
 
 interface UserManagementPageProps {
   userType: 'student' | 'teacher';
@@ -424,14 +244,13 @@ interface UserManagementPageProps {
 
 export function UserManagementPage({ userType, pageTitle, pageDescription }: UserManagementPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  // IMPROVEMENT: Added state for items per page
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // NEW
+
   const { mutate: globalMutate } = useSWRConfig();
 
-  // Updated to use itemsPerPage state
   const skip = userType === 'student' 
     ? (currentPage - 1) * itemsPerPage 
     : 100 + (currentPage - 1) * itemsPerPage;
@@ -445,76 +264,64 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
 
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page to avoid invalid page numbers
+    setCurrentPage(1);
   };
   
-  const handleUserUpdate = async (id: number, userData: Partial<User>) => {
-    await mutate(async (currentData?: UsersApiResponse) => {
-      if (!currentData) return currentData;
-      const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
-      return { ...currentData, users: updatedUsers };
-    }, { revalidate: false });
-
+  // NEW: Handler for creating a user
+  const handleUserCreated = async (userData: Omit<User, 'id' | 'image' | 'address'>) => {
     try {
-      await updateUser(id, userData);
-      toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} updated successfully!`);
+      const newUser = await addUser(userData);
+      
+      // Optimistically update the UI if on the first page
+      if (currentPage === 1) {
+          mutate(async (currentData?: UsersApiResponse) => {
+            if (!currentData) return currentData;
+            return { ...currentData, users: [newUser, ...currentData.users].slice(0, itemsPerPage) };
+          }, { revalidate: false });
+      }
+
+      toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} created successfully!`, {
+        description: "Note: This is a simulation. The new user will disappear on page refresh.",
+      });
     } catch {
-      toast.error(`Failed to update ${userType}.`);
-      globalMutate(swrKey);
+      toast.error(`Failed to create ${userType}.`);
     }
+  };
+
+  const handleUserUpdate = async (id: number, userData: Partial<User>) => {
+    // ... (existing code)
   };
 
   const handleViewUser = (user: User) => {
-    setSelectedUser(user);
-    setIsViewModalOpen(true);
+    // ... (existing code)
   };
 
   const handleDeleteUser = async (userId: number) => {
-    await mutate(async (currentData?: UsersApiResponse) => {
-      if (!currentData) return currentData;
-      return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
-    }, { revalidate: false });
-
-    try {
-      await deleteUser(userId);
-      toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} deleted successfully.`);
-    } catch {
-      toast.error(`Failed to delete ${userType}.`);
-      globalMutate(swrKey);
-    }
+    // ... (existing code)
   };
 
   const renderContent = () => {
-    if (isLoading && !data) return <UserTableSkeleton type={userType} items={itemsPerPage} />;
-    if (error) return (
-      <Alert variant="destructive" className="glass-card">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Failed to load {userType}s. Please try again.</AlertDescription>
-      </Alert>
-    );
-    if (!data?.users.length) return <p className="py-10 text-center text-muted-foreground">No {userType}s found.</p>;
-    
-    return <UserTable
-      users={data.users}
-      type={userType}
-      onUserUpdate={handleUserUpdate}
-      onViewUser={handleViewUser}
-      onDeleteUser={handleDeleteUser}
-    />
+    // ... (existing code)
   };
 
   const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
+  const capitalizedUserType = userType.charAt(0).toUpperCase() + userType.slice(1);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-      />
+      >
+        {/* NEW: Add user button */}
+        <Button onClick={() => setIsCreateModalOpen(true)} className="button-gradient">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add {capitalizedUserType}
+        </Button>
+      </PageHeader>
+      
       {renderContent()}
 
-      {/* IMPROVEMENT: Replaced old pagination with the new comprehensive controls component */}
       {!totalLoading && (
          <TablePaginationControls
             currentPage={currentPage}
@@ -534,368 +341,213 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
             user={selectedUser}
         />
       )}
+      
+      {/* NEW: Render the create user modal */}
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onUserCreated={handleUserCreated}
+        userType={userType}
+      />
     </div>
   );
 }
 ```
 
-# === components/features/user/user-preview-modal.tsx ===
+#### 4. Create the "Add Subject" Modal
+
+This form is simpler, so we'll use basic `useState` instead of a full form library.
+
 ```tsx
+// === NEW FILE: components/features/subject/create-subject-modal.tsx ===
 "use client";
 
-import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User } from "@/types/api.types";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AtSign, MapPin, Phone } from "lucide-react";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-export interface UserPreviewModalProps {
+export interface CreateSubjectModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  user?: User;
+  onSubjectCreated: (subjectName: string) => void;
 }
 
-export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModalProps) {
-  const renderContent = () => {
-    if (!user) {
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-6 items-center">
-            <Skeleton className="h-[120px] w-[120px] rounded-full" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-5 w-64" />
-              <Skeleton className="h-5 w-32" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-3/4" />
-          </div>
-        </div>
-      );
-    }
+export function CreateSubjectModal({
+  isOpen,
+  onOpenChange,
+  onSubjectCreated,
+}: CreateSubjectModalProps) {
+  const [subjectName, setSubjectName] = useState("");
+  const [error, setError] = useState("");
 
-    return (
-      <div className="mt-4 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="relative h-[120px] w-[120px] flex-shrink-0">
-            <Image
-              src={user.image}
-              alt={`${user.firstName} ${user.lastName}`}
-              fill
-              sizes="120px"
-              className="rounded-full object-cover border-4 border-primary/20"
-            />
-          </div>
-          <div className="flex-1 space-y-1 text-center sm:text-left">
-            {/* FIX: Removed text-gradient class */}
-            <h3 className="text-2xl font-bold text-foreground">{`${user.firstName} ${user.lastName}`}</h3>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <AtSign className="h-4 w-4" />
-              <span>{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <Phone className="h-4 w-4" />
-              <span>{user.phone}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold text-lg mb-2">Address</h4>
-          <div className="flex items-start gap-3 text-muted-foreground">
-            <MapPin className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
-            <p>{`${user.address.address}, ${user.address.city}, ${user.address.state} ${user.address.postalCode}`}</p>
-          </div>
-        </div>
-      </div>
-    );
+  const handleSave = () => {
+    const trimmedName = subjectName.trim();
+    if (trimmedName.length < 3) {
+      setError("Subject name must be at least 3 characters long.");
+      return;
+    }
+    // Convert to a slug format to match existing data
+    const slug = trimmedName.toLowerCase().replace(/\s+/g, '-');
+    onSubjectCreated(slug);
+    setSubjectName("");
+    setError("");
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>User Details</DialogTitle>
+          <DialogTitle>Add New Subject</DialogTitle>
+          <DialogDescription>
+            Enter a name for the new subject.
+          </DialogDescription>
         </DialogHeader>
-        {renderContent()}
+        <div className="space-y-2 py-4">
+            <Label htmlFor="subject-name">Subject Name</Label>
+            <Input 
+              id="subject-name"
+              value={subjectName}
+              onChange={(e) => {
+                setSubjectName(e.target.value);
+                if (error) setError("");
+              }}
+              placeholder="e.g., Creative Writing"
+            />
+            {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSave} className="button-gradient">Add Subject</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 ```
 
-# === components/features/user/user-table.tsx ===
+#### 5. Integrate "Add Subject" into the Subjects Page
+
+Finally, update the `SubjectsPage` to include the new modal and functionality.
+
 ```tsx
+// === app/(dashboard)/subjects/page.tsx (Updated) ===
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { User } from "@/types/api.types";
-import { Input } from "@/components/ui/input";
-import { Pencil, Eye, Trash2, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-
-const SUBJECTS = ['mathematics', 'physics', 'history', 'english', 'computer-science', 'biology', 'chemistry'];
-const GRADES = ['A', 'B', 'C', 'B', 'A', 'C', 'D', 'B', 'F'];
-
-interface EditableCellProps {
-  value: string;
-  onSave: (newValue: string) => void;
-}
-
-const EditableCell = ({ value, onSave }: EditableCellProps) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentValue, setCurrentValue] = useState(value);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (isEditing) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [isEditing]);
-
-  const handleSave = () => {
-    setIsEditing(false);
-    if (currentValue.trim() !== '' && currentValue !== value) {
-      onSave(currentValue);
-    } else {
-      setCurrentValue(value);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') {
-      setCurrentValue(value);
-      setIsEditing(false);
-    }
-  };
-
-  return (
-    <div className="group relative pr-4">
-      {isEditing ? (
-        <Input
-          ref={inputRef}
-          value={currentValue}
-          onChange={(e) => setCurrentValue(e.target.value)}
-          onBlur={handleSave}
-          onKeyDown={handleKeyDown}
-          className="h-8 bg-background"
-        />
-      ) : (
-        <span onClick={() => setIsEditing(true)} className="cursor-pointer flex items-center gap-2">
-          {value}
-          <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        </span>
-      )}
-    </div>
-  );
-};
-
-const DerivedCell = ({ value, className }: { value: string, className?: string }) => (
-    <span className={cn("text-muted-foreground", className)}>{value}</span>
-);
-
-interface UserTableProps {
-  users: User[];
-  type: 'student' | 'teacher';
-  onUserUpdate: (id: number, data: Partial<User>) => void;
-  onViewUser: (user: User) => void;
-  onDeleteUser: (userId: number) => void;
-}
-
-export function UserTable({ users, type, onUserUpdate, onViewUser, onDeleteUser }: UserTableProps) {
-  
-  const getDerivedData = (user: User, field: string) => {
-    switch(field) {
-        case 'grade': return GRADES[user.id % GRADES.length];
-        case 'subject': return SUBJECTS[user.id % SUBJECTS.length].replace(/-/g, ' ');
-        case 'meanGrade': return `${(user.id % 35) + 60}.0%`;
-        default: return '';
-    }
-  }
-
-  return (
-    // FIX: This container now properly handles overflow on small screens.
-    <div className="rounded-lg border bg-card backdrop-blur-xl overflow-x-auto">
-      <Table className="min-w-full">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80px]">User ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            {type === 'student' && <TableHead>Grade</TableHead>}
-            {type === 'teacher' && <TableHead>Subject</TableHead>}
-            {type === 'teacher' && <TableHead>Mean Grade</TableHead>}
-            <TableHead className="w-[50px] text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id} className="hover:bg-muted/50">
-              <TableCell className="text-muted-foreground font-mono text-xs">{user.id}</TableCell>
-              <TableCell className="font-medium">
-                <EditableCell 
-                  value={`${user.firstName} ${user.lastName}`} 
-                  onSave={(newValue) => {
-                      const [firstName, ...lastName] = newValue.split(' ');
-                      onUserUpdate(user.id, { firstName, lastName: lastName.join(' ') });
-                  }}
-                />
-              </TableCell>
-              <TableCell>
-                  <EditableCell value={user.email} onSave={(newValue) => onUserUpdate(user.id, { email: newValue })} />
-              </TableCell>
-              <TableCell>
-                <EditableCell value={user.phone} onSave={(newValue) => onUserUpdate(user.id, { phone: newValue })} />
-              </TableCell>
-                {type === 'student' && <TableCell><DerivedCell value={getDerivedData(user, 'grade')} /></TableCell>}
-                {type === 'teacher' && <TableCell className="capitalize"><DerivedCell value={getDerivedData(user, 'subject')} /></TableCell>}
-                {type === 'teacher' && <TableCell><DerivedCell value={getDerivedData(user, 'meanGrade')} /></TableCell>}
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onViewUser(user)}>
-                        <Eye className="mr-2 h-4 w-4" /> View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onDeleteUser(user.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-```
-
-# === components/features/user/user-table-skeleton.tsx ===
-```tsx
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import { useState } from "react";
+import useSWR from "swr";
+import dynamic from "next/dynamic";
+// MODIFIED: Import PlusCircle
+import { AlertTriangle, Pencil, Trash2, PlusCircle } from "lucide-react"; 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { getSubjects } from "@/lib/api";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface UserTableSkeletonProps {
-  type: 'student' | 'teacher';
-  items: number; // New prop to control how many skeleton rows to show
-}
-
-export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) {
-  const skeletonRows = Array.from({ length: items });
-
-  return (
-    <div className="rounded-lg border bg-card/80 backdrop-blur-lg overflow-x-auto">
-      <Table className="min-w-full">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80px]">User ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            {type === 'student' && <TableHead>Grade</TableHead>}
-            {type === 'teacher' && <TableHead>Subject</TableHead>}
-            {type === 'teacher' && <TableHead>Mean Grade</TableHead>}
-            <TableHead className="w-[50px] text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {skeletonRows.map((_, index) => (
-            <TableRow key={index}>
-              <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-              {type === 'teacher' && <TableCell><Skeleton className="h-4 w-24" /></TableCell>}
-              <TableCell className="text-right"><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-```
-
-# === NEW FILE: components/shared/table-pagination-controls.tsx ===
-```tsx
-"use client";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination } from "@/components/ui/pagination";
+// MODIFIED: Import all necessary data from mock-data
+import { allSubjects, mockTeachers, subjectTeacherMapping, subjectScoreData, Teacher } from "@/lib/mock-data";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { User } from "@/types/api.types";
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
+import type { UserPreviewModalProps } from "@/components/features/user/user-preview-modal";
+// NEW: Import the create subject modal
+import type { CreateSubjectModalProps } from "@/components/features/subject/create-subject-modal";
 
-interface TablePaginationControlsProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  itemsPerPage: number;
-  onItemsPerPageChange: (value: string) => void;
-  totalItems: number;
-  itemType: string;
-  itemsPerPageOptions?: number[];
-}
+const ManageInstructorsModal = dynamic(() => import("@/components/features/subject/manage-instructors-modal").then(mod => mod.ManageInstructorsModal));
+const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
+// NEW: Dynamically import create subject modal
+const CreateSubjectModal = dynamic<CreateSubjectModalProps>(() => import("@/components/features/subject/create-subject-modal").then(mod => mod.CreateSubjectModal));
 
-export function TablePaginationControls({
-  currentPage,
-  totalPages,
-  onPageChange,
-  itemsPerPage,
-  onItemsPerPageChange,
-  totalItems,
-  itemType,
-  itemsPerPageOptions = [10, 20, 30, 40, 50],
-}: TablePaginationControlsProps) {
-  const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+// ... (TeacherAvatar component remains the same) ...
+
+export default function SubjectsPage() {
+  const [period, setPeriod] = useState<Period>("this_term");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+  
+  const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
+  // ... (allUsers SWR fetch remains the same) ...
+
+  const [modalState, setModalState] = useState<{
+    manageInstructors: boolean;
+    viewTeacher: boolean;
+    createSubject: boolean; // NEW
+    subject: string | null;
+    teacher: User | null;
+  }>({ manageInstructors: false, viewTeacher: false, createSubject: false, subject: null, teacher: null });
+  
+  // ... (handleItemsPerPageChange, handleDeleteSubject, handleManageInstructors, handleViewTeacher, handleSaveInstructors remain the same) ...
+
+  // NEW: Handler for creating a subject
+  const handleSubjectCreated = (newSubjectName: string) => {
+    // Check for duplicates
+    if (allSubjects.includes(newSubjectName)) {
+      toast.error(`Subject "${newSubjectName.replace(/-/g, ' ')}" already exists.`);
+      return;
+    }
+
+    // Mutate mock data directly (since there's no backend)
+    allSubjects.push(newSubjectName);
+    subjectTeacherMapping[newSubjectName] = [];
+    Object.keys(subjectScoreData).forEach(p => {
+        subjectScoreData[p].push({ name: newSubjectName, averageScore: 0 });
+    });
+
+    // Trigger re-render for components using 'subjects' SWR key
+    mutate();
+    toast.success(`Subject "${newSubjectName.replace(/-/g, ' ')}" created successfully.`, {
+      description: "Note: This is a simulation. The new subject will disappear on page refresh.",
+    });
+  };
+
+  const totalPages = subjects ? Math.ceil(subjects.length / itemsPerPage) : 0;
+
+  // ... (renderContent function remains the same, it will automatically pick up the new subject after mutate() is called) ...
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
-      <div className="text-sm text-muted-foreground">
-        {totalItems > 0 ? `Showing ${startItem}-${endItem} of ${totalItems} ${itemType}` : `No ${itemType} found`}
-      </div>
-      <div className="flex items-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium whitespace-nowrap">Rows per page</p>
-            <Select
-              value={`${itemsPerPage}`}
-              onValueChange={onItemsPerPageChange}
-            >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={itemsPerPage} />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {itemsPerPageOptions.map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        {totalPages > 1 && (
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={onPageChange}
-            />
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Subjects Overview" description="View details for each subject offered.">
+        {/* NEW: Add Subject Button */}
+        <Button onClick={() => setModalState({ ...modalState, createSubject: true })} className="button-gradient order-first md:order-last">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Subject
+        </Button>
+        <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="this_term">This Term</SelectItem>
+            <SelectItem value="last_term">Last Term</SelectItem>
+            <SelectItem value="full_year">Full Year</SelectItem>
+          </SelectContent>
+        </Select>
+      </PageHeader>
+      
+      {renderContent()}
+      
+      {/* ... (pagination and other modals remain the same) ... */}
+      
+      {/* NEW: Render the Create Subject Modal */}
+      <CreateSubjectModal
+        isOpen={modalState.createSubject}
+        onOpenChange={(isOpen) => setModalState({ ...modalState, createSubject: isOpen })}
+        onSubjectCreated={handleSubjectCreated}
+      />
     </div>
   );
 }
 ```
+
+### Summary of Changes
+
+You now have a fully functional (within the prototype's limits) "create" flow for both users and subjects.
+
+-   **User Creation:** A robust, validated form inside a modal allows for adding new students and teachers. The UI updates optimistically, making the app feel very fast.
+-   **Subject Creation:** A simpler modal lets you add new subjects by name. The app's local mock data is updated, and SWR's `mutate` function ensures the UI reflects the change immediately.
+-   **Consistent UX:** The "Add" buttons are placed logically in the page headers, and the new modals match the style and behavior of the existing ones (`UserPreviewModal`, `ManageInstructorsModal`).
+
+This significantly enhances the practical feel of the prototype, even though the data persistence remains simulated.
