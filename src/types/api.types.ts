@@ -32,7 +32,8 @@ export interface User {
         city: string;
         postalCode: string;
         state: string;
-    }
+    },
+    subject?: string;
 }
 
 export interface UsersApiResponse {
@@ -41,5 +42,3 @@ export interface UsersApiResponse {
     skip: number;
     limit: number;
 }
-
-
