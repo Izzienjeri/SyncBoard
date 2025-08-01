@@ -8,16 +8,16 @@ import {
   ResponsiveContainer,
   Area,
 } from "recharts";
-import { attendanceData } from "@/lib/mock-data";
+import { StudentAttendance } from "@/lib/mock-data";
 
-export function AttendanceChart() {
+export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
   return (
     <div className="rounded-lg border bg-white p-4 h-full flex flex-col">
       <h3 className="font-semibold text-lg mb-2">Monthly Attendance Trends</h3>
       <div className="flex-grow">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
-            data={attendanceData}
+            data={data}
             margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
           >
             <defs>

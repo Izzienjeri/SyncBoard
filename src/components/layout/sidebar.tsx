@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
-  ClipboardCheck,
   ChevronLeft,
   ChevronRight,
   LucideProps,
@@ -31,7 +30,7 @@ const navLinks: NavLink[] = [
   { label: "Management", isHeader: true },
   { href: "/students", label: "Students", icon: Users },
   { href: "/teachers", label: "Teachers", icon: UserSquare },
-  { href: "/courses", label: "Courses", icon: BookOpen },
+  { href: "/subjects", label: "Subjects", icon: BookOpen },
 ];
 
 export function Sidebar() {

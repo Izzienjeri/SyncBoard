@@ -1,6 +1,7 @@
-import { CartsApiResponse, User, UsersApiResponse } from "@/types/api.types";
+import { User, UsersApiResponse } from "@/types/api.types";
 import { Course } from "@/types/course.types";
 import { CourseSchema } from "@/validators/course.schema";
+import { allSubjects } from "./mock-data";
 
 const DUMMY_JSON_URL = "https://dummyjson.com";
 
@@ -33,7 +34,6 @@ export async function updateUser(userId: number, userData: Partial<User>): Promi
 
 
 export async function getTotalStudents(): Promise<number> {
-  // Based on app structure where teachers are users after the first 100
   return 100;
 }
 
@@ -41,10 +41,9 @@ export async function getTotalTeachers(): Promise<number> {
   try {
     const res = await fetch(`${DUMMY_JSON_URL}/users?limit=0`);
     if (!res.ok) {
-      return 50; // Fallback
+      return 50;
     }
     const data: UsersApiResponse = await res.json();
-    // Assuming teachers are users after the first 100
     return data.total > 100 ? data.total - 100 : 0;
   } catch (e) {
     console.error("Failed to get total teachers:", e);
@@ -53,15 +52,7 @@ export async function getTotalTeachers(): Promise<number> {
 }
 
 export async function getSubjects(): Promise<string[]> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/products/categories`);
-    if (!res.ok) {
-      throw new Error("Failed to fetch subjects");
-    }
-    return await res.json();
-  } catch {
-    throw new Error("Could not retrieve subjects. Please try again later.");
-  }
+  return Promise.resolve(allSubjects);
 }
 
 
@@ -137,5 +128,3 @@ export async function deleteCourse(courseId: number): Promise<Course> {
     throw new Error("Could not delete the course.");
   }
 }
-
-

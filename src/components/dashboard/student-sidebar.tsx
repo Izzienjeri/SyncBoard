@@ -8,8 +8,7 @@ const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/students", icon: Users, label: "Students" },
   { href: "/teachers", icon: UserSquare, label: "Teachers" },
-  { href: "/courses", icon: BookOpen, label: "Courses" },
-  { href: "/enrollments", icon: ClipboardCheck, label: "Enrollments" },
+  { href: "/subjects", icon: BookOpen, label: "Subjects" },
 ];
 
 export function StudentDashboardSidebar() {

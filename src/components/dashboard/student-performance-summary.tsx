@@ -1,7 +1,5 @@
 "use client"
 
-import { useMemo } from "react";
-import useSWR from "swr";
 import {
   Table,
   TableBody,
@@ -22,10 +20,12 @@ import {
   Rectangle,
   type RectangleProps,
 } from "recharts";
-import { GradeDistribution, SubjectScore } from "@/lib/mock-data";
-import { getCourses, getUsers } from "@/lib/api";
-import { Course } from "@/types/course.types";
-import { Skeleton } from "../ui/skeleton";
+import {
+  GradeDistribution,
+  SubjectScore,
+  gradeDistributionData,
+  subjectScoreData
+} from "@/lib/mock-data";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const GRADE_COLORS = ['#2dd4bf', '#3b82f6', '#fbbd23', '#f87171', '#ef4444'];
@@ -102,63 +102,23 @@ const TopSubjectsList = ({ data }: { data: SubjectScore[] }) => (
   </Table>
 );
 
-export function StudentPerformanceSummary() {
-    const { data: studentData, isLoading: isLoadingStudents } = useSWR('https://dummyjson.com/users?limit=100', getUsers);
-    const { data: courseData, isLoading: isLoadingCourses } = useSWR('https://dummyjson.com/products?limit=0', getCourses);
+type Period = "this_term" | "last_term" | "full_year";
 
-    const gradeData: GradeDistribution[] = useMemo(() => {
-        if (!studentData) return [];
-        
-        type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
-        const distribution: Record<Grade, number> = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+export function StudentPerformanceSummary({ period }: { period: Period }) {
+  const currentGradeData = gradeDistributionData[period];
+  const currentTopSubjectsData = subjectScoreData[period];
 
-        studentData.users.forEach(student => {
-            const randomFactor = ((student.id * 17) + 31) % 100;
-            if (randomFactor < 21) {
-                distribution['A']++;
-            } else if (randomFactor < 21 + 42) {
-                distribution['B']++;
-            } else if (randomFactor < 21 + 42 + 24) {
-                distribution['C']++;
-            } else if (randomFactor < 21 + 42 + 24 + 9) {
-                distribution['D']++;
-            } else {
-                distribution['F']++;
-            }
-        });
-
-        return Object.entries(distribution).map(([grade, count]) => ({ grade, count }));
-    }, [studentData]);
-
-    const topSubjectsData: SubjectScore[] = useMemo(() => {
-        if (!courseData) return [];
-        
-        const subjects: { [key: string]: { totalScore: number, count: number } } = {};
-        
-        courseData.forEach((course: Course) => {
-            if (!subjects[course.category]) {
-                subjects[course.category] = { totalScore: 0, count: 0 };
-            }
-            subjects[course.category].totalScore += course.rating * 20;
-            subjects[course.category].count++;
-        });
-
-        return Object.entries(subjects).map(([name, data]) => ({
-            name,
-            averageScore: data.totalScore / data.count,
-        }));
-    }, [courseData]);
 
   return (
     <div className="rounded-lg border bg-card p-4 h-full flex flex-col gap-4">
       <div>
         <h3 className="font-semibold text-lg mb-2">Grade Distribution</h3>
-        {isLoadingStudents ? <Skeleton className="h-56 w-full" /> : <GradeDistributionChart data={gradeData}/>}
+        <GradeDistributionChart data={currentGradeData} />
       </div>
       <div className="border-t pt-2">
         <h3 className="font-semibold text-lg mb-2">Top Subjects</h3>
         <div className="overflow-auto">
-            {isLoadingCourses ? <Skeleton className="h-40 w-full" /> : <TopSubjectsList data={topSubjectsData}/>}
+          <TopSubjectsList data={currentTopSubjectsData} />
         </div>
       </div>
     </div>
