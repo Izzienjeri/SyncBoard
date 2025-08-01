@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import useSWR from "swr";
 import Image from "next/image";
-import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye } from "lucide-react";
+import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search } from "lucide-react";
 import { addSubject, getSubjects, getAllTeachers, updateSubject, deleteSubject } from "@/lib/api";
 import { Teacher } from "@/lib/fake-generators";
 
@@ -19,6 +19,7 @@ import { AddSubjectModal } from "@/components/features/subject/add-subject-modal
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
 import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
+import { Input } from "@/components/ui/input";
 
 type SubjectDetails = {
   name: string;
@@ -42,6 +43,7 @@ const TeacherAvatar = ({ teacher }: { teacher: Teacher }) => (
 export default function SubjectsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const [modalState, setModalState] = useState<{
     add: boolean;
@@ -67,6 +69,14 @@ export default function SubjectsPage() {
     }
     return map;
   }, [subjects, allTeachers]);
+
+  const filteredSubjects = useMemo(() => {
+    if (!subjects) return [];
+    if (!searchQuery) return subjects;
+    return subjects.filter(subject => 
+      subject.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [subjects, searchQuery]);
 
   const handleSubjectAdded = async (newSubjectName: string) => {
     try {
@@ -100,7 +110,7 @@ export default function SubjectsPage() {
     }
   };
 
-  const totalPages = subjects ? Math.ceil(subjects.length / itemsPerPage) : 0;
+  const totalPages = filteredSubjects ? Math.ceil(filteredSubjects.length / itemsPerPage) : 0;
 
   const renderContent = () => {
     if (subjectsLoading || teachersLoading) {
@@ -116,14 +126,14 @@ export default function SubjectsPage() {
           <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
         </Alert> );
     }
-    if (!subjects || subjects.length === 0) {
+    if (!filteredSubjects || filteredSubjects.length === 0) {
       return ( <div className="text-center py-10 glass-card rounded-lg">
           <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">Click &quot;Add Subject&quot; to get started.</p>
+          <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
         </div> );
     }
 
-    const paginatedSubjects = subjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const paginatedSubjects = filteredSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -132,11 +142,12 @@ export default function SubjectsPage() {
           if (!details) return null;
           
           return (
-            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group">
+            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer"
+              onClick={() => setModalState({...modalState, view: details})}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
-                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}>
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -191,14 +202,27 @@ export default function SubjectsPage() {
         </Button>
       </PageHeader>
       
+      <div className="relative w-full sm:w-64">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search subjects..."
+          value={searchQuery}
+          onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+          }}
+          className="pl-9"
+        />
+      </div>
+
       {renderContent()}
       
-      {subjects && subjects.length > 0 && (
+      {filteredSubjects && filteredSubjects.length > 0 && (
         <TablePaginationControls
           currentPage={currentPage} totalPages={totalPages}
           onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
           onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-          totalItems={subjects.length} itemType="subjects"
+          totalItems={filteredSubjects.length} itemType="subjects"
           itemsPerPageOptions={[6, 9, 12, 18]}
         />
       )}

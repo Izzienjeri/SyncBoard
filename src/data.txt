@@ -1,5 +1,5 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 16:59:56
+# Date and Time: 2025-08-01 17:21:51
 # Files Included: 38
 
 # === lib/mock-db.ts ===
@@ -612,7 +612,7 @@ export default function TeachersPage() {
 import { useState, useMemo } from "react";
 import useSWR from "swr";
 import Image from "next/image";
-import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye } from "lucide-react";
+import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search } from "lucide-react";
 import { addSubject, getSubjects, getAllTeachers, updateSubject, deleteSubject } from "@/lib/api";
 import { Teacher } from "@/lib/fake-generators";
 
@@ -628,6 +628,7 @@ import { AddSubjectModal } from "@/components/features/subject/add-subject-modal
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
 import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
+import { Input } from "@/components/ui/input";
 
 type SubjectDetails = {
   name: string;
@@ -651,6 +652,7 @@ const TeacherAvatar = ({ teacher }: { teacher: Teacher }) => (
 export default function SubjectsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [searchQuery, setSearchQuery] = useState("");
   
   const [modalState, setModalState] = useState<{
     add: boolean;
@@ -676,6 +678,14 @@ export default function SubjectsPage() {
     }
     return map;
   }, [subjects, allTeachers]);
+
+  const filteredSubjects = useMemo(() => {
+    if (!subjects) return [];
+    if (!searchQuery) return subjects;
+    return subjects.filter(subject => 
+      subject.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [subjects, searchQuery]);
 
   const handleSubjectAdded = async (newSubjectName: string) => {
     try {
@@ -709,7 +719,7 @@ export default function SubjectsPage() {
     }
   };
 
-  const totalPages = subjects ? Math.ceil(subjects.length / itemsPerPage) : 0;
+  const totalPages = filteredSubjects ? Math.ceil(filteredSubjects.length / itemsPerPage) : 0;
 
   const renderContent = () => {
     if (subjectsLoading || teachersLoading) {
@@ -725,14 +735,14 @@ export default function SubjectsPage() {
           <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
         </Alert> );
     }
-    if (!subjects || subjects.length === 0) {
+    if (!filteredSubjects || filteredSubjects.length === 0) {
       return ( <div className="text-center py-10 glass-card rounded-lg">
           <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">Click &quot;Add Subject&quot; to get started.</p>
+          <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
         </div> );
     }
 
-    const paginatedSubjects = subjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const paginatedSubjects = filteredSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -741,11 +751,12 @@ export default function SubjectsPage() {
           if (!details) return null;
           
           return (
-            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group">
+            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer"
+              onClick={() => setModalState({...modalState, view: details})}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
-                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}>
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -800,14 +811,27 @@ export default function SubjectsPage() {
         </Button>
       </PageHeader>
       
+      <div className="relative w-full sm:w-64">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search subjects..."
+          value={searchQuery}
+          onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+          }}
+          className="pl-9"
+        />
+      </div>
+
       {renderContent()}
       
-      {subjects && subjects.length > 0 && (
+      {filteredSubjects && filteredSubjects.length > 0 && (
         <TablePaginationControls
           currentPage={currentPage} totalPages={totalPages}
           onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
           onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-          totalItems={subjects.length} itemType="subjects"
+          totalItems={filteredSubjects.length} itemType="subjects"
           itemsPerPageOptions={[6, 9, 12, 18]}
         />
       )}
@@ -848,12 +872,24 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '10');
   const skip = parseInt(searchParams.get('skip') || '0');
+  const search = searchParams.get('search')?.toLowerCase() || '';
 
-  const paginatedStudents = db.students.slice(skip, skip + limit);
+  let filteredStudents = db.students;
+
+  if (search) {
+    filteredStudents = db.students.filter(student =>
+      student.firstName.toLowerCase().includes(search) ||
+      student.lastName.toLowerCase().includes(search) ||
+      student.email.toLowerCase().includes(search)
+    );
+  }
+
+  const total = filteredStudents.length;
+  const paginatedStudents = filteredStudents.slice(skip, skip + limit);
 
   return NextResponse.json({
     users: paginatedStudents,
-    total: db.students.length,
+    total: total,
     skip,
     limit,
   });
@@ -876,25 +912,35 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import { Student } from '@/lib/fake-generators';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
   const studentId = parseInt(params.id);
   const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
 
   if (studentIndex === -1) {
     return NextResponse.json({ message: 'Student not found' }, { status: 404 });
   }
+  
   const body = await request.json();
   db.students[studentIndex] = { ...db.students[studentIndex], ...body };
   return NextResponse.json(db.students[studentIndex]);
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
   const studentId = parseInt(params.id);
   const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
 
   if (studentIndex === -1) {
     return NextResponse.json({ message: 'Student not found' }, { status: 404 });
   }
+  
   const [deletedStudent] = db.students.splice(studentIndex, 1);
   return NextResponse.json({ ...deletedStudent, isDeleted: true });
 }
@@ -910,12 +956,24 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '10');
   const skip = parseInt(searchParams.get('skip') || '0');
+  const search = searchParams.get('search')?.toLowerCase() || '';
 
-  const paginatedTeachers = db.teachers.slice(skip, skip + limit);
+  let filteredTeachers = db.teachers;
+
+  if (search) {
+    filteredTeachers = db.teachers.filter(teacher =>
+      teacher.firstName.toLowerCase().includes(search) ||
+      teacher.lastName.toLowerCase().includes(search) ||
+      teacher.email.toLowerCase().includes(search)
+    );
+  }
+  
+  const total = filteredTeachers.length;
+  const paginatedTeachers = filteredTeachers.slice(skip, skip + limit);
 
   return NextResponse.json({
     users: paginatedTeachers,
-    total: db.teachers.length,
+    total: total,
     skip,
     limit,
   });
@@ -938,7 +996,8 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import { Teacher } from '@/lib/fake-generators';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params;
   const teacherId = parseInt(params.id);
   const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
 
@@ -950,7 +1009,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   return NextResponse.json(db.teachers[teacherIndex]);
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params;
   const teacherId = parseInt(params.id);
   const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
 
@@ -1004,7 +1064,8 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import { Teacher } from '@/lib/fake-generators';
 
-export async function PUT(request: Request, { params }: { params: { name: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ name: string }> }) {
+  const params = await context.params;
   const oldSubjectName = decodeURIComponent(params.name);
   const { newSubjectName, teacherIds } = await request.json();
 
@@ -1042,7 +1103,8 @@ export async function PUT(request: Request, { params }: { params: { name: string
   return NextResponse.json({ message: "Subject updated successfully." });
 }
 
-export async function DELETE(request: Request, { params }: { params: { name: string } }) {
+export async function DELETE(request: Request, context: { params: Promise<{ name: string }> }) {
+    const params = await context.params;
     const subjectNameToDelete = decodeURIComponent(params.name);
     const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
 
@@ -1075,9 +1137,10 @@ interface UseUserManagementProps {
   userType: 'student' | 'teacher';
   itemsPerPage: number;
   currentPage: number;
+  searchTerm: string;
 }
 
-export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUserManagementProps) {
+export function useUserManagement({ userType, itemsPerPage, currentPage, searchTerm }: UseUserManagementProps) {
   const [userToEdit, setUserToEdit] = useState<User | undefined>(undefined);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -1085,7 +1148,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUs
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
   const skip = (currentPage - 1) * itemsPerPage;
-  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}`;
+  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}`;
   
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
   
@@ -1708,7 +1771,12 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
         {users.map((user) => (
           <TableRow key={user.id} className="hover:bg-muted/50">
             <TableCell className="px-3 py-2 text-muted-foreground">{user.id}</TableCell>
-            <TableCell className="px-3 py-2 font-medium text-foreground">{`${user.firstName} ${user.lastName}`}</TableCell>
+            <TableCell 
+              className="px-3 py-2 font-medium text-foreground cursor-pointer hover:text-primary hover:underline"
+              onClick={() => onEditUser(user)}
+            >
+              {`${user.firstName} ${user.lastName}`}
+            </TableCell>
             <TableCell className="px-3 py-2">{user.email}</TableCell>
             <TableCell className="px-3 py-2">{user.phone}</TableCell>
             
@@ -1760,7 +1828,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema, UserFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -1777,12 +1845,32 @@ export function UserFormModal({ isOpen, onOpenChange, userToEdit, userType, onSu
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      firstName: userToEdit?.firstName ?? "",
-      lastName: userToEdit?.lastName ?? "",
-      email: userToEdit?.email ?? "",
-      phone: userToEdit?.phone ?? "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      form.reset(
+        userToEdit
+          ? {
+              firstName: userToEdit.firstName,
+              lastName: userToEdit.lastName,
+              email: userToEdit.email,
+              phone: userToEdit.phone ?? "",
+            }
+          : {
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone: "",
+            }
+      );
+    }
+  }, [isOpen, userToEdit, form]);
 
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);
@@ -2005,22 +2093,21 @@ export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) 
 ```tsx
 "use client";
 
-import useSWR from "swr";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, PlusCircle } from "lucide-react";
+import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { useUserManagement } from "@/hooks/user-management";
 import { PageHeader } from "@/components/shared/page-header";
 import { UserTable } from "@/components/features/user/user-table";
 import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import { getTotalStudents, getTotalTeachers } from "@/lib/api";
 import { User } from "@/types/api.types";
 import type { UserPreviewModalProps } from "./user-preview-modal";
 import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { Input } from "@/components/ui/input";
 
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
@@ -2035,18 +2122,29 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUserForView, setSelectedUserForView] = useState<User | undefined>(undefined);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
   const {
     data, error, isLoading,
     isFormModalOpen, userToEdit, openCreateModal, openEditModal, closeFormModal, handleFormSubmit,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
-  } = useUserManagement({ userType, itemsPerPage, currentPage });
+  } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm });
   
-  const { data: totalCount, isLoading: totalLoading } = useSWR(
-    userType === 'student' ? 'totalStudents' : 'totalTeachers',
-    userType === 'student' ? getTotalStudents : getTotalTeachers
-  );
-
+  const totalCount = data?.total;
+  const totalLoading = isLoading;
+  
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
@@ -2062,13 +2160,22 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   return (
     <>
       <div className="flex flex-col rounded-lg border bg-card overflow-hidden">
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 space-y-4">
           <PageHeader title={pageTitle} description={pageDescription}>
             <Button onClick={openCreateModal} className="button-gradient">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New {userType}
             </Button>
           </PageHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={`Search ${userType}s by name or email...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 w-full sm:w-80"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -2092,7 +2199,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
           )}
         </div>
 
-        {!totalLoading && data && data.users.length > 0 && (
+        {!totalLoading && data && (data.users.length > 0 || searchTerm) && (
           <div className="p-4 border-t">
             <TablePaginationControls
               currentPage={currentPage}

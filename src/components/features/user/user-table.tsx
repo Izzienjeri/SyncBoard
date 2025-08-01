@@ -33,7 +33,12 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
         {users.map((user) => (
           <TableRow key={user.id} className="hover:bg-muted/50">
             <TableCell className="px-3 py-2 text-muted-foreground">{user.id}</TableCell>
-            <TableCell className="px-3 py-2 font-medium text-foreground">{`${user.firstName} ${user.lastName}`}</TableCell>
+            <TableCell 
+              className="px-3 py-2 font-medium text-foreground cursor-pointer hover:text-primary hover:underline"
+              onClick={() => onEditUser(user)}
+            >
+              {`${user.firstName} ${user.lastName}`}
+            </TableCell>
             <TableCell className="px-3 py-2">{user.email}</TableCell>
             <TableCell className="px-3 py-2">{user.phone}</TableCell>
             

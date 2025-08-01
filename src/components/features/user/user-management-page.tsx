@@ -1,21 +1,20 @@
 "use client";
 
-import useSWR from "swr";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { AlertTriangle, PlusCircle } from "lucide-react";
+import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { useUserManagement } from "@/hooks/user-management";
 import { PageHeader } from "@/components/shared/page-header";
 import { UserTable } from "@/components/features/user/user-table";
 import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import { getTotalStudents, getTotalTeachers } from "@/lib/api";
 import { User } from "@/types/api.types";
 import type { UserPreviewModalProps } from "./user-preview-modal";
 import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { Input } from "@/components/ui/input";
 
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
@@ -30,18 +29,29 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUserForView, setSelectedUserForView] = useState<User | undefined>(undefined);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
 
   const {
     data, error, isLoading,
     isFormModalOpen, userToEdit, openCreateModal, openEditModal, closeFormModal, handleFormSubmit,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
-  } = useUserManagement({ userType, itemsPerPage, currentPage });
+  } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm });
   
-  const { data: totalCount, isLoading: totalLoading } = useSWR(
-    userType === 'student' ? 'totalStudents' : 'totalTeachers',
-    userType === 'student' ? getTotalStudents : getTotalTeachers
-  );
-
+  const totalCount = data?.total;
+  const totalLoading = isLoading;
+  
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
@@ -57,13 +67,22 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   return (
     <>
       <div className="flex flex-col rounded-lg border bg-card overflow-hidden">
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 space-y-4">
           <PageHeader title={pageTitle} description={pageDescription}>
             <Button onClick={openCreateModal} className="button-gradient">
               <PlusCircle className="mr-2 h-4 w-4" />
               Add New {userType}
             </Button>
           </PageHeader>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={`Search ${userType}s by name or email...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 w-full sm:w-80"
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -87,7 +106,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
           )}
         </div>
 
-        {!totalLoading && data && data.users.length > 0 && (
+        {!totalLoading && data && (data.users.length > 0 || searchTerm) && (
           <div className="p-4 border-t">
             <TablePaginationControls
               currentPage={currentPage}

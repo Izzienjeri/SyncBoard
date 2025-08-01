@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema, UserFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface UserFormModalProps {
   isOpen: boolean;
@@ -25,12 +25,32 @@ export function UserFormModal({ isOpen, onOpenChange, userToEdit, userType, onSu
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      firstName: userToEdit?.firstName ?? "",
-      lastName: userToEdit?.lastName ?? "",
-      email: userToEdit?.email ?? "",
-      phone: userToEdit?.phone ?? "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      form.reset(
+        userToEdit
+          ? {
+              firstName: userToEdit.firstName,
+              lastName: userToEdit.lastName,
+              email: userToEdit.email,
+              phone: userToEdit.phone ?? "",
+            }
+          : {
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone: "",
+            }
+      );
+    }
+  }, [isOpen, userToEdit, form]);
 
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);

@@ -9,9 +9,10 @@ interface UseUserManagementProps {
   userType: 'student' | 'teacher';
   itemsPerPage: number;
   currentPage: number;
+  searchTerm: string;
 }
 
-export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUserManagementProps) {
+export function useUserManagement({ userType, itemsPerPage, currentPage, searchTerm }: UseUserManagementProps) {
   const [userToEdit, setUserToEdit] = useState<User | undefined>(undefined);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -19,7 +20,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUs
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
   const skip = (currentPage - 1) * itemsPerPage;
-  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}`;
+  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}`;
   
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
   
