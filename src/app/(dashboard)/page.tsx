@@ -7,7 +7,6 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { AttendanceChart } from "@/components/dashboard/attendance-chart";
 import { StudentPerformanceSummary } from "@/components/dashboard/student-performance-summary";
 import { getTotalStudents, getTotalTeachers } from "@/lib/api";
-import { Bell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { attendanceData, periodStats } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,13 +47,7 @@ export default function DashboardPage() {
             <SelectItem value="full_year">Full Year</SelectItem>
           </SelectContent>
         </Select>
-        <div className="relative">
-          <Bell className="h-6 w-6 text-muted-foreground" />
-          <span className="absolute -top-1 -right-1 flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-          </span>
-        </div>
+        
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

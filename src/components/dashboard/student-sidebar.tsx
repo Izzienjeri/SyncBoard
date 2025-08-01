@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, UserSquare, BookOpen, ClipboardCheck, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare, BookOpen, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [

@@ -13,6 +13,11 @@ export type SubjectScore = {
   averageScore: number;
 };
 
+export type Teacher = {
+  id: number;
+  name: string;
+};
+
 export const periodStats = {
   this_term: {
     passRate: "85.3%",
@@ -56,6 +61,13 @@ export const subjectScoreData: Record<string, SubjectScore[]> = {
     { name: "history", averageScore: 84.0 },
     { name: "english", averageScore: 88.8 },
     { name: "mathematics", averageScore: 89.5 },
+    { name: "biology", averageScore: 85.5 },
+    { name: "chemistry", averageScore: 87.9 },
+    { name: "art-history", averageScore: 91.3 },
+    { name: "philosophy", averageScore: 92.0 },
+    { name: "economics", averageScore: 86.4 },
+    { name: "political-science", averageScore: 89.1 },
+    { name: "music-theory", averageScore: 93.7 },
   ],
   last_term: [
     { name: "computer-science", averageScore: 93.5 },
@@ -63,6 +75,13 @@ export const subjectScoreData: Record<string, SubjectScore[]> = {
     { name: "history", averageScore: 86.0 },
     { name: "english", averageScore: 90.2 },
     { name: "mathematics", averageScore: 87.5 },
+    { name: "biology", averageScore: 84.0 },
+    { name: "chemistry", averageScore: 88.2 },
+    { name: "art-history", averageScore: 89.9 },
+    { name: "philosophy", averageScore: 93.1 },
+    { name: "economics", averageScore: 85.0 },
+    { name: "political-science", averageScore: 88.0 },
+    { name: "music-theory", averageScore: 91.5 },
   ],
   full_year: [
     { name: "computer-science", averageScore: 94.1 },
@@ -70,6 +89,13 @@ export const subjectScoreData: Record<string, SubjectScore[]> = {
     { name: "history", averageScore: 85.0 },
     { name: "english", averageScore: 89.8 },
     { name: "mathematics", averageScore: 88.5 },
+    { name: "biology", averageScore: 84.8 },
+    { name: "chemistry", averageScore: 88.0 },
+    { name: "art-history", averageScore: 90.5 },
+    { name: "philosophy", averageScore: 92.5 },
+    { name: "economics", averageScore: 85.7 },
+    { name: "political-science", averageScore: 88.5 },
+    { name: "music-theory", averageScore: 92.6 },
   ]
 };
 
@@ -102,3 +128,29 @@ export const allSubjects: string[] = [
   "political-science",
   "music-theory",
 ];
+
+export const mockTeachers: Teacher[] = [
+  { id: 1, name: "Dr. Evelyn Reed" },
+  { id: 2, name: "Mr. Samuel Carter" },
+  { id: 3, name: "Ms. Eleanor Vance" },
+  { id: 4, name: "Prof. Arthur Chen" },
+  { id: 5, name: "Dr. Isabella Rossi" },
+  { id: 6, name: "Mr. Benjamin Grant" },
+  { id: 7, name: "Ms. Olivia Hayes" },
+  { id: 8, name: "Prof. Liam Goldberg" },
+];
+
+export const subjectTeacherMapping: Record<string, number[]> = {
+  "mathematics": [1, 6],
+  "physics": [4, 1],
+  "history": [3, 7],
+  "english": [2, 5],
+  "computer-science": [4, 8],
+  "biology": [5, 1],
+  "chemistry": [5, 4],
+  "art-history": [3],
+  "philosophy": [7],
+  "economics": [2, 6],
+  "political-science": [7, 8],
+  "music-theory": [3, 2],
+};
