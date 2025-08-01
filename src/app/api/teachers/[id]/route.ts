@@ -1,9 +1,14 @@
+
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import type { Teacher } from '@/lib/schemas';
 
-export async function PUT(request: Request, context: { params: { id: string } }) {
-  const teacherId = parseInt(context.params.id);
+export async function PUT(
+  request: Request, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const teacherId = parseInt(id);
   const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
 
   if (teacherIndex === -1) {
@@ -14,8 +19,12 @@ export async function PUT(request: Request, context: { params: { id: string } })
   return NextResponse.json(db.teachers[teacherIndex]);
 }
 
-export async function DELETE(request: Request, context: { params: { id: string } }) {
-  const teacherId = parseInt(context.params.id);
+export async function DELETE(
+  request: Request, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const teacherId = parseInt(id);
   const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
 
   if (teacherIndex === -1) {

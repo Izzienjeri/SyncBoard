@@ -1,9 +1,14 @@
+
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import type { Teacher } from '@/lib/schemas';
 
-export async function PUT(request: Request, context: { params: { name: string } }) {
-  const oldSubjectName = decodeURIComponent(context.params.name);
+export async function PUT(
+  request: Request, 
+  { params }: { params: Promise<{ name: string }> }
+) {
+  const { name } = await params;
+  const oldSubjectName = decodeURIComponent(name);
   const { newSubjectName, teacherIds } = await request.json();
 
   const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === oldSubjectName.toLowerCase());
@@ -40,21 +45,26 @@ export async function PUT(request: Request, context: { params: { name: string } 
   return NextResponse.json({ message: "Subject updated successfully." });
 }
 
-export async function DELETE(request: Request, context: { params: { name: string } }) {
-    const subjectNameToDelete = decodeURIComponent(context.params.name);
-    const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
+export async function DELETE(
+  request: Request, 
+  { params }: { params: Promise<{ name: string }> }
+) {
+  const { name } = await params;
+  const subjectNameToDelete = decodeURIComponent(name);
+  const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
 
-    if (subjectIndex === -1) {
-        return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
-    }
+  if (subjectIndex === -1) {
+      return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
+  }
 
-    db.subjects.splice(subjectIndex, 1);
+  db.subjects.splice(subjectIndex, 1);
 
-    db.teachers.forEach((teacher: Teacher) => {
-        if (teacher.subject.toLowerCase() === subjectNameToDelete.toLowerCase()) {
-            teacher.subject = 'Unassigned';
-        }
-    });
-    
-    return NextResponse.json({ message: `Subject "${subjectNameToDelete}" deleted successfully.` });
+  db.teachers.forEach((teacher: Teacher) => {
+      if (teacher.subject.toLowerCase() === subjectNameToDelete.toLowerCase()) {
+          teacher.subject = 'Unassigned';
+      }
+  });
+  
+  return NextResponse.json({ message: `Subject "${subjectNameToDelete}" deleted successfully.` });
 }
+

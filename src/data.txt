@@ -1,6 +1,6 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 20:11:20
-# Files Included: 39
+# Date and Time: 2025-08-01 20:32:20
+# Files Included: 37
 
 # === lib/mock-db.ts ===
 ```ts
@@ -57,14 +57,7 @@ export type SubjectScore = {
   averageScore: number;
 };
 
-export type Teacher = {
-  id: number;
-  name:string;
-}
 
-// REMOVED: periodStats object
-
-// REMOVED: gradeDistributionData object
 
 export const subjectScoreData: Record<string, SubjectScore[]> = {
   this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],
@@ -582,6 +575,9 @@ export default function DashboardPage() {
          {statsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Pass Rate" value={statsData?.passRate ?? 'N/A'} change="Calculated" className="bg-chart-3/20 border-chart-3/50" />}
          <StatCard title="Avg. Attendance" value={currentAvgAttendance.avgAttendance} change={currentAvgAttendance.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
       </div>
+
+      {/* ACCESSIBILITY FIX: Add a visually hidden h2 to maintain heading order */}
+      <h2 className="sr-only">Performance and Attendance Overview</h2>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
         <div className="xl:col-span-3">
@@ -1329,51 +1325,33 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
 }
 ```
 
+# === types/recharts.d.ts ===
+```ts
+declare module 'recharts/lib/chart/LineChart';
+declare module 'recharts/lib/chart/BarChart';
+
+declare module 'recharts/lib/component/ResponsiveContainer';
+declare module 'recharts/lib/component/Tooltip';
+declare module 'recharts/lib/component/Cell';
+
+declare module 'recharts/lib/cartesian/XAxis';
+declare module 'recharts/lib/cartesian/YAxis';
+declare module 'recharts/lib/cartesian/Area';
+declare module 'recharts/lib/cartesian/Line';
+declare module 'recharts/lib/cartesian/Bar';
+
+declare module 'recharts/lib/shape/Rectangle';
+```
+
 # === types/api.types.ts ===
 ```ts
 import type { AppUser } from "@/lib/schemas";
-
-export interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  discountPercentage: number;
-  rating: number;
-  stock: number;
-  brand: string;
-  category: string;
-  thumbnail: string;
-  images: string[];
-}
-
-export interface ProductsApiResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
-}
 
 export interface UsersApiResponse {
     users: AppUser[];
     total: number;
     skip: number;
     limit: number;
-}
-```
-
-# === components/theme-provider.tsx ===
-```tsx
-"use client";
-
-import * as React from "react";
-import {
-  ThemeProvider as NextThemesProvider,
-  type ThemeProviderProps,
-} from "next-themes";
-
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 ```
 
@@ -1574,15 +1552,14 @@ export function StatCard({ title, value, change, isNegative = false, className }
 # === components/dashboard/attendance-chart.tsx ===
 ```tsx
 "use client";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-} from "recharts";
+import { Area } from 'recharts/lib/cartesian/Area';
+import { Line } from 'recharts/lib/cartesian/Line';
+import { XAxis } from 'recharts/lib/cartesian/XAxis';
+import { YAxis } from 'recharts/lib/cartesian/YAxis';
+import { LineChart } from 'recharts/lib/chart/LineChart';
+import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
+import { Tooltip } from 'recharts/lib/component/Tooltip';
+
 import { StudentAttendance } from "@/lib/mock-data";
 
 export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
@@ -1614,7 +1591,8 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value) => `${value}%`}
+              // FIX: Explicitly type 'value' as number
+              tickFormatter={(value: number) => `${value}%`}
             />
             <Tooltip
               contentStyle={{
@@ -1622,6 +1600,7 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
                 border: "1px solid #e2e8f0",
                 borderRadius: "0.5rem",
               }}
+              // FIX: Explicitly type 'value' as number (already done here, but good practice to confirm)
               formatter={(value: number) => [`${value}%`, "Attendance"]}
             />
             <Area
@@ -1667,9 +1646,7 @@ export function StudentDashboardSidebar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
-    }
+    setIsMenuOpen(false);
   }, [pathname]);
 
   const navLinks = navItems.map((item) => {
@@ -1734,9 +1711,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, type RectangleProps,
-} from "recharts";
+import { Rectangle } from 'recharts/lib/shape/Rectangle';
+import type { RectangleProps } from 'recharts';
+
+import { Bar } from 'recharts/lib/cartesian/Bar';
+import { XAxis } from 'recharts/lib/cartesian/XAxis';
+import { YAxis } from 'recharts/lib/cartesian/YAxis';
+import { BarChart } from 'recharts/lib/chart/BarChart';
+import { Cell } from 'recharts/lib/component/Cell';
+import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
+import { Tooltip } from 'recharts/lib/component/Tooltip';
+
 import type { GradeDistribution, SubjectScore } from "@/lib/mock-data";
 import { subjectScoreData } from "@/lib/mock-data";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
@@ -1814,36 +1799,6 @@ export function StudentPerformanceSummary({ gradeDistribution }: { gradeDistribu
         </div>
       </div>
     </div>
-  );
-}
-```
-
-# === components/dashboard/mobile-header.tsx ===
-```tsx
-"use client";
-import { BookOpen, Menu } from "lucide-react";
-
-interface MobileHeaderProps {
-  onMenuClick: () => void;
-}
-
-export function MobileHeader({ onMenuClick }: MobileHeaderProps) {
-  return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
-      <div className="flex items-center gap-2">
-        <div className="p-2 bg-primary rounded-lg">
-          <BookOpen className="h-5 w-5 text-primary-foreground" />
-        </div>
-        <span className="text-lg font-bold">SyncBoard</span>
-      </div>
-      <button
-        onClick={onMenuClick}
-        className="rounded-md p-2 text-muted-foreground hover:bg-muted"
-      >
-        <Menu className="h-6 w-6" />
-        <span className="sr-only">Open menu</span>
-      </button>
-    </header>
   );
 }
 ```
@@ -2027,92 +1982,6 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
             </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/features/user/user-preview-modal.tsx ===
-```tsx
-"use client";
-
-import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { AppUser } from "@/lib/schemas";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AtSign, MapPin, Phone } from "lucide-react";
-
-export interface UserPreviewModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  user?: AppUser;
-}
-
-export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModalProps) {
-  const renderContent = () => {
-    if (!user) {
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-6 items-center">
-            <Skeleton className="h-[120px] w-[120px] rounded-full" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-5 w-64" />
-              <Skeleton className="h-5 w-32" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-3/4" />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-4 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="relative h-[120px] w-[120px] flex-shrink-0">
-            <Image
-              src={user.image}
-              alt={`${user.firstName} ${user.lastName}`}
-              fill
-              sizes="120px"
-              className="rounded-full object-cover border-4 border-primary/20"
-            />
-          </div>
-          <div className="flex-1 space-y-1 text-center sm:text-left">
-            <h3 className="text-2xl font-bold text-foreground">{`${user.firstName} ${user.lastName}`}</h3>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <AtSign className="h-4 w-4" />
-              <span>{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <Phone className="h-4 w-4" />
-              <span>{user.phone}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold text-lg mb-2">Address</h4>
-          <div className="flex items-start gap-3 text-muted-foreground">
-            <MapPin className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
-            <p>{`${user.address.address}, ${user.address.city}, ${user.address.state} ${user.address.postalCode}`}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>User Details</DialogTitle>
-        </DialogHeader>
-        {renderContent()}
       </DialogContent>
     </Dialog>
   );

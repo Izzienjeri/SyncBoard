@@ -13,14 +13,7 @@ export type SubjectScore = {
   averageScore: number;
 };
 
-export type Teacher = {
-  id: number;
-  name:string;
-}
 
-// REMOVED: periodStats object
-
-// REMOVED: gradeDistributionData object
 
 export const subjectScoreData: Record<string, SubjectScore[]> = {
   this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],

@@ -69,6 +69,9 @@ export default function DashboardPage() {
          <StatCard title="Avg. Attendance" value={currentAvgAttendance.avgAttendance} change={currentAvgAttendance.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
       </div>
 
+      {/* ACCESSIBILITY FIX: Add a visually hidden h2 to maintain heading order */}
+      <h2 className="sr-only">Performance and Attendance Overview</h2>
+
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
         <div className="xl:col-span-3">
           <AttendanceChart data={currentAttendanceData} />

@@ -4,9 +4,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, type RectangleProps,
-} from "recharts";
+import { Rectangle } from 'recharts/lib/shape/Rectangle';
+import type { RectangleProps } from 'recharts';
+
+import { Bar } from 'recharts/lib/cartesian/Bar';
+import { XAxis } from 'recharts/lib/cartesian/XAxis';
+import { YAxis } from 'recharts/lib/cartesian/YAxis';
+import { BarChart } from 'recharts/lib/chart/BarChart';
+import { Cell } from 'recharts/lib/component/Cell';
+import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
+import { Tooltip } from 'recharts/lib/component/Tooltip';
+
 import type { GradeDistribution, SubjectScore } from "@/lib/mock-data";
 import { subjectScoreData } from "@/lib/mock-data";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";

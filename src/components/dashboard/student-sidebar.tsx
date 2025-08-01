@@ -17,9 +17,7 @@ export function StudentDashboardSidebar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
-    }
+    setIsMenuOpen(false);
   }, [pathname]);
 
   const navLinks = navItems.map((item) => {
