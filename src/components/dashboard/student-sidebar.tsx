@@ -17,11 +17,9 @@ export function StudentDashboardSidebar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Close the mobile menu whenever the route changes
     if (isMenuOpen) {
       setIsMenuOpen(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const navLinks = navItems.map((item) => {
@@ -53,13 +51,12 @@ export function StudentDashboardSidebar() {
         <button
           className="lg:hidden rounded-md p-2 -mr-2"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
         >
+          <span className="sr-only">Toggle menu</span>
           {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
       
-      {/* Mobile menu dropdown */}
       <div
         className={cn(
           "transition-all duration-300 ease-in-out overflow-hidden lg:hidden",
@@ -71,7 +68,6 @@ export function StudentDashboardSidebar() {
         </nav>
       </div>
 
-      {/* Desktop menu */}
       <nav className="hidden lg:flex flex-col gap-2">
         {navLinks}
       </nav>

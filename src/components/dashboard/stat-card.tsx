@@ -16,7 +16,7 @@ export function StatCard({ title, value, change, isNegative = false, className }
       <p
         className={cn(
           "text-xs font-semibold",
-          isNegative ? "text-red-500" : "text-green-500"
+          isNegative ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
         )}
       >
         {change}

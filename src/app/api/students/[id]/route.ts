@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
-import { Student } from '@/lib/fake-generators';
+import type { Student } from '@/lib/schemas';
 
 export async function PUT(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const params = await context.params;
-  const studentId = parseInt(params.id);
+  const studentId = parseInt(context.params.id);
   const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
 
   if (studentIndex === -1) {
@@ -21,10 +20,9 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
-  const params = await context.params;
-  const studentId = parseInt(params.id);
+  const studentId = parseInt(context.params.id);
   const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
 
   if (studentIndex === -1) {

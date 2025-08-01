@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
-import { createRandomStudent, Student } from '@/lib/fake-generators';
+import { createRandomStudent } from '@/lib/fake-generators';
+import type { Student } from '@/lib/schemas';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

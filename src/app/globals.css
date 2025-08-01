@@ -5,7 +5,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
@@ -87,7 +87,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply text-foreground antialiased bg-background;
+    @apply font-sans text-foreground antialiased bg-background;
   }
 }
 
@@ -96,12 +96,11 @@
     @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-secondary;
   }
   .button-gradient {
-    @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30;
+    @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-[background-color,box-shadow,transform] duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03];
   }
   .glass-card {
     @apply bg-card/80 dark:bg-card/70 backdrop-blur-lg border shadow-lg shadow-black/10 dark:shadow-black/20;
   }
-  /* IMPROVEMENT: New utility class for the requested background gradient */
   .background-gradient-custom {
     background: hsla(191, 75%, 60%, 1);
     background: linear-gradient(90deg, hsla(191, 75%, 60%, 1) 0%, hsla(248, 87%, 36%, 1) 100%);

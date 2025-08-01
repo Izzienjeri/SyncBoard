@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
-import { Teacher } from '@/lib/fake-generators';
+import type { Teacher } from '@/lib/schemas';
 
-export async function PUT(request: Request, context: { params: Promise<{ name: string }> }) {
-  const params = await context.params;
-  const oldSubjectName = decodeURIComponent(params.name);
+export async function PUT(request: Request, context: { params: { name: string } }) {
+  const oldSubjectName = decodeURIComponent(context.params.name);
   const { newSubjectName, teacherIds } = await request.json();
 
   const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === oldSubjectName.toLowerCase());
@@ -41,9 +40,8 @@ export async function PUT(request: Request, context: { params: Promise<{ name: s
   return NextResponse.json({ message: "Subject updated successfully." });
 }
 
-export async function DELETE(request: Request, context: { params: Promise<{ name: string }> }) {
-    const params = await context.params;
-    const subjectNameToDelete = decodeURIComponent(params.name);
+export async function DELETE(request: Request, context: { params: { name: string } }) {
+    const subjectNameToDelete = decodeURIComponent(context.params.name);
     const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
 
     if (subjectIndex === -1) {

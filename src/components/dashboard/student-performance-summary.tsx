@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, type RectangleProps,
 } from "recharts";
-import { GradeDistribution, SubjectScore, subjectScoreData } from "@/lib/mock-data";
+import type { GradeDistribution, SubjectScore } from "@/lib/mock-data";
+import { subjectScoreData } from "@/lib/mock-data";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const GRADE_COLORS = ['#2dd4bf', '#3b82f6', '#fbbd23', '#f87171', '#ef4444'];
@@ -68,17 +69,16 @@ const TopSubjectsList = ({ data }: { data: SubjectScore[] }) => (
 );
 
 export function StudentPerformanceSummary({ gradeDistribution }: { gradeDistribution?: GradeDistribution[] }) {
-  // Top subjects data can remain static for this exercise
   const currentTopSubjectsData = subjectScoreData["full_year"];
 
   return (
     <div className="rounded-lg border bg-card p-4 h-full flex flex-col gap-4">
       <div>
-        <h3 className="font-semibold text-lg mb-2">Grade Distribution</h3>
+        <h2 className="font-semibold text-lg mb-2">Grade Distribution</h2>
         {gradeDistribution ? <GradeDistributionChart data={gradeDistribution} /> : <p className="text-center text-muted-foreground p-8">Loading stats...</p>}
       </div>
       <div className="border-t pt-2">
-        <h3 className="font-semibold text-lg mb-2">Top Subjects</h3>
+        <h2 className="font-semibold text-lg mb-2">Top Subjects</h2>
         <div className="overflow-auto">
           <TopSubjectsList data={currentTopSubjectsData} />
         </div>

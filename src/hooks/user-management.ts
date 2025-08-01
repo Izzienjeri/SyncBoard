@@ -3,8 +3,7 @@ import useSWR, { MutatorCallback } from "swr";
 import { toast } from "sonner";
 import { UsersApiResponse } from "@/types/api.types";
 import { addUser, deleteUser as deleteUserApi, fetcher, updateUser } from "@/lib/api";
-import { UserFormValues } from "@/lib/schemas";
-import { AppUser } from "@/lib/fake-generators";
+import { UserFormValues, AppUser } from "@/lib/schemas";
 
 interface UseUserManagementProps {
   userType: 'student' | 'teacher';

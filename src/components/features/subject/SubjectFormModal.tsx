@@ -7,9 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Teacher } from "@/lib/fake-generators";
+import type { Teacher } from "@/lib/schemas";
 import { Checkbox } from "@/components/ui/checkbox";
-import { subjectSchema, SubjectFormValues } from "@/lib/schemas";
+import { subjectSchema, type SubjectFormValues } from "@/lib/schemas";
 import { toast } from "sonner";
 
 interface SubjectFormModalProps {

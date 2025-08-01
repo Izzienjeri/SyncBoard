@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AppUser } from "@/lib/fake-generators";
+import type { AppUser } from "@/lib/schemas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AtSign, MapPin, Phone } from "lucide-react";
 

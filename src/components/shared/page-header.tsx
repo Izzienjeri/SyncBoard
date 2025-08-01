@@ -16,7 +16,6 @@ export function PageHeader({
   return (
     <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4", className)} {...props}>
       <div className="space-y-2">
-        {/* FIX: Removed text-gradient class */}
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
           {title}
         </h1>

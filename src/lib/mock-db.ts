@@ -1,4 +1,5 @@
-import { Student, Teacher, createRandomStudent, createRandomTeacher } from './fake-generators';
+import { createRandomStudent, createRandomTeacher } from './fake-generators';
+import type { Student, Teacher } from './schemas';
 
 const initialSubjects = [
   "mathematics", "physics", "history", "english", "computer-science",

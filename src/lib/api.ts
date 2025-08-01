@@ -1,4 +1,4 @@
-import { AppUser, Teacher } from "@/lib/fake-generators";
+import type { AppUser, Teacher } from "@/lib/schemas";
 
 /**
  * A generic fetcher function for use with SWR.

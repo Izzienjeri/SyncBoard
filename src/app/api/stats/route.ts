@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
-import { Student } from '@/lib/fake-generators';
+import type { Student } from '@/lib/schemas';
 
 export async function GET() {
   const students: Student[] = db.students;

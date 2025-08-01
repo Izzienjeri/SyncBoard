@@ -1,4 +1,4 @@
-import { AppUser } from "@/lib/fake-generators";
+import type { AppUser } from "@/lib/schemas";
 
 export interface Product {
   id: number;
@@ -21,8 +21,6 @@ export interface ProductsApiResponse {
   limit: number;
 }
 
-// The old User interface is removed.
-// All API responses will now use the AppUser discriminated union.
 export interface UsersApiResponse {
     users: AppUser[];
     total: number;

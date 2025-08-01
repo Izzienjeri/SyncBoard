@@ -5,7 +5,7 @@ import useSWR from "swr";
 import Image from "next/image";
 import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search, MoreHorizontal } from "lucide-react";
 import { addSubject, getSubjects, getAllTeachers, updateSubject, deleteSubject } from "@/lib/api";
-import { Teacher } from "@/lib/fake-generators";
+import type { Teacher } from "@/lib/schemas";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
 import { SubjectFormModal } from "@/components/features/subject/SubjectFormModal";
 import { Input } from "@/components/ui/input";
-import { SubjectFormValues } from "@/lib/schemas";
+import type { SubjectFormValues } from "@/lib/schemas";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -161,7 +161,7 @@ export default function SubjectsPage() {
           if (!details) return null;
           
           return (
-            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 cursor-pointer"
+            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300 cursor-pointer"
               onClick={() => setModalState({...modalState, view: details})}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -233,6 +233,8 @@ export default function SubjectsPage() {
         <Select value={sortOption} onValueChange={setSortOption}><SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Sort by..." /></SelectTrigger><SelectContent><SelectItem value="name-asc">Name (A-Z)</SelectItem><SelectItem value="name-desc">Name (Z-A)</SelectItem><SelectItem value="students-desc">Most Students</SelectItem><SelectItem value="students-asc">Fewest Students</SelectItem><SelectItem value="grade-desc">Highest Grade</SelectItem><SelectItem value="grade-asc">Lowest Grade</SelectItem></SelectContent></Select>
       </div>
 
+      {/* ACCESSIBILITY: Add sr-only heading to fix heading order */}
+      <h2 className="sr-only">All Subjects</h2>
       {renderContent()}
       
       {sortedSubjects && sortedSubjects.length > 0 && (

@@ -10,7 +10,7 @@ import { getTotalStudents, getTotalTeachers, fetcher } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { attendanceData } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GradeDistribution } from "@/lib/mock-data";
+import type { GradeDistribution } from "@/lib/mock-data";
 
 const AttendanceChart = dynamic(() => import("@/components/dashboard/attendance-chart").then(mod => mod.AttendanceChart), {
   ssr: false,

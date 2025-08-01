@@ -4,18 +4,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { userSchema, UserFormValues } from "@/lib/schemas";
+import { userSchema, type UserFormValues, type AppUser } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
-import { AppUser } from "@/lib/fake-generators"; // Use AppUser
 
 interface UserFormModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   userType: 'student' | 'teacher';
   onSubmit: (data: UserFormValues) => Promise<void>;
-  initialData?: AppUser | null; // Use AppUser
+  initialData?: AppUser | null;
 }
 
 export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initialData }: UserFormModalProps) {
