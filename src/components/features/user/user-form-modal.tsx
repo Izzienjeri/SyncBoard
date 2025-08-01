@@ -2,25 +2,23 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { User } from "@/types/api.types";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema, UserFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { User } from "@/types/api.types";
 
 interface UserFormModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  userToEdit?: User;
   userType: 'student' | 'teacher';
-  onSubmit: (data: UserFormValues, userId?: number) => Promise<void>;
+  onSubmit: (data: Partial<User>) => Promise<void>;
 }
 
-export function UserFormModal({ isOpen, onOpenChange, userToEdit, userType, onSubmit }: UserFormModalProps) {
+export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit }: UserFormModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isEditMode = !!userToEdit;
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -32,46 +30,33 @@ export function UserFormModal({ isOpen, onOpenChange, userToEdit, userType, onSu
     },
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      form.reset(
-        userToEdit
-          ? {
-              firstName: userToEdit.firstName,
-              lastName: userToEdit.lastName,
-              email: userToEdit.email,
-              phone: userToEdit.phone ?? "",
-            }
-          : {
-              firstName: "",
-              lastName: "",
-              email: "",
-              phone: "",
-            }
-      );
-    }
-  }, [isOpen, userToEdit, form]);
-
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);
     try {
-      await onSubmit(data, userToEdit?.id);
+      await onSubmit(data);
       onOpenChange(false);
+      form.reset();
     } catch {
+      // Error is handled by the hook, which re-throws to keep the modal open
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  const handleModalOpenChange = (open: boolean) => {
+    if (!open) {
+      form.reset();
+    }
+    onOpenChange(open);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleModalOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? `Edit ${userType}` : `Add New ${userType}`}</DialogTitle>
+          <DialogTitle>Add New {userType}</DialogTitle>
           <DialogDescription>
-            {isEditMode
-              ? `Update the details for ${userToEdit.firstName} ${userToEdit.lastName}.`
-              : `Enter the details for the new ${userType}. Click save when you're done.`}
+            Enter the details for the new {userType}. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -127,7 +112,7 @@ export function UserFormModal({ isOpen, onOpenChange, userToEdit, userType, onSu
                 Cancel
               </Button>
               <Button type="submit" className="button-gradient" disabled={isSubmitting || !form.formState.isValid}>
-                {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Save User')}
+                {isSubmitting ? 'Saving...' : 'Save User'}
               </Button>
             </div>
           </form>

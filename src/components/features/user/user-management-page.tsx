@@ -10,14 +10,14 @@ import { UserTableSkeleton } from "@/components/features/user/user-table-skeleto
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
 import { User } from "@/types/api.types";
-import type { UserPreviewModalProps } from "./user-preview-modal";
+import { Student, Teacher } from "@/lib/fake-generators";
 import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
+import useSWR from "swr";
+import { getSubjects } from "@/lib/api";
 
 interface UserManagementPageProps {
   userType: 'student' | 'teacher';
@@ -28,11 +28,15 @@ interface UserManagementPageProps {
 export function UserManagementPage({ userType, pageTitle, pageDescription }: UserManagementPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [selectedUserForView, setSelectedUserForView] = useState<User | undefined>(undefined);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('name-asc');
+
+  // State for inline editing
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editedUserData, setEditedUserData] = useState<Partial<User & Student & Teacher>>({});
+  
+  const { data: allSubjects } = useSWR(userType === 'teacher' ? '/api/subjects' : null, getSubjects);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [by, order] = sortOption.split('-');
@@ -44,15 +48,12 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
     }, 300);
-
-    return () => {
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [searchTerm]);
 
   const {
-    data, error, isLoading,
-    isFormModalOpen, userToEdit, openCreateModal, openEditModal, closeFormModal, handleFormSubmit,
+    data, error, isLoading, handleCreateUser, handleUpdateUser,
+    isCreateModalOpen, openCreateModal, closeCreateModal,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
   } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm, sortBy, sortOrder });
   
@@ -62,10 +63,29 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     setItemsPerPage(Number(value));
     setCurrentPage(1);
   };
-  
-  const handleViewUser = (user: User) => {
-    setSelectedUserForView(user);
-    setIsViewModalOpen(true);
+
+  // Inline editing handlers
+  const handleStartEdit = (user: User) => {
+    setEditingUserId(user.id);
+    setEditedUserData(user);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUserId(null);
+    setEditedUserData({});
+  };
+
+  const handleEditDataChange = (field: keyof (User & Student & Teacher), value: string) => {
+    setEditedUserData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveEdit = async (userId: number) => {
+    try {
+      await handleUpdateUser(userId, editedUserData);
+      handleCancelEdit();
+    } catch {
+      // Error is shown via toast in the hook, so we just stay in edit mode
+    }
   };
 
   const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
@@ -124,9 +144,14 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
             <UserTable
               users={data.users}
               type={userType}
-              onViewUser={handleViewUser}
-              onEditUser={openEditModal}
               onDeleteUser={openDeleteDialog}
+              editingUserId={editingUserId}
+              editedUserData={editedUserData}
+              onStartEdit={handleStartEdit}
+              onCancelEdit={handleCancelEdit}
+              onSaveEdit={handleSaveEdit}
+              onEditDataChange={handleEditDataChange}
+              allSubjects={allSubjects}
             />
           )}
         </div>
@@ -147,21 +172,12 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       </div>
 
       <UserFormModal
-        isOpen={isFormModalOpen}
-        onOpenChange={closeFormModal}
-        userToEdit={userToEdit}
+        isOpen={isCreateModalOpen}
+        onOpenChange={closeCreateModal}
         userType={userType}
-        onSubmit={handleFormSubmit}
+        onSubmit={handleCreateUser}
       />
-
-      {isViewModalOpen && (
-        <UserPreviewModal
-            isOpen={isViewModalOpen}
-            onOpenChange={setIsViewModalOpen}
-            user={selectedUserForView}
-        />
-      )}
-
+      
       <ConfirmationDialog
         isOpen={!!userToDelete}
         onOpenChange={(isOpen) => !isOpen && closeDeleteDialog()}

@@ -2,8 +2,7 @@ import { useState, useMemo } from "react";
 import useSWR, { MutatorCallback } from "swr";
 import { toast } from "sonner";
 import { User, UsersApiResponse } from "@/types/api.types";
-import { addUser, updateUser, deleteUser as deleteUserApi, fetcher } from "@/lib/api";
-import { UserFormValues } from "@/lib/schemas";
+import { addUser, deleteUser as deleteUserApi, fetcher, updateUser } from "@/lib/api";
 
 interface UseUserManagementProps {
   userType: 'student' | 'teacher';
@@ -15,9 +14,8 @@ interface UseUserManagementProps {
 }
 
 export function useUserManagement({ userType, itemsPerPage, currentPage, searchTerm, sortBy, sortOrder }: UseUserManagementProps) {
-  const [userToEdit, setUserToEdit] = useState<User | undefined>(undefined);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
@@ -25,23 +23,29 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
   
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
-  
 
-  const handleFormSubmit = async (formData: UserFormValues, userId?: number) => {
+  const handleCreateUser = async (userData: Partial<User>) => {
     try {
-      if (userId) {
-        await updateUser(userType, userId, formData);
-        toast.success(`${entityName} updated successfully!`);
-      } else {
-        await addUser(userType, formData);
+        await addUser(userType, userData);
         toast.success(`${entityName} added successfully.`);
-      }
-      mutate(); 
+        mutate(); 
     } catch (err) {
-      const message = err instanceof Error ? err.message : `Failed to save ${entityName.toLowerCase()}.`;
-      toast.error(message);
+        const message = err instanceof Error ? err.message : `Failed to save ${entityName.toLowerCase()}.`;
+        toast.error(message);
+        throw err; // Re-throw to keep modal open on error
     }
-  };
+  }
+
+  const handleUpdateUser = async (userId: number, userData: Partial<User>) => {
+    try {
+      await updateUser(userType, userId, userData);
+      toast.success(`${entityName} updated successfully.`);
+      mutate();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed.');
+      throw err;
+    }
+  }
   
   const handleDeleteUser = async (userId: number) => {
     const optimisticData: MutatorCallback<UsersApiResponse> = (currentData) => {
@@ -61,33 +65,21 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
     }
   };
   
-  const openCreateModal = () => {
-    setUserToEdit(undefined);
-    setIsFormModalOpen(true);
-  };
-  
-  const openEditModal = (user: User) => {
-    setUserToEdit(user);
-    setIsFormModalOpen(true);
-  };
-  
-  const openDeleteDialog = (user: User) => {
-    setUserToDelete(user);
-  };
-
-  const closeFormModal = () => setIsFormModalOpen(false);
+  const openCreateModal = () => setIsCreateModalOpen(true);
+  const closeCreateModal = () => setIsCreateModalOpen(false);
+  const openDeleteDialog = (user: User) => setUserToDelete(user);
   const closeDeleteDialog = () => setUserToDelete(null);
 
   return {
     data,
     error,
     isLoading,
-    isFormModalOpen,
-    userToEdit,
+    mutate,
+    isCreateModalOpen,
     openCreateModal,
-    openEditModal,
-    closeFormModal,
-    handleFormSubmit,
+    closeCreateModal,
+    handleCreateUser,
+    handleUpdateUser,
     userToDelete,
     openDeleteDialog,
     closeDeleteDialog,
