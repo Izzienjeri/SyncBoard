@@ -1,6 +1,38 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 15:51:17
-# Files Included: 30
+# Date and Time: 2025-08-01 16:17:01
+# Files Included: 35
+
+# === lib/mock-db.ts ===
+```ts
+import { Student, Teacher, createRandomStudent, createRandomTeacher } from './fake-generators';
+import { allSubjects as initialSubjects } from './mock-data';
+
+const globalForDb = global as unknown as {
+  db: {
+    students: Student[];
+    teachers: Teacher[];
+    subjects: string[];
+  }
+};
+
+const seedDatabase = () => {
+  console.log("🌱 Seeding database with mock data...");
+  const students = Array.from({ length: 100 }, createRandomStudent);
+  const teachers = Array.from({ length: 25 }, createRandomTeacher);
+  
+  return {
+    students,
+    teachers,
+    subjects: initialSubjects.map(s => s.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())),
+  };
+};
+
+const db = globalForDb.db || seedDatabase();
+
+if (process.env.NODE_ENV !== "production") globalForDb.db = db;
+
+export default db;
+```
 
 # === lib/mock-data.ts ===
 ```ts
@@ -21,145 +53,31 @@ export type SubjectScore = {
 
 export type Teacher = {
   id: number;
-  name: string;
-};
+  name:string;
+}
 
 export const periodStats = {
-  this_term: {
-    passRate: "85.3%",
-    passRateChange: "-1.2%",
-    isPassRateNegative: true,
-    avgAttendance: "91%",
-    changeLabel: "This Term",
-  },
-  last_term: {
-    passRate: "86.5%",
-    passRateChange: "+0.5%",
-    isPassRateNegative: false,
-    avgAttendance: "89%",
-    changeLabel: "Last Term",
-  },
-  full_year: {
-    passRate: "85.9%",
-    passRateChange: "+2.1%",
-    isPassRateNegative: false,
-    avgAttendance: "90%",
-    changeLabel: "Full Year",
-  },
+  this_term: { passRate: "85.3%", passRateChange: "-1.2%", isPassRateNegative: true, avgAttendance: "91%", changeLabel: "This Term" },
+  last_term: { passRate: "86.5%", passRateChange: "+0.5%", isPassRateNegative: false, avgAttendance: "89%", changeLabel: "Last Term" },
+  full_year: { passRate: "85.9%", passRateChange: "+2.1%", isPassRateNegative: false, avgAttendance: "90%", changeLabel: "Full Year" },
 };
 
 export const gradeDistributionData: Record<string, GradeDistribution[]> = {
-  this_term: [
-    { grade: "A", count: 23 }, { grade: "B", count: 40 }, { grade: "C", count: 25 }, { grade: "D", count: 8 }, { grade: "F", count: 4 },
-  ],
-  last_term: [
-    { grade: "A", count: 25 }, { grade: "B", count: 45 }, { grade: "C", count: 20 }, { grade: "D", count: 7 }, { grade: "F", count: 3 },
-  ],
-  full_year: [
-    { grade: "A", count: 24 }, { grade: "B", count: 42 }, { grade: "C", count: 22 }, { grade: "D", count: 8 }, { grade: "F", count: 4 },
-  ],
+  this_term: [ { grade: "A", count: 23 }, { grade: "B", count: 40 }, { grade: "C", count: 25 }, { grade: "D", count: 8 }, { grade: "F", count: 4 } ],
+  last_term: [ { grade: "A", count: 25 }, { grade: "B", count: 45 }, { grade: "C", count: 20 }, { grade: "D", count: 7 }, { grade: "F", count: 3 } ],
+  full_year: [ { grade: "A", count: 24 }, { grade: "B", count: 42 }, { grade: "C", count: 22 }, { grade: "D", count: 8 }, { grade: "F", count: 4 } ],
 };
 
 export const subjectScoreData: Record<string, SubjectScore[]> = {
-  this_term: [
-    { name: "computer-science", averageScore: 95.1 },
-    { name: "physics", averageScore: 90.2 },
-    { name: "history", averageScore: 84.0 },
-    { name: "english", averageScore: 88.8 },
-    { name: "mathematics", averageScore: 89.5 },
-    { name: "biology", averageScore: 85.5 },
-    { name: "chemistry", averageScore: 87.9 },
-    { name: "art-history", averageScore: 91.3 },
-    { name: "philosophy", averageScore: 92.0 },
-    { name: "economics", averageScore: 86.4 },
-    { name: "political-science", averageScore: 89.1 },
-    { name: "music-theory", averageScore: 93.7 },
-  ],
-  last_term: [
-    { name: "computer-science", averageScore: 93.5 },
-    { name: "physics", averageScore: 92.1 },
-    { name: "history", averageScore: 86.0 },
-    { name: "english", averageScore: 90.2 },
-    { name: "mathematics", averageScore: 87.5 },
-    { name: "biology", averageScore: 84.0 },
-    { name: "chemistry", averageScore: 88.2 },
-    { name: "art-history", averageScore: 89.9 },
-    { name: "philosophy", averageScore: 93.1 },
-    { name: "economics", averageScore: 85.0 },
-    { name: "political-science", averageScore: 88.0 },
-    { name: "music-theory", averageScore: 91.5 },
-  ],
-  full_year: [
-    { name: "computer-science", averageScore: 94.1 },
-    { name: "physics", averageScore: 91.2 },
-    { name: "history", averageScore: 85.0 },
-    { name: "english", averageScore: 89.8 },
-    { name: "mathematics", averageScore: 88.5 },
-    { name: "biology", averageScore: 84.8 },
-    { name: "chemistry", averageScore: 88.0 },
-    { name: "art-history", averageScore: 90.5 },
-    { name: "philosophy", averageScore: 92.5 },
-    { name: "economics", averageScore: 85.7 },
-    { name: "political-science", averageScore: 88.5 },
-    { name: "music-theory", averageScore: 92.6 },
-  ]
+  this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],
+  last_term: [ { name: "computer-science", averageScore: 93.5 }, { name: "physics", averageScore: 92.1 }, { name: "history", averageScore: 86.0 }, { name: "english", averageScore: 90.2 }, { name: "mathematics", averageScore: 87.5 } ],
+  full_year: [ { name: "computer-science", averageScore: 94.1 }, { name: "physics", averageScore: 91.2 }, { name: "history", averageScore: 85.0 }, { name: "english", averageScore: 89.8 }, { name: "mathematics", averageScore: 88.5 } ],
 };
 
 export const attendanceData: StudentAttendance[] = [
-  { month: "Jan", attendance: 95 },
-  { month: "Feb", attendance: 92 },
-  { month: "Mar", attendance: 93 },
-  { month: "Apr", attendance: 88 },
-  { month: "May", attendance: 90 },
-  { month: "Jun", attendance: 85 },
-  { month: "Jul", attendance: 89 },
-  { month: "Aug", attendance: 91 },
-  { month: "Sep", attendance: 94 },
-  { month: "Oct", attendance: 96 },
-  { month: "Nov", attendance: 93 },
-  { month: "Dec", attendance: 87 },
+  { month: "Jan", attendance: 95 }, { month: "Feb", attendance: 92 }, { month: "Mar", attendance: 93 }, { month: "Apr", attendance: 88 }, { month: "May", attendance: 90 }, { month: "Jun", attendance: 85 },
+  { month: "Jul", attendance: 89 }, { month: "Aug", attendance: 91 }, { month: "Sep", attendance: 94 }, { month: "Oct", attendance: 96 }, { month: "Nov", attendance: 93 }, { month: "Dec", attendance: 87 },
 ];
-
-export const allSubjects: string[] = [
-  "mathematics",
-  "physics",
-  "history",
-  "english",
-  "computer-science",
-  "biology",
-  "chemistry",
-  "art-history",
-  "philosophy",
-  "economics",
-  "political-science",
-  "music-theory",
-];
-
-export const mockTeachers: Teacher[] = [
-  { id: 1, name: "Dr. Evelyn Reed" },
-  { id: 2, name: "Mr. Samuel Carter" },
-  { id: 3, name: "Ms. Eleanor Vance" },
-  { id: 4, name: "Prof. Arthur Chen" },
-  { id: 5, name: "Dr. Isabella Rossi" },
-  { id: 6, name: "Mr. Benjamin Grant" },
-  { id: 7, name: "Ms. Olivia Hayes" },
-  { id: 8, name: "Prof. Liam Goldberg" },
-];
-
-export const subjectTeacherMapping: Record<string, number[]> = {
-  "mathematics": [1, 6],
-  "physics": [4, 1],
-  "history": [3, 7],
-  "english": [2, 5],
-  "computer-science": [4, 8],
-  "biology": [5, 1],
-  "chemistry": [5, 4],
-  "art-history": [3],
-  "philosophy": [7],
-  "economics": [2, 6],
-  "political-science": [7, 8],
-  "music-theory": [3, 2],
-};
 ```
 
 # === lib/utils.ts ===
@@ -174,118 +92,77 @@ export function cn(...inputs: ClassValue[]) {
 
 # === lib/api.ts ===
 ```ts
-// === lib/api.ts ===
 import { User, UsersApiResponse } from "@/types/api.types";
-import { allSubjects, mockTeachers, subjectScoreData, subjectTeacherMapping } from "./mock-data";
 
-const DUMMY_JSON_URL = "https://dummyjson.com";
+export const fetcher = (url: string) => fetch(url).then(res => res.json());
 
-export async function getUsers(url: string): Promise<UsersApiResponse> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch users");
-    }
-    const data: UsersApiResponse = await res.json();
-    return data;
-  } catch {
-    throw new Error("Could not retrieve users. Please try again later.");
+// --- User Functions ---
+export async function addUser(userType: 'student' | 'teacher', userData: Partial<User>): Promise<User> {
+  const res = await fetch(`/api/${userType}s`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || `Failed to add ${userType}`);
   }
+  return res.json();
 }
 
-export async function addUser(userData: Partial<User>): Promise<User> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to add user');
-    }
-    return await res.json();
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      throw new Error(e.message || "Could not add the user.");
-    }
-    throw new Error("An unknown error occurred while adding the user.");
+export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<User>): Promise<User> {
+  const res = await fetch(`/api/${userType}s/${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+  if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || `Failed to update ${userType}`);
   }
+  return res.json();
 }
 
-export async function updateUser(userId: number, userData: Partial<User>): Promise<User> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) throw new Error("Failed to update user");
-    return await res.json();
-  } catch {
-    throw new Error("Could not update the user.");
+export async function deleteUser(userType: 'student' | 'teacher', userId: number): Promise<{ id: number, isDeleted: boolean }> {
+  const res = await fetch(`/api/${userType}s/${userId}`, { method: "DELETE" });
+  if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || `Failed to delete ${userType}`);
   }
+  return res.json();
 }
 
-export async function deleteUser(userId: number): Promise<{ id: number, isDeleted: boolean }> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete user");
-    return await res.json();
-  } catch {
-    throw new Error("Could not delete the user.");
-  }
-}
-
+// --- Dashboard Stats ---
 export async function getTotalStudents(): Promise<number> {
-  return 100;
+    const res = await fetch('/api/students?limit=0');
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.total;
 }
 
 export async function getTotalTeachers(): Promise<number> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users?limit=0`);
-    if (!res.ok) {
-      return 50;
-    }
-    const data: UsersApiResponse = await res.json();
-    return data.total > 100 ? data.total - 100 : 0;
-  } catch (e) {
-    console.error("Failed to get total teachers:", e);
-    return 50;
-  }
+    const res = await fetch('/api/teachers?limit=0');
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.total;
 }
 
+// --- Subject Functions ---
 export async function getSubjects(): Promise<string[]> {
-  return Promise.resolve(allSubjects);
+    return fetcher('/api/subjects');
 }
 
-export async function addSubject(subjectName: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const formattedName = subjectName.toLowerCase().replace(/\s+/g, '-');
-    if (allSubjects.includes(formattedName)) {
-      reject(new Error("Subject already exists."));
-      return;
-    }
-
-    allSubjects.push(formattedName);
-    
-    const periods = ['this_term', 'last_term', 'full_year'];
-    periods.forEach(period => {
-      subjectScoreData[period].push({
-        name: formattedName,
-        averageScore: Math.floor(Math.random() * (95 - 70 + 1) + 70),
-      });
+export async function addSubject(subjectName: string): Promise<{ name: string }> {
+    const res = await fetch('/api/subjects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subjectName }),
     });
-
-    if (mockTeachers.length > 0) {
-        const randomTeacherId = mockTeachers[Math.floor(Math.random() * mockTeachers.length)].id;
-        subjectTeacherMapping[formattedName] = [randomTeacherId];
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to add subject');
     }
-
-    resolve(formattedName);
-  });
+    return res.json();
 }
 ```
 
@@ -301,6 +178,65 @@ export const userSchema = z.object({
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
+```
+
+# === lib/fake-generators.ts ===
+```ts
+import { faker } from '@faker-js/faker';
+import { User } from '@/types/api.types';
+
+export interface Student extends User {
+  grade: string;
+}
+
+export interface Teacher extends User {
+  subject: string;
+}
+
+const allSubjects = [
+    'Mathematics', 'Physics', 'History', 'English', 'Computer Science', 
+    'Biology', 'Chemistry', 'Art History', 'Philosophy', 'Economics'
+];
+
+export const createRandomStudent = (): Student => {
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  return {
+    id: faker.number.int({ min: 1, max: 100000 }),
+    firstName,
+    lastName,
+    email: faker.internet.email({ firstName, lastName }),
+    phone: faker.phone.number(),
+    image: faker.image.avatar(),
+    address: {
+      address: faker.location.streetAddress(),
+      city: faker.location.city(),
+      postalCode: faker.location.zipCode(),
+      state: faker.location.state({ abbreviated: true }),
+    },
+    grade: faker.helpers.arrayElement(['A', 'B', 'C', 'D', 'F']),
+  };
+};
+
+export const createRandomTeacher = (): Teacher => {
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  return {
+    id: faker.number.int({ min: 100001, max: 200000 }),
+    firstName,
+    lastName,
+    email: faker.internet.email({ firstName, lastName }),
+    phone: faker.phone.number(),
+    image: faker.image.avatar(),
+    address: {
+      address: faker.location.streetAddress(),
+      city: faker.location.city(),
+      postalCode: faker.location.zipCode(),
+      state: faker.location.state({ abbreviated: true }),
+    },
+    subject: faker.helpers.arrayElement(allSubjects),
+  };
+};
 ```
 
 # === app/globals.css ===
@@ -583,90 +519,44 @@ export default function TeachersPage() {
 
 import { useState } from "react";
 import useSWR from "swr";
-import dynamic from "next/dynamic";
-import { AlertTriangle, Pencil, PlusCircle, Trash2 } from "lucide-react";
+import { AlertTriangle, PlusCircle, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { addSubject, getSubjects } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockTeachers, subjectTeacherMapping, subjectScoreData, Teacher } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { User } from "@/types/api.types";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import type { UserPreviewModalProps } from "@/components/features/user/user-preview-modal";
 import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
-const ManageInstructorsModal = dynamic(() => import("@/components/features/subject/manage-instructors-modal").then(mod => mod.ManageInstructorsModal));
-const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
-
-type Period = "this_term" | "last_term" | "full_year";
-
-const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
-  const initials = teacherName.split(' ').map((n) => n[0]).slice(0, 2).join('');
-  return (
-    <div className="h-8 w-8 rounded-full bg-muted flex-shrink-0 flex items-center justify-center">
-      <span className="text-xs font-semibold text-muted-foreground">{initials}</span>
-    </div>
-  );
-};
-
 export default function SubjectsPage() {
-  const [period, setPeriod] = useState<Period>("this_term");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [itemsPerPage, setItemsPerPage] = useState(9);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [subjectToDelete, setSubjectToDelete] = useState<string | null>(null);
-  
-  const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
-  const { data: allUsers } = useSWR<User[]>(`https://dummyjson.com/users?limit=200`, async (url: string) => (await fetch(url)).json().then(res => res.users));
 
-  const [modalState, setModalState] = useState<{
-    manageInstructors: boolean;
-    viewTeacher: boolean;
-    subject: string | null;
-    teacher: User | null;
-  }>({ manageInstructors: false, viewTeacher: false, subject: null, teacher: null });
-  
+  const { data: subjects, error, isLoading, mutate } = useSWR("/api/subjects", getSubjects);
+
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
   };
 
-  const handleSubjectAdded = (newSubject: string) => {
-    const capitalizedSubject = newSubject.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    toast.success(`Subject "${capitalizedSubject}" added successfully.`);
-    mutate(currentSubjects => {
-      if (!currentSubjects) return [newSubject];
-      return [...currentSubjects, newSubject].sort();
-    }, false);
+  const handleSubjectAdded = async (newSubjectName: string) => {
+      try {
+        const newSubject = await addSubject(newSubjectName);
+        toast.success(`Subject "${newSubject.name}" added successfully.`);
+        mutate();
+      } catch (e: any) {
+        toast.error(e.message || "Failed to add subject.");
+      }
   };
 
-  const handleDeleteSubject = (subjectToDelete: string) => {
-    mutate(subjects?.filter(s => s !== subjectToDelete), false);
-    toast.success(`Subject "${subjectToDelete.replace(/-/g, ' ')}" deleted.`);
-  };
-
-  const handleManageInstructors = (subject: string) => {
-    setModalState({ ...modalState, manageInstructors: true, subject });
-  };
-  
-  const handleViewTeacher = (teacherId: number) => {
-    const teacherUser = allUsers?.find(u => u.id === teacherId);
-    if(teacherUser) {
-        setModalState({ ...modalState, viewTeacher: true, teacher: teacherUser });
-    } else {
-        toast.warning("Could not find full details for this teacher.");
-    }
-  };
-
-  const handleSaveInstructors = (subject: string, newTeacherIds: number[]) => {
-    subjectTeacherMapping[subject] = newTeacherIds;
-    mutate(subjects);
-    toast.success(`Instructors for "${subject.replace(/-/g, ' ')}" updated.`);
+  const handleDeleteSubject = (subjectName: string) => {
+    mutate(subjects?.filter(s => s !== subjectName), false);
+    toast.success(`Subject "${subjectName}" deleted.`);
   };
 
   const totalPages = subjects ? Math.ceil(subjects.length / itemsPerPage) : 0;
@@ -675,7 +565,7 @@ export default function SubjectsPage() {
     if (isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: itemsPerPage }).map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
+          {Array.from({ length: itemsPerPage }).map((_, i) => <Skeleton key={i} className="h-40 rounded-lg" />)}
         </div>
       );
     }
@@ -691,7 +581,7 @@ export default function SubjectsPage() {
       return (
         <div className="text-center py-10 glass-card rounded-lg">
           <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">Could not find any subjects in the catalog.</p>
+          <p className="text-muted-foreground">Click &quot;Add Subject&quot; to get started.</p>
         </div>
       );
     }
@@ -700,67 +590,35 @@ export default function SubjectsPage() {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {paginatedSubjects.map((subject) => {
-          const meanGradeData = subjectScoreData[period].find(s => s.name === subject);
-          const teacherIds = subjectTeacherMapping[subject] || [];
-          const teachers = teacherIds.map(id => mockTeachers.find(t => t.id === id)).filter(Boolean) as Teacher[];
-
-          return (
-            <Card key={subject} className="glass-card flex flex-col">
-              <CardHeader className="flex-row items-center justify-between">
-                <CardTitle className="capitalize text-lg">{subject.replace(/-/g, ' ')}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setSubjectToDelete(subject)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </CardHeader>
-              <CardContent className="flex flex-col flex-grow justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Mean Grade ({period.replace(/_/g, ' ')})</p>
-                  <p className="text-3xl font-bold text-primary">{meanGradeData?.averageScore.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-sm font-medium text-muted-foreground">Instructors</p>
-                    <Button variant="outline" size="sm" onClick={() => handleManageInstructors(subject)}>
-                        <Pencil className="h-3 w-3 mr-1.5" /> Manage
-                    </Button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {teachers.length > 0 ? (
-                      teachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-1 -m-1 rounded-md" onClick={() => handleViewTeacher(teacher.id)}>
-                          <TeacherAvatar teacherName={teacher.name} />
-                          <span className="font-medium text-sm">{teacher.name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-muted-foreground italic">No instructors assigned.</p>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+        {paginatedSubjects.map((subject) => (
+          <Card key={subject} className="glass-card flex flex-col">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="capitalize text-lg">{subject}</CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => setSubjectToDelete(subject)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Total students enrolled: <span className="font-semibold text-foreground">{Math.floor(Math.random() * 50) + 10}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Average Grade: <span className="font-semibold text-foreground">{(Math.random() * (95 - 75) + 75).toFixed(1)}%</span>
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Subjects Overview" description="View details for each subject offered.">
+      <PageHeader title="Subjects Overview" description="View and manage all subjects offered.">
         <Button onClick={() => setIsAddModalOpen(true)} className="button-gradient">
           <PlusCircle className="h-4 w-4 mr-2"/>
           Add Subject
         </Button>
-        <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="this_term">This Term</SelectItem>
-            <SelectItem value="last_term">Last Term</SelectItem>
-            <SelectItem value="full_year">Full Year</SelectItem>
-          </SelectContent>
-        </Select>
       </PageHeader>
       
       {renderContent()}
@@ -774,27 +632,8 @@ export default function SubjectsPage() {
             onItemsPerPageChange={handleItemsPerPageChange}
             totalItems={subjects.length}
             itemType="subjects"
-            itemsPerPageOptions={[6, 9, 12, 15]}
+            itemsPerPageOptions={[9, 12, 15, 18]}
          />
-      )}
-      
-      {modalState.manageInstructors && modalState.subject && (
-        <ManageInstructorsModal
-          isOpen={modalState.manageInstructors}
-          onOpenChange={(isOpen) => setModalState({ ...modalState, manageInstructors: isOpen })}
-          subjectName={modalState.subject}
-          allTeachers={mockTeachers}
-          assignedTeacherIds={subjectTeacherMapping[modalState.subject] || []}
-          onSave={(newIds) => handleSaveInstructors(modalState.subject!, newIds)}
-        />
-      )}
-
-      {modalState.viewTeacher && modalState.teacher && (
-        <UserPreviewModal 
-          isOpen={modalState.viewTeacher}
-          onOpenChange={(isOpen) => setModalState({ ...modalState, viewTeacher: isOpen, teacher: null })}
-          user={modalState.teacher}
-        />
       )}
       
       <ConfirmationDialog
@@ -806,7 +645,7 @@ export default function SubjectsPage() {
           }
         }}
         title="Are you sure?"
-        description={`This will permanently delete the subject "${subjectToDelete?.replace(/-/g, ' ')}". This action cannot be undone.`}
+        description={`This will permanently delete the subject "${subjectToDelete}". This action cannot be undone.`}
         confirmText="Yes, delete"
       />
 
@@ -814,10 +653,161 @@ export default function SubjectsPage() {
         isOpen={isAddModalOpen}
         onOpenChange={setIsAddModalOpen}
         onSubjectAdded={handleSubjectAdded}
-        addSubjectApi={addSubject}
       />
     </div>
   );
+}
+```
+
+# === app/api/students/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { createRandomStudent, Student } from '@/lib/fake-generators';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const skip = parseInt(searchParams.get('skip') || '0');
+
+  const paginatedStudents = db.students.slice(skip, skip + limit);
+
+  return NextResponse.json({
+    users: paginatedStudents,
+    total: db.students.length,
+    skip,
+    limit,
+  });
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const newStudent: Student = {
+    ...createRandomStudent(),
+    ...body,
+  };
+  db.students.unshift(newStudent);
+  return NextResponse.json(newStudent, { status: 201 });
+}
+```
+
+# === app/api/students/[id]/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { Student } from '@/lib/fake-generators';
+
+// PUT /api/students/123
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
+  const studentId = parseInt(params.id);
+  const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
+
+  if (studentIndex === -1) {
+    return NextResponse.json({ message: 'Student not found' }, { status: 404 });
+  }
+  const body = await request.json();
+  db.students[studentIndex] = { ...db.students[studentIndex], ...body };
+  return NextResponse.json(db.students[studentIndex]);
+}
+
+// DELETE /api/students/123
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const studentId = parseInt(params.id);
+  const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
+
+  if (studentIndex === -1) {
+    return NextResponse.json({ message: 'Student not found' }, { status: 404 });
+  }
+  const [deletedStudent] = db.students.splice(studentIndex, 1);
+  return NextResponse.json({ ...deletedStudent, isDeleted: true });
+}
+```
+
+# === app/api/teachers/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { createRandomTeacher, Teacher } from '@/lib/fake-generators';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const skip = parseInt(searchParams.get('skip') || '0');
+
+  const paginatedTeachers = db.teachers.slice(skip, skip + limit);
+
+  return NextResponse.json({
+    users: paginatedTeachers,
+    total: db.teachers.length,
+    skip,
+    limit,
+  });
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const newTeacher: Teacher = {
+    ...createRandomTeacher(),
+    ...body,
+  };
+  db.teachers.unshift(newTeacher);
+  return NextResponse.json(newTeacher, { status: 201 });
+}
+```
+
+# === app/api/teachers/[id]/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { Teacher } from '@/lib/fake-generators';
+
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
+  const teacherId = parseInt(params.id);
+  const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
+
+  if (teacherIndex === -1) {
+    return NextResponse.json({ message: 'Teacher not found' }, { status: 404 });
+  }
+  const body = await request.json();
+  db.teachers[teacherIndex] = { ...db.teachers[teacherIndex], ...body };
+  return NextResponse.json(db.teachers[teacherIndex]);
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const teacherId = parseInt(params.id);
+  const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
+
+  if (teacherIndex === -1) {
+    return NextResponse.json({ message: 'Teacher not found' }, { status: 404 });
+  }
+  const [deletedTeacher] = db.teachers.splice(teacherIndex, 1);
+  return NextResponse.json({ ...deletedTeacher, isDeleted: true });
+}
+```
+
+# === app/api/subjects/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+
+export async function GET() {
+  return NextResponse.json(db.subjects.sort());
+}
+
+export async function POST(request: Request) {
+  const { subjectName } = await request.json();
+  if (!subjectName) {
+    return NextResponse.json({ message: "Subject name is required." }, { status: 400 });
+  }
+  
+  const formattedName = subjectName.charAt(0).toUpperCase() + subjectName.slice(1).toLowerCase();
+
+  if (db.subjects.find(s => s.toLowerCase() === formattedName.toLowerCase())) {
+    return NextResponse.json({ message: "Subject already exists." }, { status: 409 });
+  }
+
+  db.subjects.push(formattedName);
+  return NextResponse.json({ name: formattedName }, { status: 201 });
 }
 ```
 
@@ -827,7 +817,7 @@ import { useState, useMemo } from "react";
 import useSWR, { useSWRConfig, MutatorCallback } from "swr";
 import { toast } from "sonner";
 import { User, UsersApiResponse } from "@/types/api.types";
-import { addUser, updateUser, deleteUser as deleteUserApi } from "@/lib/api";
+import { addUser, updateUser, deleteUser as deleteUserApi, fetcher } from "@/lib/api";
 import { UserFormValues } from "@/lib/schemas";
 
 interface UseUserManagementProps {
@@ -843,40 +833,25 @@ export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUs
   
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
-  const skip = userType === 'student'
-    ? (currentPage - 1) * itemsPerPage
-    : 100 + (currentPage - 1) * itemsPerPage;
-  const swrKey = `https://dummyjson.com/users?limit=${itemsPerPage}&skip=${skip}`;
+  const skip = (currentPage - 1) * itemsPerPage;
+  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}`;
   
-  const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, url => fetch(url).then(res => res.json()), { keepPreviousData: true });
+  const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
   const { mutate: globalMutate } = useSWRConfig();
 
   const handleFormSubmit = async (formData: UserFormValues, userId?: number) => {
-    const optimisticDataCallback: MutatorCallback<UsersApiResponse> = (currentData) => {
-      if (!currentData) return currentData;
-      
-      if (userId) {
-        const updatedUsers = currentData.users.map(u => u.id === userId ? { ...u, ...formData } : u);
-        return { ...currentData, users: updatedUsers };
-      } else {
-        return currentData;
-      }
-    };
-    await mutate(optimisticDataCallback, { revalidate: false });
-
     try {
       if (userId) {
-        await updateUser(userId, formData);
+        await updateUser(userType, userId, formData);
         toast.success(`${entityName} updated successfully!`);
       } else {
-        await addUser(formData);
+        await addUser(userType, formData);
         toast.success(`${entityName} added successfully.`);
       }
+      mutate(); 
     } catch (err) {
       const message = err instanceof Error ? err.message : `Failed to save ${entityName.toLowerCase()}.`;
       toast.error(message);
-    } finally {
-      globalMutate(swrKey);
     }
   };
   
@@ -888,11 +863,11 @@ export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUs
     await mutate(optimisticData, { revalidate: false });
 
     try {
-      await deleteUserApi(userId);
+      await deleteUserApi(userType, userId);
       toast.success(`${entityName} deleted successfully.`);
     } catch {
       toast.error(`Failed to delete ${entityName.toLowerCase()}.`);
-      globalMutate(swrKey);
+      mutate();
     } finally {
       setUserToDelete(null);
     }
@@ -919,7 +894,6 @@ export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUs
     data,
     error,
     isLoading,
-    swrKey,
     isFormModalOpen,
     userToEdit,
     openCreateModal,
@@ -1517,109 +1491,16 @@ export function StudentPerformanceSummary({ period }: { period: Period }) {
 }
 ```
 
-# === components/features/customer/user-preview-modal.tsx ===
-```tsx
-"use client";
-
-import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User } from "@/types/api.types";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AtSign, MapPin, Phone } from "lucide-react";
-
-interface UserPreviewModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  user?: User;
-}
-
-export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModalProps) {
-  const renderContent = () => {
-    if (!user) {
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-6 items-center">
-            <Skeleton className="h-[120px] w-[120px] rounded-full" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-5 w-64" />
-              <Skeleton className="h-5 w-32" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-3/4" />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-4 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="relative h-[120px] w-[120px] flex-shrink-0">
-            <Image
-              src={user.image}
-              alt={`${user.firstName} ${user.lastName}`}
-              fill
-              sizes="120px"
-              className="rounded-full object-cover border-4 border-primary/20"
-            />
-          </div>
-          <div className="flex-1 space-y-1 text-center sm:text-left">
-            <h3 className="text-2xl font-bold text-gradient">{`${user.firstName} ${user.lastName}`}</h3>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <AtSign className="h-4 w-4" />
-              <span>{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <Phone className="h-4 w-4" />
-              <span>{user.phone}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold text-lg mb-2">Address</h4>
-          <div className="flex items-start gap-3 text-muted-foreground">
-            <MapPin className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
-            <p>{`${user.address.address}, ${user.address.city}, ${user.address.state} ${user.address.postalCode}`}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>User Details</DialogTitle>
-        </DialogHeader>
-        {renderContent()}
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
 # === components/features/user/user-table.tsx ===
 ```tsx
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User } from "@/types/api.types";
+import { Student, Teacher } from "@/lib/fake-generators";
 import { Eye, Trash2, MoreHorizontal, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-
-const SUBJECTS = ['mathematics', 'physics', 'history', 'english', 'computer-science', 'biology', 'chemistry'];
-const GRADES = ['A', 'B', 'C', 'B', 'A', 'C', 'D', 'B', 'F'];
-
-const DerivedCell = ({ value, className }: { value: string, className?: string }) => (
-    <span className={cn("text-muted-foreground", className)}>{value}</span>
-);
 
 interface UserTableProps {
   users: User[];
@@ -1630,17 +1511,6 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }: UserTableProps) {
-  
-  // This function remains for demo purposes to enrich the UI.
-  const getDerivedData = (user: User, field: string) => {
-    switch(field) {
-        case 'grade': return GRADES[user.id % GRADES.length];
-        case 'subject': return SUBJECTS[user.id % SUBJECTS.length].replace(/-/g, ' ');
-        case 'meanGrade': return `${(user.id % 35) + 60}.0%`;
-        default: return '';
-    }
-  }
-
   return (
     <Table className="min-w-full">
       <TableHeader>
@@ -1649,9 +1519,8 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
           <TableHead className="px-3 py-2 font-semibold text-foreground">Name</TableHead>
           <TableHead className="px-3 py-2 font-semibold text-foreground">Email</TableHead>
           <TableHead className="px-3 py-2 font-semibold text-foreground">Phone</TableHead>
-          {type === 'student' && <TableHead className="px-3 py-2 font-semibold text-foreground">Grade</TableHead>}
-          {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Subject</TableHead>}
-          {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Mean Grade</TableHead>}
+          {type === 'student' && <TableHead className="px-3 py-2 font-semibold text-foreground">Current Grade</TableHead>}
+          {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Main Subject</TableHead>}
           <TableHead className="w-[50px] px-3 py-2 text-right font-semibold text-foreground">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -1662,9 +1531,14 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
             <TableCell className="px-3 py-2 font-medium text-foreground">{`${user.firstName} ${user.lastName}`}</TableCell>
             <TableCell className="px-3 py-2">{user.email}</TableCell>
             <TableCell className="px-3 py-2">{user.phone}</TableCell>
-            {type === 'student' && <TableCell className="px-3 py-2"><DerivedCell value={getDerivedData(user, 'grade')} /></TableCell>}
-            {type === 'teacher' && <TableCell className="capitalize px-3 py-2"><DerivedCell value={getDerivedData(user, 'subject')} /></TableCell>}
-            {type === 'teacher' && <TableCell className="px-3 py-2"><DerivedCell value={getDerivedData(user, 'meanGrade')} /></TableCell>}
+            
+            {type === 'student' && (
+              <TableCell className="px-3 py-2 font-medium text-center">{(user as Student).grade}</TableCell>
+            )}
+            {type === 'teacher' && (
+              <TableCell className="capitalize px-3 py-2">{(user as Teacher).subject}</TableCell>
+            )}
+
             <TableCell className="text-right px-3 py-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -2086,92 +1960,8 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
 }
 ```
 
-# === components/features/subject/manage-instructors-modal.tsx ===
-```tsx
-"use client";
-
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Teacher } from "@/lib/mock-data";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-export interface ManageInstructorsModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  subjectName: string;
-  allTeachers: Teacher[];
-  assignedTeacherIds: number[];
-  onSave: (newTeacherIds: number[]) => void;
-}
-
-export function ManageInstructorsModal({
-  isOpen,
-  onOpenChange,
-  subjectName,
-  allTeachers,
-  assignedTeacherIds,
-  onSave,
-}: ManageInstructorsModalProps) {
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(assignedTeacherIds));
-
-  const handleToggle = (teacherId: number) => {
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(teacherId)) {
-        newSet.delete(teacherId);
-      } else {
-        newSet.add(teacherId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSaveChanges = () => {
-    onSave(Array.from(selectedIds));
-    onOpenChange(false);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>Manage Instructors</DialogTitle>
-          <DialogDescription>
-            Assign or un-assign instructors for <span className="font-bold capitalize">{subjectName.replace(/-/g, ' ')}</span>.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="max-h-80 pr-4">
-          <div className="space-y-4 py-2">
-            {allTeachers.map(teacher => (
-              <div key={teacher.id} className="flex items-center space-x-3">
-                <Checkbox
-                  id={`teacher-${teacher.id}`}
-                  checked={selectedIds.has(teacher.id)}
-                  onCheckedChange={() => handleToggle(teacher.id)}
-                />
-                <Label htmlFor={`teacher-${teacher.id}`} className="font-medium">
-                  {teacher.name}
-                </Label>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSaveChanges} className="button-gradient">Save Changes</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
 # === components/features/subject/add-subject-modal.tsx ===
 ```tsx
-// === components/features/subject/add-subject-modal.tsx ===
 "use client";
 
 import { useState } from "react";
@@ -2183,11 +1973,10 @@ import { Label } from "@/components/ui/label";
 interface AddSubjectModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubjectAdded: (newSubject: string) => void;
-  addSubjectApi: (subjectName: string) => Promise<string>;
+  onSubjectAdded: (newSubjectName: string) => Promise<void>;
 }
 
-export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded, addSubjectApi }: AddSubjectModalProps) {
+export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded }: AddSubjectModalProps) {
   const [subjectName, setSubjectName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2196,29 +1985,35 @@ export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded, addSubje
     e.preventDefault();
     setError(null);
     if (!subjectName.trim()) {
-        setError("Subject name cannot be empty.");
-        return;
+      setError("Subject name cannot be empty.");
+      return;
     }
 
     setIsSubmitting(true);
     try {
-      const newSubject = await addSubjectApi(subjectName);
-      onSubjectAdded(newSubject);
+      await onSubjectAdded(subjectName);
       onOpenChange(false);
       setTimeout(() => setSubjectName(""), 300);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message || "Failed to add subject.");
-      } else {
-        setError("An unknown error occurred while adding the subject.");
+        setError(err.message || "An unknown error occurred.");
       }
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  const handleOpenChange = (open: boolean) => {
+      if (!open) {
+          setSubjectName("");
+          setError(null);
+          setIsSubmitting(false);
+      }
+      onOpenChange(open);
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle>Add New Subject</DialogTitle>
@@ -2226,16 +2021,14 @@ export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded, addSubje
             Enter the name for the new subject.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="subjectName" className="text-right">Name</Label>
-              <Input id="subjectName" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="col-span-3" />
-            </div>
-            {error && <p className="text-sm text-destructive text-center col-span-4">{error}</p>}
+        <form onSubmit={handleSubmit} className="pt-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="subjectName" className="text-right">Name</Label>
+            <Input id="subjectName" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="col-span-3" />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
+          {error && <p className="text-sm text-destructive text-center col-span-4 pt-2">{error}</p>}
+          <DialogFooter className="pt-6">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
             <Button type="submit" className="button-gradient" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Subject'}
             </Button>

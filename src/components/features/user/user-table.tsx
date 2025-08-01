@@ -2,17 +2,10 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User } from "@/types/api.types";
+import { Student, Teacher } from "@/lib/fake-generators";
 import { Eye, Trash2, MoreHorizontal, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-
-const SUBJECTS = ['mathematics', 'physics', 'history', 'english', 'computer-science', 'biology', 'chemistry'];
-const GRADES = ['A', 'B', 'C', 'B', 'A', 'C', 'D', 'B', 'F'];
-
-const DerivedCell = ({ value, className }: { value: string, className?: string }) => (
-    <span className={cn("text-muted-foreground", className)}>{value}</span>
-);
 
 interface UserTableProps {
   users: User[];
@@ -23,17 +16,6 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }: UserTableProps) {
-  
-  // This function remains for demo purposes to enrich the UI.
-  const getDerivedData = (user: User, field: string) => {
-    switch(field) {
-        case 'grade': return GRADES[user.id % GRADES.length];
-        case 'subject': return SUBJECTS[user.id % SUBJECTS.length].replace(/-/g, ' ');
-        case 'meanGrade': return `${(user.id % 35) + 60}.0%`;
-        default: return '';
-    }
-  }
-
   return (
     <Table className="min-w-full">
       <TableHeader>
@@ -42,9 +24,8 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
           <TableHead className="px-3 py-2 font-semibold text-foreground">Name</TableHead>
           <TableHead className="px-3 py-2 font-semibold text-foreground">Email</TableHead>
           <TableHead className="px-3 py-2 font-semibold text-foreground">Phone</TableHead>
-          {type === 'student' && <TableHead className="px-3 py-2 font-semibold text-foreground">Grade</TableHead>}
-          {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Subject</TableHead>}
-          {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Mean Grade</TableHead>}
+          {type === 'student' && <TableHead className="px-3 py-2 font-semibold text-foreground">Current Grade</TableHead>}
+          {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Main Subject</TableHead>}
           <TableHead className="w-[50px] px-3 py-2 text-right font-semibold text-foreground">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -55,9 +36,14 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
             <TableCell className="px-3 py-2 font-medium text-foreground">{`${user.firstName} ${user.lastName}`}</TableCell>
             <TableCell className="px-3 py-2">{user.email}</TableCell>
             <TableCell className="px-3 py-2">{user.phone}</TableCell>
-            {type === 'student' && <TableCell className="px-3 py-2"><DerivedCell value={getDerivedData(user, 'grade')} /></TableCell>}
-            {type === 'teacher' && <TableCell className="capitalize px-3 py-2"><DerivedCell value={getDerivedData(user, 'subject')} /></TableCell>}
-            {type === 'teacher' && <TableCell className="px-3 py-2"><DerivedCell value={getDerivedData(user, 'meanGrade')} /></TableCell>}
+            
+            {type === 'student' && (
+              <TableCell className="px-3 py-2 font-medium text-center">{(user as Student).grade}</TableCell>
+            )}
+            {type === 'teacher' && (
+              <TableCell className="capitalize px-3 py-2">{(user as Teacher).subject}</TableCell>
+            )}
+
             <TableCell className="text-right px-3 py-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

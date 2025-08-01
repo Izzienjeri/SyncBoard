@@ -1,113 +1,70 @@
-// === lib/api.ts ===
-import { User, UsersApiResponse } from "@/types/api.types";
-import { allSubjects, mockTeachers, subjectScoreData, subjectTeacherMapping } from "./mock-data";
 
-const DUMMY_JSON_URL = "https://dummyjson.com";
+import { User } from "@/types/api.types";
 
-export async function getUsers(url: string): Promise<UsersApiResponse> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch users");
-    }
-    const data: UsersApiResponse = await res.json();
-    return data;
-  } catch {
-    throw new Error("Could not retrieve users. Please try again later.");
+export const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+export async function addUser(userType: 'student' | 'teacher', userData: Partial<User>): Promise<User> {
+  const res = await fetch(`/api/${userType}s`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || `Failed to add ${userType}`);
   }
+  return res.json();
 }
 
-export async function addUser(userData: Partial<User>): Promise<User> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to add user');
-    }
-    return await res.json();
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      throw new Error(e.message || "Could not add the user.");
-    }
-    throw new Error("An unknown error occurred while adding the user.");
+export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<User>): Promise<User> {
+  const res = await fetch(`/api/${userType}s/${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(userData),
+  });
+  if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || `Failed to update ${userType}`);
   }
+  return res.json();
 }
 
-export async function updateUser(userId: number, userData: Partial<User>): Promise<User> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) throw new Error("Failed to update user");
-    return await res.json();
-  } catch {
-    throw new Error("Could not update the user.");
+export async function deleteUser(userType: 'student' | 'teacher', userId: number): Promise<{ id: number, isDeleted: boolean }> {
+  const res = await fetch(`/api/${userType}s/${userId}`, { method: "DELETE" });
+  if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || `Failed to delete ${userType}`);
   }
-}
-
-export async function deleteUser(userId: number): Promise<{ id: number, isDeleted: boolean }> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete user");
-    return await res.json();
-  } catch {
-    throw new Error("Could not delete the user.");
-  }
+  return res.json();
 }
 
 export async function getTotalStudents(): Promise<number> {
-  return 100;
+    const res = await fetch('/api/students?limit=0');
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.total;
 }
 
 export async function getTotalTeachers(): Promise<number> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users?limit=0`);
-    if (!res.ok) {
-      return 50;
-    }
-    const data: UsersApiResponse = await res.json();
-    return data.total > 100 ? data.total - 100 : 0;
-  } catch (e) {
-    console.error("Failed to get total teachers:", e);
-    return 50;
-  }
+    const res = await fetch('/api/teachers?limit=0');
+    if (!res.ok) return 0;
+    const data = await res.json();
+    return data.total;
 }
 
 export async function getSubjects(): Promise<string[]> {
-  return Promise.resolve(allSubjects);
+    return fetcher('/api/subjects');
 }
 
-export async function addSubject(subjectName: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const formattedName = subjectName.toLowerCase().replace(/\s+/g, '-');
-    if (allSubjects.includes(formattedName)) {
-      reject(new Error("Subject already exists."));
-      return;
-    }
-
-    allSubjects.push(formattedName);
-    
-    const periods = ['this_term', 'last_term', 'full_year'];
-    periods.forEach(period => {
-      subjectScoreData[period].push({
-        name: formattedName,
-        averageScore: Math.floor(Math.random() * (95 - 70 + 1) + 70),
-      });
+export async function addSubject(subjectName: string): Promise<{ name: string }> {
+    const res = await fetch('/api/subjects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subjectName }),
     });
-
-    if (mockTeachers.length > 0) {
-        const randomTeacherId = mockTeachers[Math.floor(Math.random() * mockTeachers.length)].id;
-        subjectTeacherMapping[formattedName] = [randomTeacherId];
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to add subject');
     }
-
-    resolve(formattedName);
-  });
+    return res.json();
 }
