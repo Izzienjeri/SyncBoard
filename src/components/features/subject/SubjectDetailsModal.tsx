@@ -3,7 +3,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Teacher } from "@/lib/fake-generators";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +48,6 @@ export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: Su
         </div>
         <div>
             <h4 className="font-semibold mb-3">Instructors ({subjectDetails.teachers.length})</h4>
-            <ScrollArea className="h-[200px] pr-4">
             <div className="space-y-3">
                 {subjectDetails.teachers.length > 0 ? (
                     subjectDetails.teachers.map(teacher => (
@@ -65,7 +63,6 @@ export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: Su
                     <p className="text-sm text-muted-foreground italic text-center py-8">No instructors are currently assigned to this subject.</p>
                 )}
             </div>
-            </ScrollArea>
         </div>
       </DialogContent>
     </Dialog>

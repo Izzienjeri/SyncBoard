@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Teacher } from "@/lib/fake-generators";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { subjectSchema, SubjectFormValues } from "@/lib/schemas";
 import { toast } from "sonner";
 
@@ -77,7 +76,7 @@ export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, 
               render={() => (
                 <FormItem>
                   <FormLabel>Assign Instructors ({form.watch('teacherIds')?.length || 0} selected)</FormLabel>
-                  <ScrollArea className="h-48 mt-2 border rounded-md p-4">
+                  <div className="max-h-48 overflow-y-auto mt-2 border rounded-md p-4">
                     <div className="space-y-3">
                       {allTeachers.map((teacher) => (
                         <FormField
@@ -100,7 +99,7 @@ export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, 
                          />
                       ))}
                     </div>
-                  </ScrollArea>
+                  </div>
                 </FormItem>
               )}
             />

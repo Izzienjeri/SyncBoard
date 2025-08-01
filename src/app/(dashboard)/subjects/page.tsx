@@ -193,10 +193,10 @@ export default function SubjectsPage() {
                 </div>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-muted-foreground">Students</p><p className="font-semibold text-xl">{details.studentCount}</p></div>
+                <div><p className="text-muted-foreground">Students</p><p className="font-semibold text-lg sm:text-xl">{details.studentCount}</p></div>
                 <div>
                   <p className="text-muted-foreground">Avg. Grade</p>
-                  <Badge className={cn("text-xl font-semibold border-none px-3 py-1", getGradeColorClass(details.avgGrade))}>
+                  <Badge className={cn("text-lg sm:text-xl font-semibold border-none px-3 py-1", getGradeColorClass(details.avgGrade))}>
                     {details.avgGrade.toFixed(1)}%
                   </Badge>
                 </div>

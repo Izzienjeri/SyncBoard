@@ -21,9 +21,9 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
       <TableHeader>
         <TableRow className="border-b hover:bg-transparent">
           <TableHead className="w-[70px] px-3 py-2 font-semibold text-foreground">ID</TableHead>
-          <TableHead className="min-w-[250px] px-3 py-2 font-semibold text-foreground">Name</TableHead>
-          <TableHead className="px-3 py-2 font-semibold text-foreground">Email</TableHead>
-          <TableHead className="px-3 py-2 font-semibold text-foreground">Phone</TableHead>
+          <TableHead className="min-w-[150px] px-3 py-2 font-semibold text-foreground">Name</TableHead>
+          <TableHead className="hidden sm:table-cell px-3 py-2 font-semibold text-foreground">Email</TableHead>
+          <TableHead className="hidden md:table-cell px-3 py-2 font-semibold text-foreground">Phone</TableHead>
           {type === 'student' && <TableHead className="w-[120px] px-3 py-2 font-semibold text-foreground">Grade</TableHead>}
           {type === 'teacher' && <TableHead className="px-3 py-2 font-semibold text-foreground">Subject</TableHead>}
           <TableHead className="w-[120px] px-3 py-2 text-right font-semibold text-foreground">Actions</TableHead>
@@ -36,8 +36,8 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
             <TableCell className="px-3 py-2 font-medium text-foreground">
               {`${user.firstName} ${user.lastName}`}
             </TableCell>
-            <TableCell className="px-3 py-2">{user.email}</TableCell>
-            <TableCell className="px-3 py-2">{user.phone}</TableCell>
+            <TableCell className="hidden sm:table-cell px-3 py-2">{user.email}</TableCell>
+            <TableCell className="hidden md:table-cell px-3 py-2">{user.phone}</TableCell>
             
             {/* TYPE-SAFE: No more casting! TypeScript understands the properties based on user.type */}
             {user.type === 'student' && (
