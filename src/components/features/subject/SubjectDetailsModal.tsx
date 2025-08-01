@@ -5,6 +5,7 @@ import { Teacher } from "@/lib/fake-generators";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
+import { cn } from "@/lib/utils";
 
 interface SubjectDetailsModalProps {
   isOpen: boolean;
@@ -16,6 +17,13 @@ interface SubjectDetailsModalProps {
     avgGrade: number;
   } | null;
 }
+
+const getGradeColorClass = (grade: number) => {
+  if (grade >= 90) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300";
+  if (grade >= 80) return "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300";
+  if (grade >= 70) return "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300";
+  return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
+};
 
 export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: SubjectDetailsModalProps) {
   if (!subjectDetails) return null;
@@ -36,7 +44,7 @@ export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: Su
             </div>
             <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground">Average Grade</span>
-                <Badge variant="secondary" className="w-fit text-base">{subjectDetails.avgGrade.toFixed(1)}%</Badge>
+                <Badge className={cn("w-fit text-base border-none", getGradeColorClass(subjectDetails.avgGrade))}>{subjectDetails.avgGrade.toFixed(1)}%</Badge>
             </div>
         </div>
         <div>

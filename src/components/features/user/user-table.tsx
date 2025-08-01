@@ -2,8 +2,11 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AppUser } from "@/lib/fake-generators";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface UserTableProps {
   users: AppUser[];
@@ -38,8 +41,19 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
             
             {/* TYPE-SAFE: No more casting! TypeScript understands the properties based on user.type */}
             {user.type === 'student' && (
-              <TableCell className="px-3 py-2 font-medium text-center">
-                {user.grade}
+              <TableCell className="px-3 py-2 text-center">
+                <Badge className={cn(
+                  "font-semibold",
+                  {
+                    "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300": user.grade === 'A',
+                    "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300": user.grade === 'B',
+                    "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300": user.grade === 'C',
+                    "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300": user.grade === 'D',
+                    "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300": user.grade === 'F',
+                  }
+                )}>
+                  {user.grade}
+                </Badge>
               </TableCell>
             )}
             {user.type === 'teacher' && (
@@ -49,14 +63,24 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
             )}
 
             <TableCell className="text-right px-3 py-2">
-              <div className="flex justify-end gap-2">
-                <Button onClick={() => onEdit(user)} variant="ghost" size="icon" className="h-8 w-8">
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button onClick={() => onDelete(user)} variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(user)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    <span>Edit</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </TableCell>
           </TableRow>
         ))}

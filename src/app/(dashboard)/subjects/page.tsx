@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import useSWR from "swr";
 import Image from "next/image";
-import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search } from "lucide-react";
+import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search, MoreHorizontal } from "lucide-react";
 import { addSubject, getSubjects, getAllTeachers, updateSubject, deleteSubject } from "@/lib/api";
 import { Teacher } from "@/lib/fake-generators";
 
@@ -14,12 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
 import { SubjectFormModal } from "@/components/features/subject/SubjectFormModal";
 import { Input } from "@/components/ui/input";
 import { SubjectFormValues } from "@/lib/schemas";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type SubjectDetails = {
   name: string;
@@ -39,6 +42,13 @@ const TeacherAvatar = ({ teacher }: { teacher: Teacher }) => (
     />
   </div>
 );
+
+const getGradeColorClass = (grade: number) => {
+  if (grade >= 90) return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300";
+  if (grade >= 80) return "bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-300";
+  if (grade >= 70) return "bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300";
+  return "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300";
+};
 
 export default function SubjectsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -151,21 +161,45 @@ export default function SubjectsPage() {
           if (!details) return null;
           
           return (
-            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer"
+            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 cursor-pointer"
               onClick={() => setModalState({...modalState, view: details})}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
-                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}> <Eye className="h-4 w-4" /> </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, editingSubjectName: details.name, formOpen: true})}> <Pencil className="h-4 w-4" /> </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}> <Trash2 className="h-4 w-4" /> </Button>
+                  <div className="-mr-2 -mt-2" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setModalState({...modalState, view: details})}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          <span>View</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setModalState({...modalState, editingSubjectName: details.name, formOpen: true})}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          <span>Edit</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setModalState({...modalState, delete: details.name})} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          <span>Delete</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4 text-sm">
                 <div><p className="text-muted-foreground">Students</p><p className="font-semibold text-xl">{details.studentCount}</p></div>
-                <div><p className="text-muted-foreground">Avg. Grade</p><p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p></div>
+                <div>
+                  <p className="text-muted-foreground">Avg. Grade</p>
+                  <Badge className={cn("text-xl font-semibold border-none px-3 py-1", getGradeColorClass(details.avgGrade))}>
+                    {details.avgGrade.toFixed(1)}%
+                  </Badge>
+                </div>
               </CardContent>
               <CardFooter className="pt-4">
                 <div className="w-full">
