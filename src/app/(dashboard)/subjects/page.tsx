@@ -74,7 +74,7 @@ export default function SubjectsPage() {
   const sortedSubjects = useMemo(() => {
     if (!subjects) return [];
     
-    let subjectsToProcess = subjects.filter(subject => 
+    const subjectsToProcess = subjects.filter(subject => 
       subject.toLowerCase().includes(searchQuery.toLowerCase())
     );
 

@@ -20,7 +20,7 @@ export function StudentDashboardSidebar() {
         <div className="p-2 bg-primary rounded-lg">
           <BookOpen className="h-6 w-6 text-primary-foreground" />
         </div>
-        <span className="text-xl font-bold">EduDash</span>
+        <span className="text-xl font-bold">SyncBoard</span>
       </div>
       <nav className="flex flex-row lg:flex-col gap-2 flex-grow overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
         {navItems.map((item) => {
@@ -31,7 +31,6 @@ export function StudentDashboardSidebar() {
             href={item.href}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-secondary hover:text-primary",
-              // FIX: Updated active state to better match the screenshot
               isActive && "bg-secondary text-primary font-semibold"
             )}
           >

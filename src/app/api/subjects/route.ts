@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
-import { Teacher } from '@/lib/fake-generators';
 
 export async function GET() {
   return NextResponse.json(db.subjects.sort());

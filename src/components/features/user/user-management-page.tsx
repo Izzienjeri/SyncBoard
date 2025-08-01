@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import dynamic from "next/dynamic";
 import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { useUserManagement } from "@/hooks/user-management";
 import { PageHeader } from "@/components/shared/page-header";

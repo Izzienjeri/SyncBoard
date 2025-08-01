@@ -56,7 +56,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit }: User
         <DialogHeader>
           <DialogTitle>Add New {userType}</DialogTitle>
           <DialogDescription>
-            Enter the details for the new {userType}. Click save when you're done.
+            Enter the details for the new {userType}. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
