@@ -62,7 +62,7 @@ export default function DashboardPage() {
         </Select>
       </PageHeader>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
          {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/students"><StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-chart-1/20 border-chart-1/50 hover:border-chart-1 transition-colors" /></Link>}
          {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/teachers"><StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-chart-2/20 border-chart-2/50 hover:border-chart-2 transition-colors" /></Link>}
          {statsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Pass Rate" value={statsData?.passRate ?? 'N/A'} change="Calculated" className="bg-chart-3/20 border-chart-3/50" />}
