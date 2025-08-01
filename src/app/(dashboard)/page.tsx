@@ -12,6 +12,7 @@ import { attendanceData } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GradeDistribution } from "@/lib/mock-data";
 
+// Dynamically import chart components with SSR disabled, as they rely on client-side browser APIs.
 const AttendanceChart = dynamic(() => import("@/components/dashboard/attendance-chart").then(mod => mod.AttendanceChart), {
   ssr: false,
   loading: () => <Skeleton className="h-[400px] rounded-lg" />,
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   };
   const currentAvgAttendance = periodAvgAttendance[period];
 
+  // Filters the full year's mock attendance data based on the selected period.
   const getAttendanceDataForPeriod = () => {
     switch (period) {
       case "this_term": return attendanceData.slice(8, 12);
@@ -69,7 +71,7 @@ export default function DashboardPage() {
          <StatCard title="Avg. Attendance" value={currentAvgAttendance.avgAttendance} change={currentAvgAttendance.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
       </div>
 
-      {/* ACCESSIBILITY FIX: Add a visually hidden h2 to maintain heading order */}
+      
       <h2 className="sr-only">Performance and Attendance Overview</h2>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">

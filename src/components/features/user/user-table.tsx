@@ -39,7 +39,7 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
             <TableCell className="hidden sm:table-cell px-3 py-2">{user.email}</TableCell>
             <TableCell className="hidden md:table-cell px-3 py-2">{user.phone}</TableCell>
             
-            {/* TYPE-SAFE: No more casting! TypeScript understands the properties based on user.type */}
+            {/* Using a discriminated union (AppUser) allows TypeScript to infer the correct properties inside these blocks. */}
             {user.type === 'student' && (
               <TableCell className="px-3 py-2 text-center">
                 <Badge className={cn(

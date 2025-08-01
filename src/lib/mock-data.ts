@@ -13,8 +13,7 @@ export type SubjectScore = {
   averageScore: number;
 };
 
-
-
+// Static mock data for charts, representing different time periods.
 export const subjectScoreData: Record<string, SubjectScore[]> = {
   this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],
   last_term: [ { name: "computer-science", averageScore: 93.5 }, { name: "physics", averageScore: 92.1 }, { name: "history", averageScore: 86.0 }, { name: "english", averageScore: 90.2 }, { name: "mathematics", averageScore: 87.5 } ],

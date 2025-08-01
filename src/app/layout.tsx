@@ -4,6 +4,7 @@ import "./globals.css";
 
 const inter = Inter({ 
   subsets: ["latin"],
+  // Make the Inter font available as a CSS variable (--font-inter).
   variable: '--font-inter',
 });
 

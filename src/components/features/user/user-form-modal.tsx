@@ -18,7 +18,7 @@ interface UserFormModalProps {
 }
 
 export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initialData }: UserFormModalProps) {
-  // ... rest of the component logic remains the same
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!initialData;
 
@@ -32,6 +32,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
     },
   });
 
+  // Reset the form when the modal opens, populating it with initial data if in edit mode.
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && initialData) {
@@ -52,7 +53,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
     try {
       await onSubmit(data);
     } catch {
-      // Error is handled by the hook
+      // The parent hook handles displaying the error toast.
     } finally {
       setIsSubmitting(false);
     }
@@ -77,6 +78,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}> Cancel </Button>
+              {/* Disable the submit button if no changes have been made to the form. */}
               <Button type="submit" className="button-gradient" disabled={isSubmitting || !form.formState.isDirty}> {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : `Save ${userType}`)} </Button>
             </div>
           </form>

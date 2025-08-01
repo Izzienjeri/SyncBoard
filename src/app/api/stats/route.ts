@@ -27,7 +27,7 @@ export async function GET() {
   
   const gradeDistribution = Object.entries(gradeCounts).map(([grade, count]) => ({ grade, count }));
 
-  // Calculate Pass Rate (all grades except 'F' are passing)
+  // Calculate Pass Rate, where any grade other than 'F' is considered passing.
   const failingStudents = gradeCounts.F;
   const passingStudents = totalStudents - failingStudents;
   const passRate = ((passingStudents / totalStudents) * 100).toFixed(1) + '%';

@@ -22,12 +22,14 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
   const skip = (currentPage - 1) * itemsPerPage;
+  // The SWR key includes all query parameters, so data is re-fetched automatically when any of them change.
   const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
   
+  // `keepPreviousData` provides a smoother UX by showing stale data while new data is loading.
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
 
   const handleCreateUser = async (userData: Partial<AppUser>) => {
-    // Add the discriminator type for creation
+    
     const finalUserData = { ...userData, type: userType };
     await addUser(userType, finalUserData);
     toast.success(`${entityName} added successfully.`);
@@ -56,6 +58,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   };
   
   const handleDeleteUser = async (userId: number) => {
+    // Optimistically update the UI by removing the user immediately.
     const optimisticData: MutatorCallback<UsersApiResponse> = (currentData) => {
       if (!currentData) return currentData;
       return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
@@ -67,6 +70,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
       toast.success(`${entityName} deleted successfully.`);
     } catch {
       toast.error(`Failed to delete ${entityName.toLowerCase()}.`);
+      // If the API call fails, re-fetch the data to revert the optimistic update.
       mutate();
     } finally {
       setUserToDelete(null);

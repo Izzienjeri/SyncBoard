@@ -1,8 +1,4 @@
-# Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 20:41:15
-# Files Included: 36
-
-# === lib/mock-db.ts ===
+// === lib/mock-db.ts ===
 ```ts
 import { createRandomStudent, createRandomTeacher } from './fake-generators';
 import type { Student, Teacher } from './schemas';
@@ -13,6 +9,7 @@ const initialSubjects = [
   "political-science", "music-theory",
 ];
 
+// Persist the mock database in a global variable during development to avoid re-seeding on every hot reload.
 const globalForDb = global as unknown as {
   db: {
     students: Student[];
@@ -29,18 +26,21 @@ const seedDatabase = () => {
   return {
     students,
     teachers,
+    // Format subject strings for display (e.g., 'computer-science' -> 'Computer Science').
     subjects: initialSubjects.map((s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())),
   };
 };
 
+// Use the existing global database instance or seed a new one.
 const db = globalForDb.db || seedDatabase();
 
+// In non-production environments, save the database to the global object.
 if (process.env.NODE_ENV !== "production") globalForDb.db = db;
 
 export default db;
 ```
 
-# === lib/mock-data.ts ===
+// === lib/mock-data.ts ===
 ```ts
 export type StudentAttendance = {
   month: string;
@@ -57,8 +57,7 @@ export type SubjectScore = {
   averageScore: number;
 };
 
-
-
+// Static mock data for charts, representing different time periods.
 export const subjectScoreData: Record<string, SubjectScore[]> = {
   this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],
   last_term: [ { name: "computer-science", averageScore: 93.5 }, { name: "physics", averageScore: 92.1 }, { name: "history", averageScore: 86.0 }, { name: "english", averageScore: 90.2 }, { name: "mathematics", averageScore: 87.5 } ],
@@ -71,34 +70,25 @@ export const attendanceData: StudentAttendance[] = [
 ];
 ```
 
-# === lib/utils.ts ===
+// === lib/utils.ts ===
 ```ts
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+// A utility function to merge Tailwind CSS classes, resolving conflicts.
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 ```
 
-# === lib/api.ts ===
+// === lib/api.ts ===
 ```ts
 import type { AppUser, Teacher } from "@/lib/schemas";
 
-/**
- * A generic fetcher function for use with SWR.
- * @param url The URL to fetch.
- * @returns The JSON response.
- */
+// Generic fetcher function for use with data-fetching libraries like SWR.
 export const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 
-/**
- * Adds a new student or teacher to the database.
- * @param userType - The type of user to add ('student' or 'teacher').
- * @param userData - The form data for the new user.
- * @returns The newly created user object.
- */
 export async function addUser(userType: 'student' | 'teacher', userData: Partial<AppUser>): Promise<AppUser> {
   const res = await fetch(`/api/${userType}s`, {
     method: "POST",
@@ -112,13 +102,7 @@ export async function addUser(userType: 'student' | 'teacher', userData: Partial
   return res.json();
 }
 
-/**
- * Updates an existing student or teacher in the database.
- * @param userType - The type of user to update ('student' or 'teacher').
- * @param userId - The ID of the user to update.
- * @param userData - The updated form data.
- * @returns The updated user object.
- */
+
 export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<AppUser>): Promise<AppUser> {
   const res = await fetch(`/api/${userType}s/${userId}`, {
     method: "PUT",
@@ -132,12 +116,7 @@ export async function updateUser(userType: 'student' | 'teacher', userId: number
   return res.json();
 }
 
-/**
- * Deletes a student or teacher from the database.
- * @param userType - The type of user to delete ('student' or 'teacher').
- * @param userId - The ID of the user to delete.
- * @returns A confirmation object.
- */
+
 export async function deleteUser(userType: 'student' | 'teacher', userId: number): Promise<{ id: number, isDeleted: boolean }> {
   const res = await fetch(`/api/${userType}s/${userId}`, { method: "DELETE" });
   if (!res.ok) {
@@ -147,10 +126,7 @@ export async function deleteUser(userType: 'student' | 'teacher', userId: number
   return res.json();
 }
 
-/**
- * Gets the total number of students.
- * @returns The total count of students.
- */
+// Fetches only the total count of students by setting the limit to 0.
 export async function getTotalStudents(): Promise<number> {
     const res = await fetch('/api/students?limit=0');
     if (!res.ok) return 0;
@@ -158,10 +134,7 @@ export async function getTotalStudents(): Promise<number> {
     return data.total;
 }
 
-/**
- * Gets the total number of teachers.
- * @returns The total count of teachers.
- */
+// Fetches only the total count of teachers by setting the limit to 0.
 export async function getTotalTeachers(): Promise<number> {
     const res = await fetch('/api/teachers?limit=0');
     if (!res.ok) return 0;
@@ -169,27 +142,17 @@ export async function getTotalTeachers(): Promise<number> {
     return data.total;
 }
 
-/**
- * Gets the complete list of all teachers (not paginated).
- * @returns An array of all teacher objects.
- */
+// Fetches the complete, unpaginated list of all teachers.
 export async function getAllTeachers(): Promise<Teacher[]> {
     return fetcher('/api/teachers/all');
 }
 
-/**
- * Gets the list of all available subjects.
- * @returns An array of subject names.
- */
+
 export async function getSubjects(): Promise<string[]> {
     return fetcher('/api/subjects');
 }
 
-/**
- * Adds a new subject to the database.
- * @param data - The data for the new subject including name and assigned teacher IDs.
- * @returns The newly created subject object.
- */
+
 export async function addSubject(data: { subjectName: string; teacherIds: number[] }): Promise<{ name: string }> {
     const res = await fetch('/api/subjects', {
         method: 'POST',
@@ -203,12 +166,7 @@ export async function addSubject(data: { subjectName: string; teacherIds: number
     return res.json();
 }
 
-/**
- * Updates a subject's details (name and/or assigned teachers).
- * @param oldName - The current name of the subject.
- * @param data - An object containing the new name and an array of teacher IDs.
- * @returns A confirmation message.
- */
+
 export async function updateSubject(oldName: string, data: { newSubjectName: string, teacherIds: number[] }): Promise<{ message: string }> {
     const res = await fetch(`/api/subjects/${encodeURIComponent(oldName)}`, {
         method: 'PUT',
@@ -222,11 +180,7 @@ export async function updateSubject(oldName: string, data: { newSubjectName: str
     return res.json();
 }
 
-/**
- * Deletes a subject from the database.
- * @param subjectName - The name of the subject to delete.
- * @returns A confirmation message.
- */
+
 export async function deleteSubject(subjectName: string): Promise<{ message: string }> {
     const res = await fetch(`/api/subjects/${encodeURIComponent(subjectName)}`, {
         method: 'DELETE',
@@ -239,7 +193,7 @@ export async function deleteSubject(subjectName: string): Promise<{ message: str
 }
 ```
 
-# === lib/schemas.ts ===
+// === lib/schemas.ts ===
 ```ts
 import { z } from "zod";
 
@@ -268,6 +222,7 @@ export interface Teacher extends BaseUser {
   subject: string;
 }
 
+// A discriminated union type for users, allowing for type-safe property access based on the 'type' field.
 export type AppUser = Student | Teacher;
 
 export const userSchema = z.object({
@@ -287,7 +242,7 @@ export const subjectSchema = z.object({
 export type SubjectFormValues = z.infer<typeof subjectSchema>;
 ```
 
-# === lib/fake-generators.ts ===
+// === lib/fake-generators.ts ===
 ```ts
 import { faker } from '@faker-js/faker';
 import type { Student, Teacher } from './schemas';
@@ -340,12 +295,14 @@ export const createRandomTeacher = (): Teacher => {
 };
 ```
 
-# === app/globals.css ===
+// === app/globals.css ===
 ```css
 @import "tailwindcss";
 
+/* Define a custom variant for dark mode styles, applying to descendants of .dark */
 @custom-variant dark (&:is(.dark *));
 
+/* Inline CSS variables for use within Tailwind's theme configuration. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -378,6 +335,7 @@ export const createRandomTeacher = (): Teacher => {
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Light theme color palette using the modern OKLCH color space for more consistent brightness. */
 :root {
   --radius: 0.75rem;
   --background: oklch(0.99 0.005 240);
@@ -405,6 +363,7 @@ export const createRandomTeacher = (): Teacher => {
   --chart-5: oklch(0.8 0.2 80);
 }
 
+/* Dark theme color palette overrides. */
 .dark {
   --background: oklch(0.08 0.02 250);
   --foreground: oklch(0.95 0.01 240);
@@ -435,6 +394,7 @@ export const createRandomTeacher = (): Teacher => {
   }
 }
 
+/* Custom utility classes. */
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-secondary;
@@ -452,7 +412,7 @@ export const createRandomTeacher = (): Teacher => {
 }
 ```
 
-# === app/layout.tsx ===
+// === app/layout.tsx ===
 ```tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -460,6 +420,7 @@ import "./globals.css";
 
 const inter = Inter({ 
   subsets: ["latin"],
+  // Make the Inter font available as a CSS variable (--font-inter).
   variable: '--font-inter',
 });
 
@@ -481,7 +442,7 @@ export default function RootLayout({
 }
 ```
 
-# === app/(dashboard)/layout.tsx ===
+// === app/(dashboard)/layout.tsx ===
 ```tsx
 import { StudentDashboardSidebar } from "@/components/dashboard/student-sidebar";
 
@@ -503,7 +464,7 @@ export default function DashboardLayout({
 }
 ```
 
-# === app/(dashboard)/page.tsx ===
+// === app/(dashboard)/page.tsx ===
 ```tsx
 "use client";
 
@@ -519,6 +480,7 @@ import { attendanceData } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GradeDistribution } from "@/lib/mock-data";
 
+// Dynamically import chart components with SSR disabled, as they rely on client-side browser APIs.
 const AttendanceChart = dynamic(() => import("@/components/dashboard/attendance-chart").then(mod => mod.AttendanceChart), {
   ssr: false,
   loading: () => <Skeleton className="h-[400px] rounded-lg" />,
@@ -551,6 +513,7 @@ export default function DashboardPage() {
   };
   const currentAvgAttendance = periodAvgAttendance[period];
 
+  // Filters the full year's mock attendance data based on the selected period.
   const getAttendanceDataForPeriod = () => {
     switch (period) {
       case "this_term": return attendanceData.slice(8, 12);
@@ -562,7 +525,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Student Dashboard">
+      <PageHeader title="Analytics">
         <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
           <SelectContent><SelectItem value="this_term">This Term</SelectItem><SelectItem value="last_term">Last Term</SelectItem><SelectItem value="full_year">Full Year</SelectItem></SelectContent>
@@ -576,7 +539,7 @@ export default function DashboardPage() {
          <StatCard title="Avg. Attendance" value={currentAvgAttendance.avgAttendance} change={currentAvgAttendance.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
       </div>
 
-      {/* ACCESSIBILITY FIX: Add a visually hidden h2 to maintain heading order */}
+      
       <h2 className="sr-only">Performance and Attendance Overview</h2>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
@@ -595,7 +558,7 @@ export default function DashboardPage() {
 }
 ```
 
-# === app/(dashboard)/students/page.tsx ===
+// === app/(dashboard)/students/page.tsx ===
 ```tsx
 import { UserManagementPage } from "@/components/features/user/user-management-page";
 
@@ -610,7 +573,7 @@ export default function StudentsPage() {
 }
 ```
 
-# === app/(dashboard)/teachers/page.tsx ===
+// === app/(dashboard)/teachers/page.tsx ===
 ```tsx
 import { UserManagementPage } from "@/components/features/user/user-management-page";
 
@@ -625,7 +588,7 @@ export default function TeachersPage() {
 }
 ```
 
-# === app/(dashboard)/subjects/page.tsx ===
+// === app/(dashboard)/subjects/page.tsx ===
 ```tsx
 "use client";
 
@@ -695,6 +658,7 @@ export default function SubjectsPage() {
   const { data: subjects, error: subjectsError, isLoading: subjectsLoading, mutate: mutateSubjects } = useSWR("/api/subjects", getSubjects);
   const { data: allTeachers, isLoading: teachersLoading, mutate: mutateTeachers } = useSWR("/api/teachers/all", getAllTeachers);
 
+  // Memoize a map of subject details for efficient lookups, recalculating only when data changes.
   const subjectDetailsMap = useMemo(() => {
     const map = new Map<string, SubjectDetails>();
     if (subjects && allTeachers) {
@@ -702,6 +666,7 @@ export default function SubjectsPage() {
         map.set(subject, {
           name: subject,
           teachers: allTeachers.filter((t: Teacher) => t.subject === subject),
+          // Student count and average grade are randomized for demonstration purposes.
           studentCount: Math.floor(Math.random() * 80) + 20,
           avgGrade: Math.random() * (95 - 70) + 70,
         });
@@ -710,6 +675,7 @@ export default function SubjectsPage() {
     return map;
   }, [subjects, allTeachers]);
 
+  // Memoize the filtered and sorted list of subjects.
   const sortedSubjects = useMemo(() => {
     if (!subjects) return [];
     
@@ -742,6 +708,7 @@ export default function SubjectsPage() {
     return subjectsToProcess;
   }, [subjects, searchQuery, sortOption, subjectDetailsMap]);
 
+  // Handles both creating and updating a subject.
   const handleSubjectSubmit = async (data: SubjectFormValues) => {
     try {
       if (modalState.editingSubjectName) {
@@ -751,6 +718,7 @@ export default function SubjectsPage() {
         const newSubject = await addSubject({ subjectName: data.name, teacherIds: data.teacherIds });
         toast.success(`Subject "${newSubject.name}" added successfully.`);
       }
+      // Re-fetch both subjects and teachers data to reflect changes.
       await Promise.all([mutateSubjects(), mutateTeachers()]);
     } catch (e: unknown) {
       if (e instanceof Error) toast.error(e.message);
@@ -795,6 +763,7 @@ export default function SubjectsPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
+                  {/* Stop click propagation to prevent the card's onClick from firing when the menu is clicked. */}
                   <div className="-mr-2 -mt-2" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -843,6 +812,7 @@ export default function SubjectsPage() {
     );
   };
 
+  // Memoize initial form data for editing a subject.
   const formInitialData = useMemo(() => {
     if (!modalState.editingSubjectName || !allTeachers) return null;
     const assignedTeacherIds = allTeachers.filter(t => t.subject === modalState.editingSubjectName).map(t => t.id);
@@ -862,7 +832,7 @@ export default function SubjectsPage() {
         <Select value={sortOption} onValueChange={setSortOption}><SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Sort by..." /></SelectTrigger><SelectContent><SelectItem value="name-asc">Name (A-Z)</SelectItem><SelectItem value="name-desc">Name (Z-A)</SelectItem><SelectItem value="students-desc">Most Students</SelectItem><SelectItem value="students-asc">Fewest Students</SelectItem><SelectItem value="grade-desc">Highest Grade</SelectItem><SelectItem value="grade-asc">Lowest Grade</SelectItem></SelectContent></Select>
       </div>
 
-      {/* ACCESSIBILITY: Add sr-only heading to fix heading order */}
+      
       <h2 className="sr-only">All Subjects</h2>
       {renderContent()}
       
@@ -882,7 +852,7 @@ export default function SubjectsPage() {
 }
 ```
 
-# === app/api/stats/route.ts ===
+// === app/api/stats/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -913,7 +883,7 @@ export async function GET() {
   
   const gradeDistribution = Object.entries(gradeCounts).map(([grade, count]) => ({ grade, count }));
 
-  // Calculate Pass Rate (all grades except 'F' are passing)
+  // Calculate Pass Rate, where any grade other than 'F' is considered passing.
   const failingStudents = gradeCounts.F;
   const passingStudents = totalStudents - failingStudents;
   const passRate = ((passingStudents / totalStudents) * 100).toFixed(1) + '%';
@@ -922,7 +892,7 @@ export async function GET() {
 }
 ```
 
-# === app/api/students/route.ts ===
+// === app/api/students/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -947,7 +917,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // Sorting logic
+  // Dynamically sort results based on query parameters.
   if (sortBy) {
     filteredStudents.sort((a, b) => {
       let valA, valB;
@@ -990,7 +960,7 @@ export async function POST(request: Request) {
 }
 ```
 
-# === app/api/students/[id]/route.ts ===
+// === app/api/students/[id]/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -1030,7 +1000,7 @@ export async function DELETE(
 }
 ```
 
-# === app/api/teachers/route.ts ===
+// === app/api/teachers/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -1055,7 +1025,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // Sorting logic
+  // Dynamically sort results based on query parameters.
   if (sortBy) {
     filteredTeachers.sort((a, b) => {
       let valA, valB;
@@ -1096,7 +1066,7 @@ export async function POST(request: Request) {
 }
 ```
 
-# === app/api/teachers/[id]/route.ts ===
+// === app/api/teachers/[id]/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -1134,7 +1104,7 @@ export async function DELETE(
 }
 ```
 
-# === app/api/teachers/all/route.ts ===
+// === app/api/teachers/all/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -1144,7 +1114,7 @@ export async function GET() {
 }
 ```
 
-# === app/api/subjects/route.ts ===
+// === app/api/subjects/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -1167,6 +1137,7 @@ export async function POST(request: Request) {
 
   db.subjects.push(formattedName);
 
+  // If teacher IDs are provided, update their assigned subject.
   if (teacherIds && Array.isArray(teacherIds)) {
     teacherIds.forEach((id: number) => {
       const teacher = db.teachers.find(t => t.id === id);
@@ -1180,7 +1151,7 @@ export async function POST(request: Request) {
 }
 ```
 
-# === app/api/subjects/[name]/route.ts ===
+// === app/api/subjects/[name]/route.ts ===
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
@@ -1201,6 +1172,7 @@ export async function PUT(
 
   const finalName = newSubjectName || oldSubjectName;
 
+  // If the subject name is being changed, update it in the subjects list and for all currently assigned teachers.
   if (newSubjectName && newSubjectName !== oldSubjectName) {
     db.subjects[subjectIndex] = newSubjectName;
     db.teachers.forEach((teacher: Teacher) => {
@@ -1210,13 +1182,16 @@ export async function PUT(
     });
   }
 
+  // Handle teacher re-assignments.
   if (teacherIds && Array.isArray(teacherIds)) {
+    // Un-assign teachers who were previously assigned to this subject but are not in the new list.
     db.teachers.forEach((teacher: Teacher) => {
         if (teacher.subject.toLowerCase() === finalName.toLowerCase() && !teacherIds.includes(teacher.id)) {
             teacher.subject = 'Unassigned';
         }
     });
     
+    // Assign the subject to all teachers in the provided list.
     teacherIds.forEach((id: number) => {
       const teacher = db.teachers.find(t => t.id === id);
       if (teacher) {
@@ -1242,6 +1217,7 @@ export async function DELETE(
 
   db.subjects.splice(subjectIndex, 1);
 
+  // When a subject is deleted, set the subject for any assigned teachers to 'Unassigned'.
   db.teachers.forEach((teacher: Teacher) => {
       if (teacher.subject.toLowerCase() === subjectNameToDelete.toLowerCase()) {
           teacher.subject = 'Unassigned';
@@ -1252,7 +1228,7 @@ export async function DELETE(
 }
 ```
 
-# === hooks/user-management.ts ===
+// === hooks/user-management.ts ===
 ```ts
 import { useState, useMemo } from "react";
 import useSWR, { MutatorCallback } from "swr";
@@ -1278,12 +1254,14 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
   const skip = (currentPage - 1) * itemsPerPage;
+  // The SWR key includes all query parameters, so data is re-fetched automatically when any of them change.
   const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
   
+  // `keepPreviousData` provides a smoother UX by showing stale data while new data is loading.
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
 
   const handleCreateUser = async (userData: Partial<AppUser>) => {
-    // Add the discriminator type for creation
+    
     const finalUserData = { ...userData, type: userType };
     await addUser(userType, finalUserData);
     toast.success(`${entityName} added successfully.`);
@@ -1312,6 +1290,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   };
   
   const handleDeleteUser = async (userId: number) => {
+    // Optimistically update the UI by removing the user immediately.
     const optimisticData: MutatorCallback<UsersApiResponse> = (currentData) => {
       if (!currentData) return currentData;
       return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
@@ -1323,6 +1302,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
       toast.success(`${entityName} deleted successfully.`);
     } catch {
       toast.error(`Failed to delete ${entityName.toLowerCase()}.`);
+      // If the API call fails, re-fetch the data to revert the optimistic update.
       mutate();
     } finally {
       setUserToDelete(null);
@@ -1343,7 +1323,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
 }
 ```
 
-# === types/api.types.ts ===
+// === types/api.types.ts ===
 ```ts
 import type { AppUser } from "@/lib/schemas";
 
@@ -1355,7 +1335,7 @@ export interface UsersApiResponse {
 }
 ```
 
-# === components/shared/table-pagination-controls.tsx ===
+// === components/shared/table-pagination-controls.tsx ===
 ```tsx
 "use client";
 
@@ -1423,9 +1403,8 @@ export function TablePaginationControls({
 }
 ```
 
-# === components/shared/confirmation-dialog.tsx ===
+// === components/shared/confirmation-dialog.tsx ===
 ```tsx
-// === NEW FILE: components/shared/confirmation-dialog.tsx ===
 "use client";
 
 import {
@@ -1459,6 +1438,7 @@ export function ConfirmationDialog({
   isDestructive = true,
 }: ConfirmationDialogProps) {
   
+  // Closes the dialog after the confirm action is executed.
   const handleConfirm = () => {
     onConfirm();
     onOpenChange(false);
@@ -1488,7 +1468,7 @@ export function ConfirmationDialog({
 }
 ```
 
-# === components/shared/page-header.tsx ===
+// === components/shared/page-header.tsx ===
 ```tsx
 import { cn } from "@/lib/utils";
 
@@ -1519,7 +1499,7 @@ export function PageHeader({
 }
 ```
 
-# === components/dashboard/stat-card.tsx ===
+// === components/dashboard/stat-card.tsx ===
 ```tsx
 import { cn } from "@/lib/utils";
 
@@ -1549,7 +1529,7 @@ export function StatCard({ title, value, change, isNegative = false, className }
 }
 ```
 
-# === components/dashboard/attendance-chart.tsx ===
+// === components/dashboard/attendance-chart.tsx ===
 ```tsx
 "use client";
 import {
@@ -1575,6 +1555,7 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
             data={data}
             margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
           >
+            {/* Defines the gradient used for the area fill below the line. */}
             <defs>
               <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -1594,7 +1575,6 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              // FIX: Explicitly type 'value' as number
               tickFormatter={(value: number) => `${value}%`}
             />
             <Tooltip
@@ -1603,7 +1583,6 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
                 border: "1px solid #e2e8f0",
                 borderRadius: "0.5rem",
               }}
-              // FIX: Explicitly type 'value' as number (already done here, but good practice to confirm)
               formatter={(value: number) => [`${value}%`, "Attendance"]}
             />
             <Area
@@ -1628,7 +1607,7 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
 }
 ```
 
-# === components/dashboard/student-sidebar.tsx ===
+// === components/dashboard/student-sidebar.tsx ===
 ```tsx
 "use client";
 import Link from "next/link";
@@ -1648,11 +1627,13 @@ export function StudentDashboardSidebar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Close the mobile menu when the user navigates to a new page.
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
 
   const navLinks = navItems.map((item) => {
+    // Determine if the nav item is active by checking if the current path starts with its href.
     const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
     return (
       <Link
@@ -1706,7 +1687,7 @@ export function StudentDashboardSidebar() {
 }
 ```
 
-# === components/dashboard/student-performance-summary.tsx ===
+// === components/dashboard/student-performance-summary.tsx ===
 ```tsx
 "use client"
 
@@ -1752,6 +1733,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
+// A custom bar component for the chart to create a hover effect.
 const ActiveBar = (props: RectangleProps) => {
   const { x = 0, y = 0, width = 0, height = 0, ...rest } = props;
   return <Rectangle {...rest} x={x} width={width} height={height + 5} y={y - 5} />;
@@ -1809,7 +1791,7 @@ export function StudentPerformanceSummary({ gradeDistribution }: { gradeDistribu
 }
 ```
 
-# === components/features/user/user-table.tsx ===
+// === components/features/user/user-table.tsx ===
 ```tsx
 "use client";
 
@@ -1852,7 +1834,7 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
             <TableCell className="hidden sm:table-cell px-3 py-2">{user.email}</TableCell>
             <TableCell className="hidden md:table-cell px-3 py-2">{user.phone}</TableCell>
             
-            {/* TYPE-SAFE: No more casting! TypeScript understands the properties based on user.type */}
+            {/* Using a discriminated union (AppUser) allows TypeScript to infer the correct properties inside these blocks. */}
             {user.type === 'student' && (
               <TableCell className="px-3 py-2 text-center">
                 <Badge className={cn(
@@ -1903,7 +1885,7 @@ export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
 }
 ```
 
-# === components/features/user/user-form-modal.tsx ===
+// === components/features/user/user-form-modal.tsx ===
 ```tsx
 "use client";
 
@@ -1925,7 +1907,7 @@ interface UserFormModalProps {
 }
 
 export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initialData }: UserFormModalProps) {
-  // ... rest of the component logic remains the same
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!initialData;
 
@@ -1939,6 +1921,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
     },
   });
 
+  // Reset the form when the modal opens, populating it with initial data if in edit mode.
   useEffect(() => {
     if (isOpen) {
       if (isEditMode && initialData) {
@@ -1959,7 +1942,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
     try {
       await onSubmit(data);
     } catch {
-      // Error is handled by the hook
+      // The parent hook handles displaying the error toast.
     } finally {
       setIsSubmitting(false);
     }
@@ -1984,6 +1967,7 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}> Cancel </Button>
+              {/* Disable the submit button if no changes have been made to the form. */}
               <Button type="submit" className="button-gradient" disabled={isSubmitting || !form.formState.isDirty}> {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : `Save ${userType}`)} </Button>
             </div>
           </form>
@@ -1994,14 +1978,14 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initia
 }
 ```
 
-# === components/features/user/user-table-skeleton.tsx ===
+// === components/features/user/user-table-skeleton.tsx ===
 ```tsx
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserTableSkeletonProps {
   type: 'student' | 'teacher';
-  items: number; // New prop to control how many skeleton rows to show
+  items: number;
 }
 
 export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) {
@@ -2037,7 +2021,7 @@ export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) 
 }
 ```
 
-# === components/features/user/user-management-page.tsx ===
+// === components/features/user/user-management-page.tsx ===
 ```tsx
 "use client";
 
@@ -2073,6 +2057,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     return { sortBy: by, sortOrder: order };
   }, [sortOption]);
 
+  // Debounce the search term to avoid excessive API calls while the user is typing.
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -2196,7 +2181,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
 }
 ```
 
-# === components/features/subject/SubjectDetailsModal.tsx ===
+// === components/features/subject/SubjectDetailsModal.tsx ===
 ```tsx
 "use client";
 
@@ -2270,7 +2255,7 @@ export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: Su
 }
 ```
 
-# === components/features/subject/SubjectFormModal.tsx ===
+// === components/features/subject/SubjectFormModal.tsx ===
 ```tsx
 "use client";
 
@@ -2303,6 +2288,7 @@ export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, 
   
   const { isSubmitting } = form.formState;
 
+  // Reset the form when the modal opens, populating with initial data for editing or clearing for creation.
   useEffect(() => {
     if (isOpen) {
       form.reset(isEditMode && initialData ? initialData : { name: "", teacherIds: [] });
@@ -2361,6 +2347,7 @@ export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, 
                                  <Checkbox
                                    checked={field.value?.includes(teacher.id)}
                                    onCheckedChange={(checked) => {
+                                     // Manually update the array of selected teacher IDs.
                                      return checked
                                        ? field.onChange([...(field.value || []), teacher.id])
                                        : field.onChange(field.value?.filter((id) => id !== teacher.id));

@@ -32,6 +32,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     return { sortBy: by, sortOrder: order };
   }, [sortOption]);
 
+  // Debounce the search term to avoid excessive API calls while the user is typing.
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);

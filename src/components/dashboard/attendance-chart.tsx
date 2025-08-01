@@ -22,6 +22,7 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
             data={data}
             margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
           >
+            {/* Defines the gradient used for the area fill below the line. */}
             <defs>
               <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />

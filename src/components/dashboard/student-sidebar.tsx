@@ -16,11 +16,13 @@ export function StudentDashboardSidebar() {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Close the mobile menu when the user navigates to a new page.
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
 
   const navLinks = navItems.map((item) => {
+    // Determine if the nav item is active by checking if the current path starts with its href.
     const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
     return (
       <Link

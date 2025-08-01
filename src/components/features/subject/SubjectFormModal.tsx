@@ -29,6 +29,7 @@ export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, 
   
   const { isSubmitting } = form.formState;
 
+  // Reset the form when the modal opens, populating with initial data for editing or clearing for creation.
   useEffect(() => {
     if (isOpen) {
       form.reset(isEditMode && initialData ? initialData : { name: "", teacherIds: [] });
@@ -87,6 +88,7 @@ export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, 
                                  <Checkbox
                                    checked={field.value?.includes(teacher.id)}
                                    onCheckedChange={(checked) => {
+                                     // Manually update the array of selected teacher IDs.
                                      return checked
                                        ? field.onChange([...(field.value || []), teacher.id])
                                        : field.onChange(field.value?.filter((id) => id !== teacher.id));

@@ -19,6 +19,7 @@ export async function POST(request: Request) {
 
   db.subjects.push(formattedName);
 
+  // If teacher IDs are provided, update their assigned subject.
   if (teacherIds && Array.isArray(teacherIds)) {
     teacherIds.forEach((id: number) => {
       const teacher = db.teachers.find(t => t.id === id);

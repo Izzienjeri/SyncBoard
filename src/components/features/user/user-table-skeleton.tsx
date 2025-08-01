@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserTableSkeletonProps {
   type: 'student' | 'teacher';
-  items: number; // New prop to control how many skeleton rows to show
+  items: number;
 }
 
 export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) {

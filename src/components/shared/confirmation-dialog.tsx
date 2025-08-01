@@ -1,4 +1,3 @@
-// === NEW FILE: components/shared/confirmation-dialog.tsx ===
 "use client";
 
 import {
@@ -32,6 +31,7 @@ export function ConfirmationDialog({
   isDestructive = true,
 }: ConfirmationDialogProps) {
   
+  // Closes the dialog after the confirm action is executed.
   const handleConfirm = () => {
     onConfirm();
     onOpenChange(false);

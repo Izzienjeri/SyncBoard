@@ -66,6 +66,7 @@ export default function SubjectsPage() {
   const { data: subjects, error: subjectsError, isLoading: subjectsLoading, mutate: mutateSubjects } = useSWR("/api/subjects", getSubjects);
   const { data: allTeachers, isLoading: teachersLoading, mutate: mutateTeachers } = useSWR("/api/teachers/all", getAllTeachers);
 
+  // Memoize a map of subject details for efficient lookups, recalculating only when data changes.
   const subjectDetailsMap = useMemo(() => {
     const map = new Map<string, SubjectDetails>();
     if (subjects && allTeachers) {
@@ -73,6 +74,7 @@ export default function SubjectsPage() {
         map.set(subject, {
           name: subject,
           teachers: allTeachers.filter((t: Teacher) => t.subject === subject),
+          // Student count and average grade are randomized for demonstration purposes.
           studentCount: Math.floor(Math.random() * 80) + 20,
           avgGrade: Math.random() * (95 - 70) + 70,
         });
@@ -81,6 +83,7 @@ export default function SubjectsPage() {
     return map;
   }, [subjects, allTeachers]);
 
+  // Memoize the filtered and sorted list of subjects.
   const sortedSubjects = useMemo(() => {
     if (!subjects) return [];
     
@@ -113,6 +116,7 @@ export default function SubjectsPage() {
     return subjectsToProcess;
   }, [subjects, searchQuery, sortOption, subjectDetailsMap]);
 
+  // Handles both creating and updating a subject.
   const handleSubjectSubmit = async (data: SubjectFormValues) => {
     try {
       if (modalState.editingSubjectName) {
@@ -122,6 +126,7 @@ export default function SubjectsPage() {
         const newSubject = await addSubject({ subjectName: data.name, teacherIds: data.teacherIds });
         toast.success(`Subject "${newSubject.name}" added successfully.`);
       }
+      // Re-fetch both subjects and teachers data to reflect changes.
       await Promise.all([mutateSubjects(), mutateTeachers()]);
     } catch (e: unknown) {
       if (e instanceof Error) toast.error(e.message);
@@ -166,6 +171,7 @@ export default function SubjectsPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
+                  {/* Stop click propagation to prevent the card's onClick from firing when the menu is clicked. */}
                   <div className="-mr-2 -mt-2" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -214,6 +220,7 @@ export default function SubjectsPage() {
     );
   };
 
+  // Memoize initial form data for editing a subject.
   const formInitialData = useMemo(() => {
     if (!modalState.editingSubjectName || !allTeachers) return null;
     const assignedTeacherIds = allTeachers.filter(t => t.subject === modalState.editingSubjectName).map(t => t.id);
@@ -233,7 +240,7 @@ export default function SubjectsPage() {
         <Select value={sortOption} onValueChange={setSortOption}><SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Sort by..." /></SelectTrigger><SelectContent><SelectItem value="name-asc">Name (A-Z)</SelectItem><SelectItem value="name-desc">Name (Z-A)</SelectItem><SelectItem value="students-desc">Most Students</SelectItem><SelectItem value="students-asc">Fewest Students</SelectItem><SelectItem value="grade-desc">Highest Grade</SelectItem><SelectItem value="grade-asc">Lowest Grade</SelectItem></SelectContent></Select>
       </div>
 
-      {/* ACCESSIBILITY: Add sr-only heading to fix heading order */}
+      
       <h2 className="sr-only">All Subjects</h2>
       {renderContent()}
       

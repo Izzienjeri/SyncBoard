@@ -42,6 +42,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   return null;
 };
 
+// A custom bar component for the chart to create a hover effect.
 const ActiveBar = (props: RectangleProps) => {
   const { x = 0, y = 0, width = 0, height = 0, ...rest } = props;
   return <Rectangle {...rest} x={x} width={width} height={height + 5} y={y - 5} />;

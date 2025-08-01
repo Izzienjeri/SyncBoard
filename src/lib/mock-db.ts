@@ -7,6 +7,7 @@ const initialSubjects = [
   "political-science", "music-theory",
 ];
 
+// Persist the mock database in a global variable during development to avoid re-seeding on every hot reload.
 const globalForDb = global as unknown as {
   db: {
     students: Student[];
@@ -23,12 +24,15 @@ const seedDatabase = () => {
   return {
     students,
     teachers,
+    // Format subject strings for display (e.g., 'computer-science' -> 'Computer Science').
     subjects: initialSubjects.map((s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())),
   };
 };
 
+// Use the existing global database instance or seed a new one.
 const db = globalForDb.db || seedDatabase();
 
+// In non-production environments, save the database to the global object.
 if (process.env.NODE_ENV !== "production") globalForDb.db = db;
 
 export default db;

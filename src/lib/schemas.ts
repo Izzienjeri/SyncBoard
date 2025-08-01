@@ -25,6 +25,7 @@ export interface Teacher extends BaseUser {
   subject: string;
 }
 
+// A discriminated union type for users, allowing for type-safe property access based on the 'type' field.
 export type AppUser = Student | Teacher;
 
 export const userSchema = z.object({

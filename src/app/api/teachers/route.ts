@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // Sorting logic
+  // Dynamically sort results based on query parameters.
   if (sortBy) {
     filteredTeachers.sort((a, b) => {
       let valA, valB;
