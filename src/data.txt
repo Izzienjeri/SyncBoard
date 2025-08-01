@@ -1,97 +1,189 @@
-# Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 17:21:51
-# Files Included: 38
+Excellent feedback. I've implemented all your requested features, focusing on robust sorting, a cleaner editing experience, and more functionality when creating subjects.
 
-# === lib/mock-db.ts ===
+Here is a summary of the key improvements:
+
+1.  **Comprehensive Sorting:**
+    *   **Students Page:** You can now sort students by `Name` or `Grade` (ascending/descending) using a new dropdown menu.
+    *   **Teachers Page:** Similarly, teachers can be sorted by `Name` or `Subject`.
+    *   **Subjects Page:** The subjects list can now be sorted by `Name`, `Number of Students`, or `Average Grade`.
+    *   All sorting is integrated with pagination and search, ensuring a consistent experience.
+
+2.  **Improved Inline Editing UI:**
+    *   The previous "click to edit" text has been replaced. Now, when you hover over a student's or teacher's name in the table, a subtle **pencil icon** appears, indicating that the row is editable. Clicking the icon opens the pre-filled edit modal.
+
+3.  **Enhanced "Add Subject" Modal:**
+    *   You can now **assign instructors directly when creating a new subject**. The "Add Subject" modal now includes the same instructor selection list that was previously only available in the "Edit" modal.
+
+Here are the updated files with these new features:
+
+# ✨ Modified Files
+
+# === app/api/students/route.ts ===
 ```ts
-import { Student, Teacher, createRandomStudent, createRandomTeacher } from './fake-generators';
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { createRandomStudent, Student } from '@/lib/fake-generators';
 
-const initialSubjects = [
-  "mathematics", "physics", "history", "english", "computer-science",
-  "biology", "chemistry", "art-history", "philosophy", "economics",
-  "political-science", "music-theory",
-];
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const skip = parseInt(searchParams.get('skip') || '0');
+  const search = searchParams.get('search')?.toLowerCase() || '';
+  const sortBy = searchParams.get('sortBy');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-const globalForDb = global as unknown as {
-  db: {
-    students: Student[];
-    teachers: Teacher[];
-    subjects: string[];
+  let filteredStudents = db.students;
+
+  if (search) {
+    filteredStudents = db.students.filter(student =>
+      student.firstName.toLowerCase().includes(search) ||
+      student.lastName.toLowerCase().includes(search) ||
+      student.email.toLowerCase().includes(search)
+    );
   }
-};
 
-const seedDatabase = () => {
-  console.log("🌱 Seeding database with mock data...");
-  const students = Array.from({ length: 100 }, createRandomStudent);
-  const teachers = Array.from({ length: 25 }, createRandomTeacher);
-  
-  return {
-    students,
-    teachers,
-    subjects: initialSubjects.map((s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())),
-  };
-};
+  // Sorting logic
+  if (sortBy) {
+    filteredStudents.sort((a, b) => {
+      let valA, valB;
 
-const db = globalForDb.db || seedDatabase();
+      switch (sortBy) {
+        case 'name':
+          valA = `${a.firstName} ${a.lastName}`;
+          valB = `${b.firstName} ${b.lastName}`;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        case 'grade':
+          valA = a.grade;
+          valB = b.grade;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        default:
+          return 0;
+      }
+    });
+  }
 
-if (process.env.NODE_ENV !== "production") globalForDb.db = db;
 
-export default db;
-```
+  const total = filteredStudents.length;
+  const paginatedStudents = filteredStudents.slice(skip, skip + limit);
 
-# === lib/mock-data.ts ===
-```ts
-export type StudentAttendance = {
-  month: string;
-  attendance: number;
-};
-
-export type GradeDistribution = {
-  grade: string;
-  count: number;
-};
-
-export type SubjectScore = {
-  name: string;
-  averageScore: number;
-};
-
-export type Teacher = {
-  id: number;
-  name:string;
+  return NextResponse.json({
+    users: paginatedStudents,
+    total: total,
+    skip,
+    limit,
+  });
 }
 
-export const periodStats = {
-  this_term: { passRate: "85.3%", passRateChange: "-1.2%", isPassRateNegative: true, avgAttendance: "91%", changeLabel: "This Term" },
-  last_term: { passRate: "86.5%", passRateChange: "+0.5%", isPassRateNegative: false, avgAttendance: "89%", changeLabel: "Last Term" },
-  full_year: { passRate: "85.9%", passRateChange: "+2.1%", isPassRateNegative: false, avgAttendance: "90%", changeLabel: "Full Year" },
-};
-
-export const gradeDistributionData: Record<string, GradeDistribution[]> = {
-  this_term: [ { grade: "A", count: 23 }, { grade: "B", count: 40 }, { grade: "C", count: 25 }, { grade: "D", count: 8 }, { grade: "F", count: 4 } ],
-  last_term: [ { grade: "A", count: 25 }, { grade: "B", count: 45 }, { grade: "C", count: 20 }, { grade: "D", count: 7 }, { grade: "F", count: 3 } ],
-  full_year: [ { grade: "A", count: 24 }, { grade: "B", count: 42 }, { grade: "C", count: 22 }, { grade: "D", count: 8 }, { grade: "F", count: 4 } ],
-};
-
-export const subjectScoreData: Record<string, SubjectScore[]> = {
-  this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],
-  last_term: [ { name: "computer-science", averageScore: 93.5 }, { name: "physics", averageScore: 92.1 }, { name: "history", averageScore: 86.0 }, { name: "english", averageScore: 90.2 }, { name: "mathematics", averageScore: 87.5 } ],
-  full_year: [ { name: "computer-science", averageScore: 94.1 }, { name: "physics", averageScore: 91.2 }, { name: "history", averageScore: 85.0 }, { name: "english", averageScore: 89.8 }, { name: "mathematics", averageScore: 88.5 } ],
-};
-
-export const attendanceData: StudentAttendance[] = [
-  { month: "Jan", attendance: 95 }, { month: "Feb", attendance: 92 }, { month: "Mar", attendance: 93 }, { month: "Apr", attendance: 88 }, { month: "May", attendance: 90 }, { month: "Jun", attendance: 85 },
-  { month: "Jul", attendance: 89 }, { month: "Aug", attendance: 91 }, { month: "Sep", attendance: 94 }, { month: "Oct", attendance: 96 }, { month: "Nov", attendance: 93 }, { month: "Dec", attendance: 87 },
-];
+export async function POST(request: Request) {
+  const body = await request.json();
+  const newStudent: Student = {
+    ...createRandomStudent(),
+    ...body,
+  };
+  db.students.unshift(newStudent);
+  return NextResponse.json(newStudent, { status: 201 });
+}
 ```
 
-# === lib/utils.ts ===
+# === app/api/teachers/route.ts ===
 ```ts
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { createRandomTeacher, Teacher } from '@/lib/fake-generators';
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const limit = parseInt(searchParams.get('limit') || '10');
+  const skip = parseInt(searchParams.get('skip') || '0');
+  const search = searchParams.get('search')?.toLowerCase() || '';
+  const sortBy = searchParams.get('sortBy');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
+
+  let filteredTeachers = db.teachers;
+
+  if (search) {
+    filteredTeachers = db.teachers.filter(teacher =>
+      teacher.firstName.toLowerCase().includes(search) ||
+      teacher.lastName.toLowerCase().includes(search) ||
+      teacher.email.toLowerCase().includes(search)
+    );
+  }
+
+  // Sorting logic
+  if (sortBy) {
+    filteredTeachers.sort((a, b) => {
+      let valA, valB;
+      switch (sortBy) {
+        case 'name':
+          valA = `${a.firstName} ${a.lastName}`;
+          valB = `${b.firstName} ${b.lastName}`;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        case 'subject':
+          valA = a.subject;
+          valB = b.subject;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        default:
+          return 0;
+      }
+    });
+  }
+  
+  const total = filteredTeachers.length;
+  const paginatedTeachers = filteredTeachers.slice(skip, skip + limit);
+
+  return NextResponse.json({
+    users: paginatedTeachers,
+    total: total,
+    skip,
+    limit,
+  });
+}
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const newTeacher: Teacher = {
+    ...createRandomTeacher(),
+    ...body,
+  };
+  db.teachers.unshift(newTeacher);
+  return NextResponse.json(newTeacher, { status: 201 });
+}
+```
+
+# === app/api/subjects/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { Teacher } from '@/lib/fake-generators';
+
+export async function GET() {
+  return NextResponse.json(db.subjects.sort());
+}
+
+export async function POST(request: Request) {
+  const { subjectName, teacherIds } = await request.json();
+  if (!subjectName) {
+    return NextResponse.json({ message: "Subject name is required." }, { status: 400 });
+  }
+  
+  const formattedName = subjectName.charAt(0).toUpperCase() + subjectName.slice(1).toLowerCase();
+
+  if (db.subjects.find(s => s.toLowerCase() === formattedName.toLowerCase())) {
+    return NextResponse.json({ message: "Subject already exists." }, { status: 409 });
+  }
+
+  db.subjects.push(formattedName);
+
+  if (teacherIds && Array.isArray(teacherIds)) {
+    teacherIds.forEach((id: number) => {
+      const teacher = db.teachers.find(t => t.id === id);
+      if (teacher) {
+        teacher.subject = formattedName;
+      }
+    });
+  }
+
+  return NextResponse.json({ name: formattedName }, { status: 201 });
 }
 ```
 
@@ -206,14 +298,14 @@ export async function getSubjects(): Promise<string[]> {
 
 /**
  * Adds a new subject to the database.
- * @param subjectName - The name of the new subject.
+ * @param data - The data for the new subject including name and assigned teacher IDs.
  * @returns The newly created subject object.
  */
-export async function addSubject(subjectName: string): Promise<{ name: string }> {
+export async function addSubject(data: { subjectName: string; teacherIds: number[] }): Promise<{ name: string }> {
     const res = await fetch('/api/subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subjectName }),
+        body: JSON.stringify(data),
     });
     if (!res.ok) {
         const error = await res.json();
@@ -258,872 +350,6 @@ export async function deleteSubject(subjectName: string): Promise<{ message: str
 }
 ```
 
-# === lib/schemas.ts ===
-```ts
-import { z } from "zod";
-
-export const userSchema = z.object({
-  firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
-  lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  phone: z.string().optional(),
-});
-
-export type UserFormValues = z.infer<typeof userSchema>;
-```
-
-# === lib/fake-generators.ts ===
-```ts
-import { faker } from '@faker-js/faker';
-import { User } from '@/types/api.types';
-
-export interface Student extends User {
-  grade: string;
-}
-
-export interface Teacher extends User {
-  subject: string;
-}
-
-const allSubjects = [
-    'Mathematics', 'Physics', 'History', 'English', 'Computer Science', 
-    'Biology', 'Chemistry', 'Art History', 'Philosophy', 'Economics'
-];
-
-export const createRandomStudent = (): Student => {
-  const firstName = faker.person.firstName();
-  const lastName = faker.person.lastName();
-  return {
-    id: faker.number.int({ min: 1, max: 100000 }),
-    firstName,
-    lastName,
-    email: faker.internet.email({ firstName, lastName }),
-    phone: `(${faker.string.numeric(3)}) ${faker.string.numeric(3)}-${faker.string.numeric(4)}`,
-    image: faker.image.avatar(),
-    address: {
-      address: faker.location.streetAddress(),
-      city: faker.location.city(),
-      postalCode: faker.location.zipCode(),
-      state: faker.location.state({ abbreviated: true }),
-    },
-    grade: faker.helpers.arrayElement(['A', 'B', 'C', 'D', 'F']),
-  };
-};
-
-export const createRandomTeacher = (): Teacher => {
-  const firstName = faker.person.firstName();
-  const lastName = faker.person.lastName();
-  return {
-    id: faker.number.int({ min: 100001, max: 200000 }),
-    firstName,
-    lastName,
-    email: faker.internet.email({ firstName, lastName }),
-    phone: `(${faker.string.numeric(3)}) ${faker.string.numeric(3)}-${faker.string.numeric(4)}`,
-    image: faker.image.avatar(),
-    address: {
-      address: faker.location.streetAddress(),
-      city: faker.location.city(),
-      postalCode: faker.location.zipCode(),
-      state: faker.location.state({ abbreviated: true }),
-    },
-    subject: faker.helpers.arrayElement(allSubjects),
-  };
-};
-```
-
-# === app/globals.css ===
-```css
-@import "tailwindcss";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-
-:root {
-  --radius: 0.75rem;
-  --background: oklch(0.99 0.005 240);
-  --foreground: oklch(0.1 0.03 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.1 0.03 250);
-  --popover: oklch(1 0 0 / 0.8);
-  --popover-foreground: oklch(0.1 0.03 250);
-  --primary: oklch(0.60 0.18 265);
-  --primary-foreground: oklch(0.99 0.005 240);
-  --secondary: oklch(0.92 0.03 260);
-  --secondary-foreground: oklch(0.1 0.03 250);
-  --muted: oklch(0.95 0.02 260);
-  --muted-foreground: oklch(0.45 0.04 255);
-  --accent: oklch(0.95 0.02 260);
-  --accent-foreground: oklch(0.09 0.08 265);
-  --destructive: oklch(0.65 0.22 20);
-  --border: oklch(0.1 0.03 250 / 0.15);
-  --input: oklch(0.1 0.03 250 / 0.05);
-  --ring: oklch(0.60 0.18 265);
-  --chart-1: oklch(0.7 0.15 290);
-  --chart-2: oklch(0.75 0.18 200);
-  --chart-3: oklch(0.65 0.2 260);
-  --chart-4: oklch(0.8 0.18 150);
-  --chart-5: oklch(0.8 0.2 80);
-}
-
-.dark {
-  --background: oklch(0.08 0.02 250);
-  --foreground: oklch(0.95 0.01 240);
-  --card: oklch(0.12 0.03 260);
-  --card-foreground: oklch(0.95 0.01 240);
-  --popover: oklch(0.05 0.02 250 / 0.8);
-  --popover-foreground: oklch(0.95 0.01 240);
-  --primary: oklch(0.7 0.2 275);
-  --primary-foreground: oklch(0.98 0.01 275);
-  --secondary: oklch(0.2 0.05 270);
-  --secondary-foreground: oklch(0.95 0.01 240);
-  --muted: oklch(0.2 0.05 270 / 0.5);
-  --muted-foreground: oklch(0.65 0.05 260);
-  --accent: oklch(0.2 0.05 270);
-  --accent-foreground: oklch(0.95 0.01 240);
-  --destructive: oklch(0.7 0.2 25);
-  --border: oklch(1 1 1 / 0.15);
-  --input: oklch(1 1 1 / 0.08);
-  --ring: oklch(0.75 0.22 280);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply text-foreground antialiased bg-background;
-  }
-}
-
-@layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary to-secondary;
-  }
-  .button-gradient {
-    @apply bg-gradient-to-br from-primary to-primary/70 text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/20 hover:from-primary/90 hover:to-primary/60 hover:shadow-xl hover:shadow-primary/30;
-  }
-  .glass-card {
-    @apply bg-card/80 dark:bg-card/70 backdrop-blur-lg border shadow-lg shadow-black/10 dark:shadow-black/20;
-  }
-  /* IMPROVEMENT: New utility class for the requested background gradient */
-  .background-gradient-custom {
-    background: hsla(191, 75%, 60%, 1);
-    background: linear-gradient(90deg, hsla(191, 75%, 60%, 1) 0%, hsla(248, 87%, 36%, 1) 100%);
-  }
-}
-```
-
-# === app/layout.tsx ===
-```tsx
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "Student Management Dashboard",
-  description: "A dashboard for managing students and their performance.",
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
-}
-```
-
-# === app/(dashboard)/layout.tsx ===
-```tsx
-import { StudentDashboardSidebar } from "@/components/dashboard/student-sidebar";
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <main className="min-h-screen w-full p-4 sm:p-6 lg:p-8 background-gradient-custom">
-      <div className="mx-auto w-full max-w-7xl rounded-2xl bg-card/90 p-6 shadow-xl backdrop-blur-lg lg:p-8 flex flex-col lg:flex-row gap-8 lg:items-start">
-        <StudentDashboardSidebar />
-        <div className="flex-1 flex flex-col gap-8 min-w-0">
-          {children}
-        </div>
-      </div>
-    </main>
-  );
-}
-```
-
-# === app/(dashboard)/page.tsx ===
-```tsx
-"use client";
-
-import { useState } from "react";
-import useSWR from "swr";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import { PageHeader } from "@/components/shared/page-header";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { getTotalStudents, getTotalTeachers } from "@/lib/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { attendanceData, periodStats } from "@/lib/mock-data";
-import { Skeleton } from "@/components/ui/skeleton";
-
-const AttendanceChart = dynamic(() => import("@/components/dashboard/attendance-chart").then(mod => mod.AttendanceChart), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[400px] rounded-lg" />,
-});
-const StudentPerformanceSummary = dynamic(() => import("@/components/dashboard/student-performance-summary").then(mod => mod.StudentPerformanceSummary), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[400px] rounded-lg" />,
-});
-
-
-type Period = "this_term" | "last_term" | "full_year";
-
-export default function DashboardPage() {
-  const [period, setPeriod] = useState<Period>("this_term");
-
-  const { data: totalStudents, isLoading: studentsLoading } = useSWR('totalStudents', getTotalStudents);
-  const { data: totalTeachers, isLoading: teachersLoading } = useSWR('totalTeachers', getTotalTeachers);
-
-  const currentStats = periodStats[period];
-
-  const getAttendanceDataForPeriod = () => {
-    switch (period) {
-      case "this_term":
-        return attendanceData.slice(8, 12);
-      case "last_term":
-        return attendanceData.slice(4, 8);
-      case "full_year":
-      default:
-        return attendanceData;
-    }
-  };
-  const currentAttendanceData = getAttendanceDataForPeriod();
-
-  return (
-    <>
-      <PageHeader title="Student Dashboard">
-        <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter period" />
-          </SelectTrigger>
-          <SelectContent>
-             <SelectItem value="this_term">This Term</SelectItem>
-            <SelectItem value="last_term">Last Term</SelectItem>
-            <SelectItem value="full_year">Full Year</SelectItem>
-          </SelectContent>
-        </Select>
-      </PageHeader>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-         {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/students"><StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-chart-1/20 border-chart-1/50 hover:border-chart-1 transition-colors" /></Link>}
-         {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/teachers"><StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-chart-2/20 border-chart-2/50 hover:border-chart-2 transition-colors" /></Link>}
-         <StatCard title="Pass Rate" value={currentStats.passRate} change={currentStats.passRateChange} isNegative={currentStats.isPassRateNegative} className="bg-chart-3/20 border-chart-3/50" />
-         <StatCard title="Avg. Attendance" value={currentStats.avgAttendance} change={currentStats.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
-        <div className="xl:col-span-3">
-          <AttendanceChart data={currentAttendanceData} />
-        </div>
-        <div className="xl:col-span-2">
-          <StudentPerformanceSummary period={period} />
-        </div>
-      </div>
-    </>
-  );
-}
-```
-
-# === app/(dashboard)/students/page.tsx ===
-```tsx
-import { UserManagementPage } from "@/components/features/user/user-management-page";
-
-export default function StudentsPage() {
-  return (
-    <UserManagementPage
-      userType="student"
-      pageTitle="Student Management"
-      pageDescription="View and manage student profiles."
-    />
-  );
-}
-```
-
-# === app/(dashboard)/teachers/page.tsx ===
-```tsx
-import { UserManagementPage } from "@/components/features/user/user-management-page";
-
-export default function TeachersPage() {
-  return (
-    <UserManagementPage
-      userType="teacher"
-      pageTitle="Teacher Management"
-      pageDescription="View and manage teacher profiles."
-    />
-  );
-}
-```
-
-# === app/(dashboard)/subjects/page.tsx ===
-```tsx
-"use client";
-
-import { useState, useMemo } from "react";
-import useSWR from "swr";
-import Image from "next/image";
-import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search } from "lucide-react";
-import { addSubject, getSubjects, getAllTeachers, updateSubject, deleteSubject } from "@/lib/api";
-import { Teacher } from "@/lib/fake-generators";
-
-import { PageHeader } from "@/components/shared/page-header";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import { toast } from "sonner";
-
-import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
-import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
-import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
-import { Input } from "@/components/ui/input";
-
-type SubjectDetails = {
-  name: string;
-  teachers: Teacher[];
-  studentCount: number;
-  avgGrade: number;
-}
-
-const TeacherAvatar = ({ teacher }: { teacher: Teacher }) => (
-  <div className="group relative" title={`${teacher.firstName} ${teacher.lastName}`}>
-    <Image
-      src={teacher.image}
-      alt={teacher.firstName}
-      width={32}
-      height={32}
-      className="rounded-full border-2 border-card transition-transform group-hover:scale-110"
-    />
-  </div>
-);
-
-export default function SubjectsPage() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  const [modalState, setModalState] = useState<{
-    add: boolean;
-    edit: string | null;
-    delete: string | null;
-    view: SubjectDetails | null;
-  }>({ add: false, edit: null, delete: null, view: null });
-
-  const { data: subjects, error: subjectsError, isLoading: subjectsLoading, mutate: mutateSubjects } = useSWR("/api/subjects", getSubjects);
-  const { data: allTeachers, isLoading: teachersLoading, mutate: mutateTeachers } = useSWR("/api/teachers/all", getAllTeachers);
-
-  const subjectDetailsMap = useMemo(() => {
-    const map = new Map<string, SubjectDetails>();
-    if (subjects && allTeachers) {
-      subjects.forEach((subject: string) => {
-        map.set(subject, {
-          name: subject,
-          teachers: allTeachers.filter((t: Teacher) => t.subject === subject),
-          studentCount: Math.floor(Math.random() * 80) + 20,
-          avgGrade: Math.random() * (95 - 70) + 70,
-        });
-      });
-    }
-    return map;
-  }, [subjects, allTeachers]);
-
-  const filteredSubjects = useMemo(() => {
-    if (!subjects) return [];
-    if (!searchQuery) return subjects;
-    return subjects.filter(subject => 
-      subject.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [subjects, searchQuery]);
-
-  const handleSubjectAdded = async (newSubjectName: string) => {
-    try {
-      const newSubject = await addSubject(newSubjectName);
-      toast.success(`Subject "${newSubject.name}" added successfully.`);
-      await mutateSubjects();
-    } catch (e: unknown) {
-      if (e instanceof Error) toast.error(e.message);
-      throw e;
-    }
-  };
-  
-  const handleDeleteSubject = async (subjectName: string) => {
-    try {
-      await deleteSubject(subjectName);
-      toast.success(`Subject "${subjectName}" deleted.`);
-      await mutateSubjects();
-    } catch(e: unknown) {
-      if (e instanceof Error) toast.error(e.message);
-    }
-  };
-
-  const handleSubjectUpdate = async (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => {
-    try {
-        await updateSubject(oldName, data);
-        toast.success(`Subject "${data.newSubjectName}" updated successfully.`);
-        await Promise.all([mutateSubjects(), mutateTeachers()]);
-    } catch(e: unknown) {
-        if (e instanceof Error) toast.error(e.message);
-        throw e;
-    }
-  };
-
-  const totalPages = filteredSubjects ? Math.ceil(filteredSubjects.length / itemsPerPage) : 0;
-
-  const renderContent = () => {
-    if (subjectsLoading || teachersLoading) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: itemsPerPage }).map((_, i) => <Skeleton key={i} className="h-56 rounded-xl" />)}
-        </div>
-      );
-    }
-    if (subjectsError) {
-      return ( <Alert variant="destructive" className="glass-card">
-          <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
-        </Alert> );
-    }
-    if (!filteredSubjects || filteredSubjects.length === 0) {
-      return ( <div className="text-center py-10 glass-card rounded-lg">
-          <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
-        </div> );
-    }
-
-    const paginatedSubjects = filteredSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {paginatedSubjects.map((subjectName) => {
-          const details = subjectDetailsMap.get(subjectName);
-          if (!details) return null;
-          
-          return (
-            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer"
-              onClick={() => setModalState({...modalState, view: details})}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
-                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, edit: details.name})}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p className="text-muted-foreground">Students</p>
-                    <p className="font-semibold text-xl">{details.studentCount}</p>
-                </div>
-                <div>
-                    <p className="text-muted-foreground">Avg. Grade</p>
-                    <p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-4">
-                <div className="w-full">
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">INSTRUCTORS ({details.teachers.length})</p>
-                  {details.teachers.length > 0 ? (
-                    <div className="flex -space-x-2">
-                      {details.teachers.slice(0, 6).map(teacher => <TeacherAvatar key={teacher.id} teacher={teacher} />)}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">No instructors assigned.</p>
-                  )}
-                </div>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const assignedTeacherIdsForEdit = useMemo(() => {
-      if (!modalState.edit || !allTeachers) return [];
-      return allTeachers.filter(t => t.subject === modalState.edit).map(t => t.id);
-  }, [modalState.edit, allTeachers]);
-
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Subjects Overview" description="View and manage all subjects offered.">
-        <Button onClick={() => setModalState({...modalState, add: true})} className="button-gradient">
-          <PlusCircle className="h-4 w-4 mr-2"/> Add Subject
-        </Button>
-      </PageHeader>
-      
-      <div className="relative w-full sm:w-64">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search subjects..."
-          value={searchQuery}
-          onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-          }}
-          className="pl-9"
-        />
-      </div>
-
-      {renderContent()}
-      
-      {filteredSubjects && filteredSubjects.length > 0 && (
-        <TablePaginationControls
-          currentPage={currentPage} totalPages={totalPages}
-          onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
-          onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-          totalItems={filteredSubjects.length} itemType="subjects"
-          itemsPerPageOptions={[6, 9, 12, 18]}
-        />
-      )}
-      
-      <ConfirmationDialog
-        isOpen={!!modalState.delete}
-        onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, delete: null})}
-        onConfirm={() => { if (modalState.delete) handleDeleteSubject(modalState.delete); }}
-        title="Are you sure?"
-        description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`}
-        confirmText="Yes, delete"
-      />
-      <AddSubjectModal isOpen={modalState.add} onOpenChange={(isOpen) => setModalState({...modalState, add: isOpen})} onSubjectAdded={handleSubjectAdded} />
-      
-      {modalState.edit && allTeachers && (
-        <EditSubjectModal
-            isOpen={!!modalState.edit}
-            onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, edit: null})}
-            subjectName={modalState.edit}
-            allTeachers={allTeachers}
-            assignedTeacherIds={assignedTeacherIdsForEdit}
-            onSubjectUpdate={handleSubjectUpdate}
-        />
-      )}
-      <SubjectDetailsModal isOpen={!!modalState.view} onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, view: null})} subjectDetails={modalState.view} />
-    </div>
-  );
-}
-```
-
-# === app/api/students/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { createRandomStudent, Student } from '@/lib/fake-generators';
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const skip = parseInt(searchParams.get('skip') || '0');
-  const search = searchParams.get('search')?.toLowerCase() || '';
-
-  let filteredStudents = db.students;
-
-  if (search) {
-    filteredStudents = db.students.filter(student =>
-      student.firstName.toLowerCase().includes(search) ||
-      student.lastName.toLowerCase().includes(search) ||
-      student.email.toLowerCase().includes(search)
-    );
-  }
-
-  const total = filteredStudents.length;
-  const paginatedStudents = filteredStudents.slice(skip, skip + limit);
-
-  return NextResponse.json({
-    users: paginatedStudents,
-    total: total,
-    skip,
-    limit,
-  });
-}
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  const newStudent: Student = {
-    ...createRandomStudent(),
-    ...body,
-  };
-  db.students.unshift(newStudent);
-  return NextResponse.json(newStudent, { status: 201 });
-}
-```
-
-# === app/api/students/[id]/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { Student } from '@/lib/fake-generators';
-
-export async function PUT(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const params = await context.params;
-  const studentId = parseInt(params.id);
-  const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
-
-  if (studentIndex === -1) {
-    return NextResponse.json({ message: 'Student not found' }, { status: 404 });
-  }
-  
-  const body = await request.json();
-  db.students[studentIndex] = { ...db.students[studentIndex], ...body };
-  return NextResponse.json(db.students[studentIndex]);
-}
-
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
-  const params = await context.params;
-  const studentId = parseInt(params.id);
-  const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
-
-  if (studentIndex === -1) {
-    return NextResponse.json({ message: 'Student not found' }, { status: 404 });
-  }
-  
-  const [deletedStudent] = db.students.splice(studentIndex, 1);
-  return NextResponse.json({ ...deletedStudent, isDeleted: true });
-}
-```
-
-# === app/api/teachers/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { createRandomTeacher, Teacher } from '@/lib/fake-generators';
-
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const skip = parseInt(searchParams.get('skip') || '0');
-  const search = searchParams.get('search')?.toLowerCase() || '';
-
-  let filteredTeachers = db.teachers;
-
-  if (search) {
-    filteredTeachers = db.teachers.filter(teacher =>
-      teacher.firstName.toLowerCase().includes(search) ||
-      teacher.lastName.toLowerCase().includes(search) ||
-      teacher.email.toLowerCase().includes(search)
-    );
-  }
-  
-  const total = filteredTeachers.length;
-  const paginatedTeachers = filteredTeachers.slice(skip, skip + limit);
-
-  return NextResponse.json({
-    users: paginatedTeachers,
-    total: total,
-    skip,
-    limit,
-  });
-}
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  const newTeacher: Teacher = {
-    ...createRandomTeacher(),
-    ...body,
-  };
-  db.teachers.unshift(newTeacher);
-  return NextResponse.json(newTeacher, { status: 201 });
-}
-```
-
-# === app/api/teachers/[id]/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { Teacher } from '@/lib/fake-generators';
-
-export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
-  const params = await context.params;
-  const teacherId = parseInt(params.id);
-  const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
-
-  if (teacherIndex === -1) {
-    return NextResponse.json({ message: 'Teacher not found' }, { status: 404 });
-  }
-  const body = await request.json();
-  db.teachers[teacherIndex] = { ...db.teachers[teacherIndex], ...body };
-  return NextResponse.json(db.teachers[teacherIndex]);
-}
-
-export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
-  const params = await context.params;
-  const teacherId = parseInt(params.id);
-  const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
-
-  if (teacherIndex === -1) {
-    return NextResponse.json({ message: 'Teacher not found' }, { status: 404 });
-  }
-  const [deletedTeacher] = db.teachers.splice(teacherIndex, 1);
-  return NextResponse.json({ ...deletedTeacher, isDeleted: true });
-}
-```
-
-# === app/api/teachers/all/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-
-export async function GET() {
-  return NextResponse.json(db.teachers);
-}
-```
-
-# === app/api/subjects/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-
-export async function GET() {
-  return NextResponse.json(db.subjects.sort());
-}
-
-export async function POST(request: Request) {
-  const { subjectName } = await request.json();
-  if (!subjectName) {
-    return NextResponse.json({ message: "Subject name is required." }, { status: 400 });
-  }
-  
-  const formattedName = subjectName.charAt(0).toUpperCase() + subjectName.slice(1).toLowerCase();
-
-  if (db.subjects.find(s => s.toLowerCase() === formattedName.toLowerCase())) {
-    return NextResponse.json({ message: "Subject already exists." }, { status: 409 });
-  }
-
-  db.subjects.push(formattedName);
-  return NextResponse.json({ name: formattedName }, { status: 201 });
-}
-```
-
-# === app/api/subjects/[name]/route.ts ===
-```ts
-import { NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { Teacher } from '@/lib/fake-generators';
-
-export async function PUT(request: Request, context: { params: Promise<{ name: string }> }) {
-  const params = await context.params;
-  const oldSubjectName = decodeURIComponent(params.name);
-  const { newSubjectName, teacherIds } = await request.json();
-
-  const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === oldSubjectName.toLowerCase());
-  if (subjectIndex === -1) {
-    return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
-  }
-
-  const finalName = newSubjectName || oldSubjectName;
-
-  if (newSubjectName && newSubjectName !== oldSubjectName) {
-    db.subjects[subjectIndex] = newSubjectName;
-    db.teachers.forEach((teacher: Teacher) => {
-      if (teacher.subject.toLowerCase() === oldSubjectName.toLowerCase()) {
-        teacher.subject = finalName;
-      }
-    });
-  }
-
-  if (teacherIds && Array.isArray(teacherIds)) {
-    db.teachers.forEach((teacher: Teacher) => {
-        if (teacher.subject.toLowerCase() === finalName.toLowerCase() && !teacherIds.includes(teacher.id)) {
-            teacher.subject = 'Unassigned';
-        }
-    });
-    
-    teacherIds.forEach((id: number) => {
-      const teacher = db.teachers.find(t => t.id === id);
-      if (teacher) {
-        teacher.subject = finalName;
-      }
-    });
-  }
-
-  return NextResponse.json({ message: "Subject updated successfully." });
-}
-
-export async function DELETE(request: Request, context: { params: Promise<{ name: string }> }) {
-    const params = await context.params;
-    const subjectNameToDelete = decodeURIComponent(params.name);
-    const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
-
-    if (subjectIndex === -1) {
-        return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
-    }
-
-    db.subjects.splice(subjectIndex, 1);
-
-    db.teachers.forEach((teacher: Teacher) => {
-        if (teacher.subject.toLowerCase() === subjectNameToDelete.toLowerCase()) {
-            teacher.subject = 'Unassigned';
-        }
-    });
-    
-    return NextResponse.json({ message: `Subject "${subjectNameToDelete}" deleted successfully.` });
-}
-```
-
 # === hooks/user-management.ts ===
 ```ts
 import { useState, useMemo } from "react";
@@ -1138,9 +364,11 @@ interface UseUserManagementProps {
   itemsPerPage: number;
   currentPage: number;
   searchTerm: string;
+  sortBy: string;
+  sortOrder: string;
 }
 
-export function useUserManagement({ userType, itemsPerPage, currentPage, searchTerm }: UseUserManagementProps) {
+export function useUserManagement({ userType, itemsPerPage, currentPage, searchTerm, sortBy, sortOrder }: UseUserManagementProps) {
   const [userToEdit, setUserToEdit] = useState<User | undefined>(undefined);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -1148,7 +376,7 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
   const skip = (currentPage - 1) * itemsPerPage;
-  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}`;
+  const swrKey = `/api/${userType}s?limit=${itemsPerPage}&skip=${skip}&search=${encodeURIComponent(searchTerm)}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
   
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
   
@@ -1222,513 +450,299 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
 }
 ```
 
-# === types/api.types.ts ===
-```ts
-export interface Product {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  discountPercentage: number;
-  rating: number;
-  stock: number;
-  brand: string;
-  category: string;
-  thumbnail: string;
-  images: string[];
-}
-
-export interface ProductsApiResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
-}
-
-
-export interface User {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    image: string;
-    address: {
-        address: string;
-        city: string;
-        postalCode: string;
-        state: string;
-    },
-    subject?: string;
-}
-
-export interface UsersApiResponse {
-    users: User[];
-    total: number;
-    skip: number;
-    limit: number;
-}
-```
-
-# === components/theme-provider.tsx ===
+# === app/(dashboard)/subjects/page.tsx ===
 ```tsx
 "use client";
 
-import * as React from "react";
-import {
-  ThemeProvider as NextThemesProvider,
-  type ThemeProviderProps,
-} from "next-themes";
+import { useState, useMemo } from "react";
+import useSWR from "swr";
+import Image from "next/image";
+import { AlertTriangle, Pencil, PlusCircle, Trash2, Eye, Search } from "lucide-react";
+import { addSubject, getSubjects, getAllTeachers, updateSubject, deleteSubject } from "@/lib/api";
+import { Teacher } from "@/lib/fake-generators";
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
-}
-```
-
-# === components/shared/table-pagination-controls.tsx ===
-```tsx
-"use client";
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pagination } from "@/components/ui/pagination";
-
-interface TablePaginationControlsProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  itemsPerPage: number;
-  onItemsPerPageChange: (value: string) => void;
-  totalItems: number;
-  itemType: string;
-  itemsPerPageOptions?: number[];
-}
-
-export function TablePaginationControls({
-  currentPage,
-  totalPages,
-  onPageChange,
-  itemsPerPage,
-  onItemsPerPageChange,
-  totalItems,
-  itemType,
-  itemsPerPageOptions = [10, 20, 30, 40, 50],
-}: TablePaginationControlsProps) {
-  const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-
-  return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div className="text-sm text-muted-foreground">
-        {totalItems > 0 ? `Showing ${startItem}-${endItem} of ${totalItems} ${itemType}` : `No ${itemType} found`}
-      </div>
-      <div className="flex items-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-medium whitespace-nowrap">Rows per page</p>
-            <Select
-              value={`${itemsPerPage}`}
-              onValueChange={onItemsPerPageChange}
-            >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={itemsPerPage} />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {itemsPerPageOptions.map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        {totalPages > 1 && (
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={onPageChange}
-            />
-        )}
-      </div>
-    </div>
-  );
-}
-```
-
-# === components/shared/confirmation-dialog.tsx ===
-```tsx
-// === NEW FILE: components/shared/confirmation-dialog.tsx ===
-"use client";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { PageHeader } from "@/components/shared/page-header";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
+import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
+import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
+import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
+import { Input } from "@/components/ui/input";
 
-interface ConfirmationDialogProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onConfirm: () => void;
-  title: string;
-  description: string;
-  confirmText?: string;
-  isDestructive?: boolean;
+type SubjectDetails = {
+  name: string;
+  teachers: Teacher[];
+  studentCount: number;
+  avgGrade: number;
 }
 
-export function ConfirmationDialog({
-  isOpen,
-  onOpenChange,
-  onConfirm,
-  title,
-  description,
-  confirmText = "Confirm",
-  isDestructive = true,
-}: ConfirmationDialogProps) {
-  
-  const handleConfirm = () => {
-    onConfirm();
-    onOpenChange(false);
-  };
-  
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            className={cn(isDestructive && "bg-destructive text-destructive-foreground hover:bg-destructive/90")}
-          >
-            {confirmText}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/shared/page-header.tsx ===
-```tsx
-import { cn } from "@/lib/utils";
-
-interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  description?: string;
-  children?: React.ReactNode;
-}
-
-export function PageHeader({
-  title,
-  description,
-  className,
-  children,
-  ...props
-}: PageHeaderProps) {
-  return (
-    <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between gap-4", className)} {...props}>
-      <div className="space-y-2">
-        {/* FIX: Removed text-gradient class */}
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          {title}
-        </h1>
-        {description && <p className="text-muted-foreground">{description}</p>}
-      </div>
-      {children && <div className="flex items-center gap-4 w-full md:w-auto justify-end">{children}</div>}
-    </div>
-  );
-}
-```
-
-# === components/dashboard/stat-card.tsx ===
-```tsx
-import { cn } from "@/lib/utils";
-
-interface StatCardProps {
-  title: string;
-  value: string;
-  change: string;
-  isNegative?: boolean;
-  className?: string;
-}
-
-export function StatCard({ title, value, change, isNegative = false, className }: StatCardProps) {
-  return (
-    <div className={cn("rounded-lg p-4", "bg-muted/50", className)}>
-      <p className="text-sm text-muted-foreground">{title}</p>
-      <p className="text-2xl font-bold text-foreground my-1">{value}</p>
-      <p
-        className={cn(
-          "text-xs font-semibold",
-          isNegative ? "text-red-500" : "text-green-500"
-        )}
-      >
-        {change}
-      </p>
-    </div>
-  );
-}
-```
-
-# === components/dashboard/attendance-chart.tsx ===
-```tsx
-"use client";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-} from "recharts";
-import { StudentAttendance } from "@/lib/mock-data";
-
-export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
-  return (
-    <div className="rounded-lg border bg-white p-4 h-full flex flex-col">
-      <h3 className="font-semibold text-lg mb-2">Monthly Attendance Trends</h3>
-      <div className="flex-grow">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
-          >
-            <defs>
-              <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-
-            <XAxis
-              dataKey="month"
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}%`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e2e8f0",
-                borderRadius: "0.5rem",
-              }}
-              formatter={(value: number) => [`${value}%`, "Attendance"]}
-            />
-            <Area
-              type="monotone"
-              dataKey="attendance"
-              stroke="none"
-              fill="url(#colorAttendance)"
-            />
-            <Line
-              type="monotone"
-              dataKey="attendance"
-              stroke="#3b82f6"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-              activeDot={{ r: 8 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-```
-
-# === components/dashboard/student-sidebar.tsx ===
-```tsx
-"use client";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, UserSquare, BookOpen } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const navItems = [
-  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/students", icon: Users, label: "Students" },
-  { href: "/teachers", icon: UserSquare, label: "Teachers" },
-  { href: "/subjects", icon: BookOpen, label: "Subjects" },
-];
-
-export function StudentDashboardSidebar() {
-  const pathname = usePathname();
-
-  return (
-    <aside className="w-full lg:w-56 lg:flex-shrink-0">
-      <div className="flex items-center gap-2 mb-8">
-        <div className="p-2 bg-primary rounded-lg">
-          <BookOpen className="h-6 w-6 text-primary-foreground" />
-        </div>
-        <span className="text-xl font-bold">EduDash</span>
-      </div>
-      <nav className="flex flex-row lg:flex-col gap-2 flex-grow overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
-        {navItems.map((item) => {
-          const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
-          return (
-          <Link
-            key={item.label}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-secondary hover:text-primary",
-              // FIX: Updated active state to better match the screenshot
-              isActive && "bg-secondary text-primary font-semibold"
-            )}
-          >
-            <item.icon className="h-5 w-5" />
-            {item.label}
-          </Link>
-        )})}
-      </nav>
-    </aside>
-  );
-}
-```
-
-# === components/dashboard/student-performance-summary.tsx ===
-```tsx
-"use client"
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  Rectangle,
-  type RectangleProps,
-} from "recharts";
-import {
-  GradeDistribution,
-  SubjectScore,
-  gradeDistributionData,
-  subjectScoreData
-} from "@/lib/mock-data";
-import { ValueType } from "recharts/types/component/DefaultTooltipContent";
-
-const GRADE_COLORS = ['#2dd4bf', '#3b82f6', '#fbbd23', '#f87171', '#ef4444'];
-
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: { value: ValueType }[];
-  label?: string;
-}
-
-const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="p-2 text-sm rounded-md border bg-popover text-popover-foreground shadow-md glass-card">
-        <p className="font-bold">{`Grade ${label}`}</p>
-        <p>{`Number of Students: ${payload[0].value}`}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const ActiveBar = (props: RectangleProps) => {
-  const { x = 0, y = 0, width = 0, height = 0, ...rest } = props;
-  
-  return <Rectangle {...rest} x={x} width={width} height={height + 5} y={y - 5} />;
-};
-
-
-const GradeDistributionChart = ({ data }: { data: GradeDistribution[] }) => (
-  <div className="h-56">
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
-        <XAxis dataKey="grade" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
-        <Tooltip
-          cursor={false}
-          content={<CustomTooltip />}
-        />
-        <Bar dataKey="count" radius={[6, 6, 0, 0]} activeBar={<ActiveBar />}>
-          {data.map((_entry, index) => (
-            <Cell key={`cell-${index}`} fill={GRADE_COLORS[index % GRADE_COLORS.length]} />
-          ))}
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+const TeacherAvatar = ({ teacher }: { teacher: Teacher }) => (
+  <div className="group relative" title={`${teacher.firstName} ${teacher.lastName}`}>
+    <Image
+      src={teacher.image}
+      alt={teacher.firstName}
+      width={32}
+      height={32}
+      className="rounded-full border-2 border-card transition-transform group-hover:scale-110"
+    />
   </div>
 );
 
-const TopSubjectsList = ({ data }: { data: SubjectScore[] }) => (
-  <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>Subject</TableHead>
-        <TableHead className="text-right">Avg. Score</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {data.sort((a, b) => b.averageScore - a.averageScore).slice(0, 5).map((subject) => (
-        <TableRow key={subject.name} className="hover:bg-muted/50 text-sm">
-          <TableCell className="font-medium capitalize">{subject.name.replace(/-/g, ' ')}</TableCell>
-          <TableCell className="text-right">
-            <Badge variant="secondary" className={
-                subject.averageScore >= 90 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" :
-                subject.averageScore >= 80 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" :
-                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
-            }>
-                {subject.averageScore.toFixed(1)}%
-            </Badge>
-          </TableCell>
-        </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-);
+export default function SubjectsPage() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("name-asc");
+  
+  const [modalState, setModalState] = useState<{
+    add: boolean;
+    edit: string | null;
+    delete: string | null;
+    view: SubjectDetails | null;
+  }>({ add: false, edit: null, delete: null, view: null });
 
-type Period = "this_term" | "last_term" | "full_year";
+  const { data: subjects, error: subjectsError, isLoading: subjectsLoading, mutate: mutateSubjects } = useSWR("/api/subjects", getSubjects);
+  const { data: allTeachers, isLoading: teachersLoading, mutate: mutateTeachers } = useSWR("/api/teachers/all", getAllTeachers);
 
-export function StudentPerformanceSummary({ period }: { period: Period }) {
-  const currentGradeData = gradeDistributionData[period];
-  const currentTopSubjectsData = subjectScoreData[period];
+  const subjectDetailsMap = useMemo(() => {
+    const map = new Map<string, SubjectDetails>();
+    if (subjects && allTeachers) {
+      subjects.forEach((subject: string) => {
+        map.set(subject, {
+          name: subject,
+          teachers: allTeachers.filter((t: Teacher) => t.subject === subject),
+          studentCount: Math.floor(Math.random() * 80) + 20,
+          avgGrade: Math.random() * (95 - 70) + 70,
+        });
+      });
+    }
+    return map;
+  }, [subjects, allTeachers]);
 
+  const sortedSubjects = useMemo(() => {
+    if (!subjects) return [];
+    
+    let subjectsToProcess = subjects.filter(subject => 
+      subject.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const [sortBy, sortOrder] = sortOption.split('-');
+
+    subjectsToProcess.sort((a, b) => {
+        const detailsA = subjectDetailsMap.get(a);
+        const detailsB = subjectDetailsMap.get(b);
+        if (!detailsA || !detailsB) return 0;
+
+        let comparison = 0;
+        switch (sortBy) {
+            case 'students':
+                comparison = detailsA.studentCount - detailsB.studentCount;
+                break;
+            case 'grade':
+                comparison = detailsA.avgGrade - detailsB.avgGrade;
+                break;
+            case 'name':
+            default:
+                comparison = a.localeCompare(b);
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return subjectsToProcess;
+  }, [subjects, searchQuery, sortOption, subjectDetailsMap]);
+
+
+  const handleSubjectAdded = async (data: { newSubjectName: string; teacherIds: number[] }) => {
+    try {
+      const newSubject = await addSubject({ subjectName: data.newSubjectName, teacherIds: data.teacherIds });
+      toast.success(`Subject "${newSubject.name}" added successfully.`);
+      await Promise.all([mutateSubjects(), mutateTeachers()]);
+    } catch (e: unknown) {
+      if (e instanceof Error) toast.error(e.message);
+      throw e;
+    }
+  };
+  
+  const handleDeleteSubject = async (subjectName: string) => {
+    try {
+      await deleteSubject(subjectName);
+      toast.success(`Subject "${subjectName}" deleted.`);
+      await mutateSubjects();
+    } catch(e: unknown) {
+      if (e instanceof Error) toast.error(e.message);
+    }
+  };
+
+  const handleSubjectUpdate = async (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => {
+    try {
+        await updateSubject(oldName, data);
+        toast.success(`Subject "${data.newSubjectName}" updated successfully.`);
+        await Promise.all([mutateSubjects(), mutateTeachers()]);
+    } catch(e: unknown) {
+        if (e instanceof Error) toast.error(e.message);
+        throw e;
+    }
+  };
+
+  const totalPages = sortedSubjects ? Math.ceil(sortedSubjects.length / itemsPerPage) : 0;
+
+  const renderContent = () => {
+    if (subjectsLoading || teachersLoading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: itemsPerPage }).map((_, i) => <Skeleton key={i} className="h-56 rounded-xl" />)}
+        </div>
+      );
+    }
+    if (subjectsError) {
+      return ( <Alert variant="destructive" className="glass-card">
+          <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
+          <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
+        </Alert> );
+    }
+    if (!sortedSubjects || sortedSubjects.length === 0) {
+      return ( <div className="text-center py-10 glass-card rounded-lg">
+          <h3 className="text-xl font-medium">No Subjects Found</h3>
+          <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
+        </div> );
+    }
+
+    const paginatedSubjects = sortedSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {paginatedSubjects.map((subjectName) => {
+          const details = subjectDetailsMap.get(subjectName);
+          if (!details) return null;
+          
+          return (
+            <Card key={details.name} className="glass-card flex flex-col justify-between rounded-xl overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 group cursor-pointer"
+              onClick={() => setModalState({...modalState, view: details})}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
+                  <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, edit: details.name})}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p className="text-muted-foreground">Students</p>
+                    <p className="font-semibold text-xl">{details.studentCount}</p>
+                </div>
+                <div>
+                    <p className="text-muted-foreground">Avg. Grade</p>
+                    <p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-4">
+                <div className="w-full">
+                  <p className="text-xs font-semibold text-muted-foreground mb-2">INSTRUCTORS ({details.teachers.length})</p>
+                  {details.teachers.length > 0 ? (
+                    <div className="flex -space-x-2">
+                      {details.teachers.slice(0, 6).map(teacher => <TeacherAvatar key={teacher.id} teacher={teacher} />)}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">No instructors assigned.</p>
+                  )}
+                </div>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const assignedTeacherIdsForEdit = useMemo(() => {
+      if (!modalState.edit || !allTeachers) return [];
+      return allTeachers.filter(t => t.subject === modalState.edit).map(t => t.id);
+  }, [modalState.edit, allTeachers]);
 
   return (
-    <div className="rounded-lg border bg-card p-4 h-full flex flex-col gap-4">
-      <div>
-        <h3 className="font-semibold text-lg mb-2">Grade Distribution</h3>
-        <GradeDistributionChart data={currentGradeData} />
-      </div>
-      <div className="border-t pt-2">
-        <h3 className="font-semibold text-lg mb-2">Top Subjects</h3>
-        <div className="overflow-auto">
-          <TopSubjectsList data={currentTopSubjectsData} />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Subjects Overview" description="View and manage all subjects offered.">
+        <Button onClick={() => setModalState({...modalState, add: true})} className="button-gradient">
+          <PlusCircle className="h-4 w-4 mr-2"/> Add Subject
+        </Button>
+      </PageHeader>
+      
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search subjects..."
+            value={searchQuery}
+            onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+            }}
+            className="pl-9"
+          />
         </div>
+        <Select value={sortOption} onValueChange={setSortOption}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+            <SelectItem value="students-desc">Most Students</SelectItem>
+            <SelectItem value="students-asc">Fewest Students</SelectItem>
+            <SelectItem value="grade-desc">Highest Grade</SelectItem>
+            <SelectItem value="grade-asc">Lowest Grade</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
+
+      {renderContent()}
+      
+      {sortedSubjects && sortedSubjects.length > 0 && (
+        <TablePaginationControls
+          currentPage={currentPage} totalPages={totalPages}
+          onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
+          totalItems={sortedSubjects.length} itemType="subjects"
+          itemsPerPageOptions={[6, 9, 12, 18]}
+        />
+      )}
+      
+      <ConfirmationDialog
+        isOpen={!!modalState.delete}
+        onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, delete: null})}
+        onConfirm={() => { if (modalState.delete) handleDeleteSubject(modalState.delete); }}
+        title="Are you sure?"
+        description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`}
+        confirmText="Yes, delete"
+      />
+      {allTeachers && <AddSubjectModal isOpen={modalState.add} onOpenChange={(isOpen) => setModalState({...modalState, add: isOpen})} onSubjectAdded={handleSubjectAdded} allTeachers={allTeachers} />}
+      
+      {modalState.edit && allTeachers && (
+        <EditSubjectModal
+            isOpen={!!modalState.edit}
+            onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, edit: null})}
+            subjectName={modalState.edit}
+            allTeachers={allTeachers}
+            assignedTeacherIds={assignedTeacherIdsForEdit}
+            onSubjectUpdate={handleSubjectUpdate}
+        />
+      )}
+      <SubjectDetailsModal isOpen={!!modalState.view} onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, view: null})} subjectDetails={modalState.view} />
     </div>
   );
 }
@@ -1771,11 +785,18 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
         {users.map((user) => (
           <TableRow key={user.id} className="hover:bg-muted/50">
             <TableCell className="px-3 py-2 text-muted-foreground">{user.id}</TableCell>
-            <TableCell 
-              className="px-3 py-2 font-medium text-foreground cursor-pointer hover:text-primary hover:underline"
-              onClick={() => onEditUser(user)}
-            >
-              {`${user.firstName} ${user.lastName}`}
+            <TableCell className="px-3 py-2 font-medium text-foreground">
+              <div className="flex items-center justify-between group -mr-4">
+                <span>{`${user.firstName} ${user.lastName}`}</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onEditUser(user)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </div>
             </TableCell>
             <TableCell className="px-3 py-2">{user.email}</TableCell>
             <TableCell className="px-3 py-2">{user.phone}</TableCell>
@@ -1816,284 +837,11 @@ export function UserTable({ users, type, onViewUser, onEditUser, onDeleteUser }:
 }
 ```
 
-# === components/features/user/user-form-modal.tsx ===
-```tsx
-"use client";
-
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { User } from "@/types/api.types";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { userSchema, UserFormValues } from "@/lib/schemas";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
-
-interface UserFormModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  userToEdit?: User;
-  userType: 'student' | 'teacher';
-  onSubmit: (data: UserFormValues, userId?: number) => Promise<void>;
-}
-
-export function UserFormModal({ isOpen, onOpenChange, userToEdit, userType, onSubmit }: UserFormModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const isEditMode = !!userToEdit;
-
-  const form = useForm<UserFormValues>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-    },
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      form.reset(
-        userToEdit
-          ? {
-              firstName: userToEdit.firstName,
-              lastName: userToEdit.lastName,
-              email: userToEdit.email,
-              phone: userToEdit.phone ?? "",
-            }
-          : {
-              firstName: "",
-              lastName: "",
-              email: "",
-              phone: "",
-            }
-      );
-    }
-  }, [isOpen, userToEdit, form]);
-
-  const handleFormSubmit = async (data: UserFormValues) => {
-    setIsSubmitting(true);
-    try {
-      await onSubmit(data, userToEdit?.id);
-      onOpenChange(false);
-    } catch {
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? `Edit ${userType}` : `Add New ${userType}`}</DialogTitle>
-          <DialogDescription>
-            {isEditMode
-              ? `Update the details for ${userToEdit.firstName} ${userToEdit.lastName}.`
-              : `Enter the details for the new ${userType}. Click save when you're done.`}
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone (Optional)</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" className="button-gradient" disabled={isSubmitting || !form.formState.isValid}>
-                {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Save User')}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/features/user/user-preview-modal.tsx ===
-```tsx
-"use client";
-
-import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User } from "@/types/api.types";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AtSign, MapPin, Phone } from "lucide-react";
-
-export interface UserPreviewModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  user?: User;
-}
-
-export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModalProps) {
-  const renderContent = () => {
-    if (!user) {
-      return (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row gap-6 items-center">
-            <Skeleton className="h-[120px] w-[120px] rounded-full" />
-            <div className="flex-1 space-y-3">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-5 w-64" />
-              <Skeleton className="h-5 w-32" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-6 w-3/4" />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-4 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-6 items-center">
-          <div className="relative h-[120px] w-[120px] flex-shrink-0">
-            <Image
-              src={user.image}
-              alt={`${user.firstName} ${user.lastName}`}
-              fill
-              sizes="120px"
-              className="rounded-full object-cover border-4 border-primary/20"
-            />
-          </div>
-          <div className="flex-1 space-y-1 text-center sm:text-left">
-            <h3 className="text-2xl font-bold text-foreground">{`${user.firstName} ${user.lastName}`}</h3>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <AtSign className="h-4 w-4" />
-              <span>{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
-              <Phone className="h-4 w-4" />
-              <span>{user.phone}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div>
-          <h4 className="font-semibold text-lg mb-2">Address</h4>
-          <div className="flex items-start gap-3 text-muted-foreground">
-            <MapPin className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
-            <p>{`${user.address.address}, ${user.address.city}, ${user.address.state} ${user.address.postalCode}`}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>User Details</DialogTitle>
-        </DialogHeader>
-        {renderContent()}
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/features/user/user-table-skeleton.tsx ===
-```tsx
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-
-interface UserTableSkeletonProps {
-  type: 'student' | 'teacher';
-  items: number; // New prop to control how many skeleton rows to show
-}
-
-export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) {
-  const skeletonRows = Array.from({ length: items });
-
-  return (
-    <Table className="min-w-full">
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[70px] px-3 py-2">User ID</TableHead>
-          <TableHead className="px-3 py-2">Name</TableHead>
-          <TableHead className="px-3 py-2">Email</TableHead>
-          <TableHead className="px-3 py-2">Phone</TableHead>
-          {type === 'student' && <TableHead className="px-3 py-2">Grade</TableHead>}
-          {type === 'teacher' && <TableHead className="px-3 py-2">Subject</TableHead>}
-          {type === 'teacher' && <TableHead className="px-3 py-2">Mean Grade</TableHead>}
-          <TableHead className="w-[50px] px-3 py-2 text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {skeletonRows.map((_, index) => (
-          <TableRow key={index}>
-            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-12" /></TableCell>
-            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-32" /></TableCell>
-            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-48" /></TableCell>
-            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-40" /></TableCell>
-            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-24" /></TableCell>
-            {type === 'teacher' && <TableCell className="px-3 py-2"><Skeleton className="h-4 w-24" /></TableCell>}
-            <TableCell className="text-right px-3 py-2"><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
-}
-```
-
 # === components/features/user/user-management-page.tsx ===
 ```tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { useUserManagement } from "@/hooks/user-management";
@@ -2108,6 +856,7 @@ import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
@@ -2124,6 +873,12 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('name-asc');
+
+  const { sortBy, sortOrder } = useMemo(() => {
+    const [by, order] = sortOption.split('-');
+    return { sortBy: by, sortOrder: order };
+  }, [sortOption]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -2140,10 +895,9 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     data, error, isLoading,
     isFormModalOpen, userToEdit, openCreateModal, openEditModal, closeFormModal, handleFormSubmit,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
-  } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm });
+  } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm, sortBy, sortOrder });
   
   const totalCount = data?.total;
-  const totalLoading = isLoading;
   
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
@@ -2167,14 +921,33 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
               Add New {userType}
             </Button>
           </PageHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={`Search ${userType}s by name or email...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full sm:w-80"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={`Search ${userType}s by name or email...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 w-full"
+              />
+            </div>
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                {userType === 'student' && <>
+                    <SelectItem value="grade-asc">Grade (A-F)</SelectItem>
+                    <SelectItem value="grade-desc">Grade (F-A)</SelectItem>
+                </>}
+                {userType === 'teacher' && <>
+                    <SelectItem value="subject-asc">Subject (A-Z)</SelectItem>
+                    <SelectItem value="subject-desc">Subject (Z-A)</SelectItem>
+                </>}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -2199,7 +972,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
           )}
         </div>
 
-        {!totalLoading && data && (data.users.length > 0 || searchTerm) && (
+        {data && (data.users.length > 0 || searchTerm) && (
           <div className="p-4 border-t">
             <TablePaginationControls
               currentPage={currentPage}
@@ -2247,75 +1020,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
 }
 ```
 
-# === components/features/subject/SubjectDetailsModal.tsx ===
-```tsx
-"use client";
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Teacher } from "@/lib/fake-generators";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import Image from "next/image";
-
-interface SubjectDetailsModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  subjectDetails: {
-    name: string;
-    teachers: Teacher[];
-    studentCount: number;
-    avgGrade: number;
-  } | null;
-}
-
-export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: SubjectDetailsModalProps) {
-  if (!subjectDetails) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-primary">{subjectDetails.name}</DialogTitle>
-          <DialogDescription>
-            An overview of the subject and its instructors.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 py-4 text-sm">
-            <div className="flex flex-col gap-1">
-                <span className="text-muted-foreground">Students Enrolled</span>
-                <span className="font-semibold text-lg">{subjectDetails.studentCount}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-                <span className="text-muted-foreground">Average Grade</span>
-                <Badge variant="secondary" className="w-fit text-base">{subjectDetails.avgGrade.toFixed(1)}%</Badge>
-            </div>
-        </div>
-        <div>
-            <h4 className="font-semibold mb-3">Instructors ({subjectDetails.teachers.length})</h4>
-            <ScrollArea className="h-[200px] pr-4">
-            <div className="space-y-3">
-                {subjectDetails.teachers.length > 0 ? (
-                    subjectDetails.teachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50">
-                            <Image src={teacher.image} alt={teacher.firstName} width={40} height={40} className="rounded-full" />
-                            <div className="flex flex-col">
-                                <span className="font-medium">{teacher.firstName} {teacher.lastName}</span>
-                                <span className="text-xs text-muted-foreground">{teacher.email}</span>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p className="text-sm text-muted-foreground italic text-center py-8">No instructors are currently assigned to this subject.</p>
-                )}
-            </div>
-            </ScrollArea>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
 # === components/features/subject/add-subject-modal.tsx ===
 ```tsx
 "use client";
@@ -2325,112 +1029,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Teacher } from "@/lib/fake-generators";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddSubjectModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubjectAdded: (newSubjectName: string) => Promise<void>;
-}
-
-export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded }: AddSubjectModalProps) {
-  const [subjectName, setSubjectName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!subjectName.trim()) {
-      setError("Subject name cannot be empty.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onSubjectAdded(subjectName);
-      onOpenChange(false);
-      setTimeout(() => setSubjectName(""), 300);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "An unknown error occurred.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  const handleOpenChange = (open: boolean) => {
-      if (!open) {
-          setSubjectName("");
-          setError(null);
-          setIsSubmitting(false);
-      }
-      onOpenChange(open);
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>Add New Subject</DialogTitle>
-          <DialogDescription>
-            Enter the name for the new subject.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="pt-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="subjectName" className="text-right">Name</Label>
-            <Input id="subjectName" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="col-span-3" />
-          </div>
-          {error && <p className="text-sm text-destructive text-center col-span-4 pt-2">{error}</p>}
-          <DialogFooter className="pt-6">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" className="button-gradient" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Subject'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/features/subject/EditSubjectModal.tsx ===
-```tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Teacher } from "@/lib/fake-generators";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface EditSubjectModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  subjectName: string;
+  onSubjectAdded: (data: { newSubjectName: string; teacherIds: number[] }) => Promise<void>;
   allTeachers: Teacher[];
-  assignedTeacherIds: number[];
-  onSubjectUpdate: (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => Promise<void>;
 }
 
-export function EditSubjectModal({ isOpen, onOpenChange, subjectName, allTeachers, assignedTeacherIds, onSubjectUpdate }: EditSubjectModalProps) {
-  const [newName, setNewName] = useState(subjectName);
-  const [selectedTeacherIds, setSelectedTeacherIds] = useState(new Set(assignedTeacherIds));
+export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded, allTeachers }: AddSubjectModalProps) {
+  const [subjectName, setSubjectName] = useState("");
+  const [selectedTeacherIds, setSelectedTeacherIds] = useState(new Set<number>());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setNewName(subjectName);
-      setSelectedTeacherIds(new Set(assignedTeacherIds));
-      setError(null);
-    }
-  }, [isOpen, subjectName, assignedTeacherIds]);
 
   const handleToggleTeacher = (teacherId: number) => {
     setSelectedTeacherIds(prev => {
@@ -2447,36 +1061,52 @@ export function EditSubjectModal({ isOpen, onOpenChange, subjectName, allTeacher
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!newName.trim()) {
+    if (!subjectName.trim()) {
       setError("Subject name cannot be empty.");
       return;
     }
+
     setIsSubmitting(true);
     try {
-      await onSubjectUpdate(subjectName, {
-        newSubjectName: newName,
+      await onSubjectAdded({
+        newSubjectName: subjectName,
         teacherIds: Array.from(selectedTeacherIds)
       });
       onOpenChange(false);
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message || "An unknown error occurred.");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
   
+  const handleOpenChange = (open: boolean) => {
+      if (!open) {
+          setSubjectName("");
+          setSelectedTeacherIds(new Set());
+          setError(null);
+          setIsSubmitting(false);
+      }
+      onOpenChange(open);
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>Edit Subject</DialogTitle>
-          <DialogDescription>Update the subject details and assign instructors.</DialogDescription>
+          <DialogTitle>Add New Subject</DialogTitle>
+          <DialogDescription>
+            Enter the name for the new subject and optionally assign instructors.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
           <div>
             <Label htmlFor="subjectName">Subject Name</Label>
-            <Input id="subjectName" value={newName} onChange={(e) => setNewName(e.target.value)} className="mt-2" />
+            <Input id="subjectName" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="mt-2" />
           </div>
+
           <div>
             <Label>Assign Instructors ({selectedTeacherIds.size} selected)</Label>
             <ScrollArea className="h-48 mt-2 border rounded-md p-4">
@@ -2484,21 +1114,22 @@ export function EditSubjectModal({ isOpen, onOpenChange, subjectName, allTeacher
                 {allTeachers.map(teacher => (
                   <div key={teacher.id} className="flex items-center gap-3">
                     <Checkbox
-                      id={`teacher-${teacher.id}`}
+                      id={`add-teacher-${teacher.id}`}
                       checked={selectedTeacherIds.has(teacher.id)}
                       onCheckedChange={() => handleToggleTeacher(teacher.id)}
                     />
-                    <Label htmlFor={`teacher-${teacher.id}`} className="font-normal">{teacher.firstName} {teacher.lastName}</Label>
+                    <Label htmlFor={`add-teacher-${teacher.id}`} className="font-normal">{teacher.firstName} {teacher.lastName}</Label>
                   </div>
                 ))}
               </div>
             </ScrollArea>
           </div>
+
           {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
+          <DialogFooter className="pt-2">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
             <Button type="submit" className="button-gradient" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? 'Saving...' : 'Save Subject'}
             </Button>
           </DialogFooter>
         </form>

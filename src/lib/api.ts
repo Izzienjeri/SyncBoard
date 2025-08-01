@@ -107,14 +107,14 @@ export async function getSubjects(): Promise<string[]> {
 
 /**
  * Adds a new subject to the database.
- * @param subjectName - The name of the new subject.
+ * @param data - The data for the new subject including name and assigned teacher IDs.
  * @returns The newly created subject object.
  */
-export async function addSubject(subjectName: string): Promise<{ name: string }> {
+export async function addSubject(data: { subjectName: string; teacherIds: number[] }): Promise<{ name: string }> {
     const res = await fetch('/api/subjects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subjectName }),
+        body: JSON.stringify(data),
     });
     if (!res.ok) {
         const error = await res.json();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { AlertTriangle, PlusCircle, Search } from "lucide-react";
 import { useUserManagement } from "@/hooks/user-management";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
@@ -31,6 +32,12 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState('name-asc');
+
+  const { sortBy, sortOrder } = useMemo(() => {
+    const [by, order] = sortOption.split('-');
+    return { sortBy: by, sortOrder: order };
+  }, [sortOption]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,10 +54,9 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     data, error, isLoading,
     isFormModalOpen, userToEdit, openCreateModal, openEditModal, closeFormModal, handleFormSubmit,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
-  } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm });
+  } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm, sortBy, sortOrder });
   
   const totalCount = data?.total;
-  const totalLoading = isLoading;
   
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
@@ -74,14 +80,33 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
               Add New {userType}
             </Button>
           </PageHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={`Search ${userType}s by name or email...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full sm:w-80"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={`Search ${userType}s by name or email...`}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 w-full"
+              />
+            </div>
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Sort by..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                {userType === 'student' && <>
+                    <SelectItem value="grade-asc">Grade (A-F)</SelectItem>
+                    <SelectItem value="grade-desc">Grade (F-A)</SelectItem>
+                </>}
+                {userType === 'teacher' && <>
+                    <SelectItem value="subject-asc">Subject (A-Z)</SelectItem>
+                    <SelectItem value="subject-desc">Subject (Z-A)</SelectItem>
+                </>}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -106,7 +131,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
           )}
         </div>
 
-        {!totalLoading && data && (data.users.length > 0 || searchTerm) && (
+        {data && (data.users.length > 0 || searchTerm) && (
           <div className="p-4 border-t">
             <TablePaginationControls
               currentPage={currentPage}

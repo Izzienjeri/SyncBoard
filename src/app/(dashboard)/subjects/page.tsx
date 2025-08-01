@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
 import { toast } from "sonner";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
@@ -44,6 +44,7 @@ export default function SubjectsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("name-asc");
   
   const [modalState, setModalState] = useState<{
     add: boolean;
@@ -70,19 +71,44 @@ export default function SubjectsPage() {
     return map;
   }, [subjects, allTeachers]);
 
-  const filteredSubjects = useMemo(() => {
+  const sortedSubjects = useMemo(() => {
     if (!subjects) return [];
-    if (!searchQuery) return subjects;
-    return subjects.filter(subject => 
+    
+    let subjectsToProcess = subjects.filter(subject => 
       subject.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [subjects, searchQuery]);
 
-  const handleSubjectAdded = async (newSubjectName: string) => {
+    const [sortBy, sortOrder] = sortOption.split('-');
+
+    subjectsToProcess.sort((a, b) => {
+        const detailsA = subjectDetailsMap.get(a);
+        const detailsB = subjectDetailsMap.get(b);
+        if (!detailsA || !detailsB) return 0;
+
+        let comparison = 0;
+        switch (sortBy) {
+            case 'students':
+                comparison = detailsA.studentCount - detailsB.studentCount;
+                break;
+            case 'grade':
+                comparison = detailsA.avgGrade - detailsB.avgGrade;
+                break;
+            case 'name':
+            default:
+                comparison = a.localeCompare(b);
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return subjectsToProcess;
+  }, [subjects, searchQuery, sortOption, subjectDetailsMap]);
+
+
+  const handleSubjectAdded = async (data: { newSubjectName: string; teacherIds: number[] }) => {
     try {
-      const newSubject = await addSubject(newSubjectName);
+      const newSubject = await addSubject({ subjectName: data.newSubjectName, teacherIds: data.teacherIds });
       toast.success(`Subject "${newSubject.name}" added successfully.`);
-      await mutateSubjects();
+      await Promise.all([mutateSubjects(), mutateTeachers()]);
     } catch (e: unknown) {
       if (e instanceof Error) toast.error(e.message);
       throw e;
@@ -110,7 +136,7 @@ export default function SubjectsPage() {
     }
   };
 
-  const totalPages = filteredSubjects ? Math.ceil(filteredSubjects.length / itemsPerPage) : 0;
+  const totalPages = sortedSubjects ? Math.ceil(sortedSubjects.length / itemsPerPage) : 0;
 
   const renderContent = () => {
     if (subjectsLoading || teachersLoading) {
@@ -126,14 +152,14 @@ export default function SubjectsPage() {
           <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
         </Alert> );
     }
-    if (!filteredSubjects || filteredSubjects.length === 0) {
+    if (!sortedSubjects || sortedSubjects.length === 0) {
       return ( <div className="text-center py-10 glass-card rounded-lg">
           <h3 className="text-xl font-medium">No Subjects Found</h3>
           <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
         </div> );
     }
 
-    const paginatedSubjects = filteredSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const paginatedSubjects = sortedSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -202,27 +228,42 @@ export default function SubjectsPage() {
         </Button>
       </PageHeader>
       
-      <div className="relative w-full sm:w-64">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search subjects..."
-          value={searchQuery}
-          onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-          }}
-          className="pl-9"
-        />
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search subjects..."
+            value={searchQuery}
+            onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+            }}
+            className="pl-9"
+          />
+        </div>
+        <Select value={sortOption} onValueChange={setSortOption}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+            <SelectItem value="students-desc">Most Students</SelectItem>
+            <SelectItem value="students-asc">Fewest Students</SelectItem>
+            <SelectItem value="grade-desc">Highest Grade</SelectItem>
+            <SelectItem value="grade-asc">Lowest Grade</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {renderContent()}
       
-      {filteredSubjects && filteredSubjects.length > 0 && (
+      {sortedSubjects && sortedSubjects.length > 0 && (
         <TablePaginationControls
           currentPage={currentPage} totalPages={totalPages}
           onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
           onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-          totalItems={filteredSubjects.length} itemType="subjects"
+          totalItems={sortedSubjects.length} itemType="subjects"
           itemsPerPageOptions={[6, 9, 12, 18]}
         />
       )}
@@ -235,7 +276,7 @@ export default function SubjectsPage() {
         description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`}
         confirmText="Yes, delete"
       />
-      <AddSubjectModal isOpen={modalState.add} onOpenChange={(isOpen) => setModalState({...modalState, add: isOpen})} onSubjectAdded={handleSubjectAdded} />
+      {allTeachers && <AddSubjectModal isOpen={modalState.add} onOpenChange={(isOpen) => setModalState({...modalState, add: isOpen})} onSubjectAdded={handleSubjectAdded} allTeachers={allTeachers} />}
       
       {modalState.edit && allTeachers && (
         <EditSubjectModal

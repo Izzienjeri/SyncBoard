@@ -7,6 +7,8 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '10');
   const skip = parseInt(searchParams.get('skip') || '0');
   const search = searchParams.get('search')?.toLowerCase() || '';
+  const sortBy = searchParams.get('sortBy');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
 
   let filteredStudents = db.students;
 
@@ -17,6 +19,27 @@ export async function GET(request: Request) {
       student.email.toLowerCase().includes(search)
     );
   }
+
+  // Sorting logic
+  if (sortBy) {
+    filteredStudents.sort((a, b) => {
+      let valA, valB;
+
+      switch (sortBy) {
+        case 'name':
+          valA = `${a.firstName} ${a.lastName}`;
+          valB = `${b.firstName} ${b.lastName}`;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        case 'grade':
+          valA = a.grade;
+          valB = b.grade;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        default:
+          return 0;
+      }
+    });
+  }
+
 
   const total = filteredStudents.length;
   const paginatedStudents = filteredStudents.slice(skip, skip + limit);

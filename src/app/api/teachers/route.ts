@@ -7,6 +7,8 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get('limit') || '10');
   const skip = parseInt(searchParams.get('skip') || '0');
   const search = searchParams.get('search')?.toLowerCase() || '';
+  const sortBy = searchParams.get('sortBy');
+  const sortOrder = searchParams.get('sortOrder') || 'asc';
 
   let filteredTeachers = db.teachers;
 
@@ -16,6 +18,25 @@ export async function GET(request: Request) {
       teacher.lastName.toLowerCase().includes(search) ||
       teacher.email.toLowerCase().includes(search)
     );
+  }
+
+  // Sorting logic
+  if (sortBy) {
+    filteredTeachers.sort((a, b) => {
+      let valA, valB;
+      switch (sortBy) {
+        case 'name':
+          valA = `${a.firstName} ${a.lastName}`;
+          valB = `${b.firstName} ${b.lastName}`;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        case 'subject':
+          valA = a.subject;
+          valB = b.subject;
+          return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        default:
+          return 0;
+      }
+    });
   }
   
   const total = filteredTeachers.length;
