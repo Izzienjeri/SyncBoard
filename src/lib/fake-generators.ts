@@ -22,7 +22,7 @@ export const createRandomStudent = (): Student => {
     firstName,
     lastName,
     email: faker.internet.email({ firstName, lastName }),
-    phone: faker.phone.number(),
+    phone: `(${faker.string.numeric(3)}) ${faker.string.numeric(3)}-${faker.string.numeric(4)}`,
     image: faker.image.avatar(),
     address: {
       address: faker.location.streetAddress(),
@@ -42,7 +42,7 @@ export const createRandomTeacher = (): Teacher => {
     firstName,
     lastName,
     email: faker.internet.email({ firstName, lastName }),
-    phone: faker.phone.number(),
+    phone: `(${faker.string.numeric(3)}) ${faker.string.numeric(3)}-${faker.string.numeric(4)}`,
     image: faker.image.avatar(),
     address: {
       address: faker.location.streetAddress(),
