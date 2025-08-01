@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import { Teacher } from '@/lib/fake-generators';
 
-export async function PUT(request: Request, { params }: { params: { name: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ name: string }> }) {
+  const params = await context.params;
   const oldSubjectName = decodeURIComponent(params.name);
   const { newSubjectName, teacherIds } = await request.json();
 
@@ -40,7 +41,8 @@ export async function PUT(request: Request, { params }: { params: { name: string
   return NextResponse.json({ message: "Subject updated successfully." });
 }
 
-export async function DELETE(request: Request, { params }: { params: { name: string } }) {
+export async function DELETE(request: Request, context: { params: Promise<{ name: string }> }) {
+    const params = await context.params;
     const subjectNameToDelete = decodeURIComponent(params.name);
     const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
 
