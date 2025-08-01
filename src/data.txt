@@ -1,327 +1,201 @@
-Of course. I can fix the "Unexpected any" linting errors. Here is an explanation of the problem and the solution I've implemented.
+You are absolutely right! My apologies. My previous fix addressed the pagination but created a new layout issue by separating the page header from the table content, which is not what the screenshot shows. The user correctly pointed out that components like the "Add New Teacher" button now seem disconnected from the table they relate to.
 
-### Problem Explanation: `no-explicit-any`
+The root cause is that the page's parent layout (`app/(dashboard)/layout.tsx`) uses a flexbox with a gap, which creates space between top-level elements on the page. To fix this, all the content on the teacher management page (header, table, and pagination) must be wrapped in a single container. This will make them appear as one unified block, matching the desired layout in the screenshot.
 
-The `no-explicit-any` error is flagged by the TypeScript linter when the `any` type is used explicitly. While `any` can seem like an easy fix, it essentially turns off TypeScript's type-checking for that variable, which defeats the purpose of using TypeScript. It removes the safety net that prevents type-related bugs.
+I will update `user-management-page.tsx` to wrap all its content in a single `div`. This `div` will have the appropriate styling (`border`, `rounded-lg`, `bg-card`) to create the single-panel appearance.
 
-In the provided code, `any` was used in `catch` blocks to handle errors:
+Here is the complete, updated code for the affected file:
 
-```typescript
-// Example from before the fix
-try {
-  // ... some code that might fail
-} catch (err: any) { // <-- The use of 'any' here is the problem
-  setError(err.message); 
-}
-```
+### `components/features/user/user-management-page.tsx`
 
-This is problematic because there's no guarantee that the `err` object caught will actually have a `.message` property. If it doesn't, the code would crash at runtime.
+I've restructured this component to return a single container that holds the `PageHeader`, the table, and the pagination controls. This ensures they are rendered together as a single visual unit, resolving the layout problem.
 
-### The Solution: Using `unknown`
+```tsx
+"use client";
 
-The modern, type-safe approach is to type the caught error as `unknown`. The `unknown` type is like a stricter version of `any`—it can hold any value, but you can't perform any operations on it without first proving what type it is through type-checking (also known as type narrowing).
+import useSWR, { useSWRConfig } from "swr";
+import { useState } from "react";
+import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import { AlertTriangle, PlusCircle } from "lucide-react";
 
-I've updated the code to:
-
-1.  Type the caught error as `unknown`.
-2.  Use an `instanceof Error` check to safely verify that the caught object is a standard JavaScript `Error`.
-3.  Only after this check do I access the `.message` property, ensuring type safety and preventing potential runtime errors.
-4.  I also fixed an unescaped apostrophe in `add-user-modal.tsx` for correct JSX rendering.
-
-Here are the updated files with the fixes:
-
-### Modified Files
-
-```ts
-// === lib/api.ts ===
+import { PageHeader } from "@/components/shared/page-header";
+import { UserTable } from "@/components/features/user/user-table";
+import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
+import { getUsers, updateUser, deleteUser, getTotalStudents, getTotalTeachers, addUser } from "@/lib/api";
 import { User, UsersApiResponse } from "@/types/api.types";
-import { allSubjects, mockTeachers, subjectScoreData, subjectTeacherMapping } from "./mock-data";
-
-const DUMMY_JSON_URL = "https://dummyjson.com";
-
-export async function getUsers(url: string): Promise<UsersApiResponse> {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error("Failed to fetch users");
-    }
-    const data: UsersApiResponse = await res.json();
-    return data;
-  } catch {
-    throw new Error("Could not retrieve users. Please try again later.");
-  }
-}
-
-export async function addUser(userData: Partial<User>): Promise<User> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to add user');
-    }
-    return await res.json();
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      throw new Error(e.message || "Could not add the user.");
-    }
-    throw new Error("An unknown error occurred while adding the user.");
-  }
-}
-
-export async function updateUser(userId: number, userData: Partial<User>): Promise<User> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userData),
-    });
-    if (!res.ok) throw new Error("Failed to update user");
-    return await res.json();
-  } catch {
-    throw new Error("Could not update the user.");
-  }
-}
-
-export async function deleteUser(userId: number): Promise<{ id: number, isDeleted: boolean }> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete user");
-    return await res.json();
-  } catch {
-    throw new Error("Could not delete the user.");
-  }
-}
-
-export async function getTotalStudents(): Promise<number> {
-  return 100;
-}
-
-export async function getTotalTeachers(): Promise<number> {
-  try {
-    const res = await fetch(`${DUMMY_JSON_URL}/users?limit=0`);
-    if (!res.ok) {
-      return 50;
-    }
-    const data: UsersApiResponse = await res.json();
-    return data.total > 100 ? data.total - 100 : 0;
-  } catch (e) {
-    console.error("Failed to get total teachers:", e);
-    return 50;
-  }
-}
-
-export async function getSubjects(): Promise<string[]> {
-  return Promise.resolve(allSubjects);
-}
-
-export async function addSubject(subjectName: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const formattedName = subjectName.toLowerCase().replace(/\s+/g, '-');
-    if (allSubjects.includes(formattedName)) {
-      reject(new Error("Subject already exists."));
-      return;
-    }
-
-    allSubjects.push(formattedName);
-    
-    const periods = ['this_term', 'last_term', 'full_year'];
-    periods.forEach(period => {
-      subjectScoreData[period].push({
-        name: formattedName,
-        averageScore: Math.floor(Math.random() * (95 - 70 + 1) + 70),
-      });
-    });
-
-    if (mockTeachers.length > 0) {
-        const randomTeacherId = mockTeachers[Math.floor(Math.random() * mockTeachers.length)].id;
-        subjectTeacherMapping[formattedName] = [randomTeacherId];
-    }
-
-    resolve(formattedName);
-  });
-}
-```
-
-```tsx
-// === components/features/user/add-user-modal.tsx ===
-"use client";
-
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { UserPreviewModalProps } from "./user-preview-modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { User } from "@/types/api.types";
+import { AddUserModal } from "./add-user-modal";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
-interface AddUserModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onUserAdded: (newUser: User) => void;
+const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
+
+interface UserManagementPageProps {
   userType: 'student' | 'teacher';
-  addUserApi: (userData: Partial<User>) => Promise<User>;
+  pageTitle: string;
+  pageDescription: string;
 }
 
-export function AddUserModal({ isOpen, onOpenChange, onUserAdded, userType, addUserApi }: AddUserModalProps) {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function UserManagementPage({ userType, pageTitle, pageDescription }: UserManagementPageProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  
+  const { mutate: globalMutate } = useSWRConfig();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!formData.firstName || !formData.lastName || !formData.email) {
-        setError("First Name, Last Name, and Email are required.");
-        return;
-    }
-    
-    setIsSubmitting(true);
-    try {
-      const newUser = await addUserApi(formData);
-      onUserAdded(newUser);
-      onOpenChange(false);
-      setTimeout(() => setFormData({ firstName: "", lastName: "", email: "", phone: "" }), 300);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || `Failed to add ${userType}. Please try again.`);
-      } else {
-        setError(`An unknown error occurred while adding the ${userType}.`);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>Add New {userType === 'student' ? 'Student' : 'Teacher'}</DialogTitle>
-          <DialogDescription>
-            Enter the details for the new {userType}. Click save when you&apos;re done.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="firstName" className="text-right">First Name</Label>
-              <Input id="firstName" value={formData.firstName} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lastName" className="text-right">Last Name</Label>
-              <Input id="lastName" value={formData.lastName} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">Email</Label>
-              <Input id="email" type="email" value={formData.email} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">Phone</Label>
-              <Input id="phone" value={formData.phone} onChange={handleChange} className="col-span-3" />
-            </div>
-            {error && <p className="text-sm text-destructive text-center col-span-4">{error}</p>}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" className="button-gradient" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save User'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+  const skip = userType === 'student' 
+    ? (currentPage - 1) * itemsPerPage 
+    : 100 + (currentPage - 1) * itemsPerPage;
+  const swrKey = `https://dummyjson.com/users?limit=${itemsPerPage}&skip=${skip}`;
+  
+  const { data, error, isLoading, mutate } = useSWR(swrKey, getUsers, { keepPreviousData: true });
+  const { data: totalCount, isLoading: totalLoading, mutate: mutateTotalCount } = useSWR(
+    userType === 'student' ? 'totalStudents' : 'totalTeachers',
+    userType === 'student' ? getTotalStudents : getTotalTeachers
   );
-}
-```
 
-```tsx
-// === components/features/subject/add-subject-modal.tsx ===
-"use client";
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
+  
+  const handleUserUpdate = async (id: number, userData: Partial<User>) => {
+    await mutate(async (currentData?: UsersApiResponse) => {
+      if (!currentData) return currentData;
+      const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
+      return { ...currentData, users: updatedUsers };
+    }, { revalidate: false });
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
-interface AddSubjectModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onSubjectAdded: (newSubject: string) => void;
-  addSubjectApi: (subjectName: string) => Promise<string>;
-}
-
-export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded, addSubjectApi }: AddSubjectModalProps) {
-  const [subjectName, setSubjectName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!subjectName.trim()) {
-        setError("Subject name cannot be empty.");
-        return;
-    }
-
-    setIsSubmitting(true);
     try {
-      const newSubject = await addSubjectApi(subjectName);
-      onSubjectAdded(newSubject);
-      onOpenChange(false);
-      setTimeout(() => setSubjectName(""), 300);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Failed to add subject.");
-      } else {
-        setError("An unknown error occurred while adding the subject.");
-      }
-    } finally {
-      setIsSubmitting(false);
+      await updateUser(id, userData);
+      toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} updated successfully!`);
+    } catch {
+      toast.error(`Failed to update ${userType}.`);
+      globalMutate(swrKey);
     }
   };
 
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const promptDeleteUser = (user: User) => {
+    setUserToDelete(user);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    await mutate(async (currentData?: UsersApiResponse) => {
+      if (!currentData) return currentData;
+      return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
+    }, { revalidate: false });
+
+    mutateTotalCount((count) => (count ? count - 1 : 0), false);
+
+    try {
+      await deleteUser(userId);
+      toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} deleted successfully.`);
+    } catch {
+      toast.error(`Failed to delete ${userType}.`);
+      globalMutate(swrKey);
+      mutateTotalCount();
+    }
+  };
+
+  const handleUserAdded = (newUser: User) => {
+    toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} "${newUser.firstName} ${newUser.lastName}" added successfully.`);
+    mutateTotalCount((count) => (count ? count + 1 : 1), false);
+    globalMutate(swrKey);
+  };
+
+  const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>Add New Subject</DialogTitle>
-          <DialogDescription>
-            Enter the name for the new subject.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="subjectName" className="text-right">Name</Label>
-              <Input id="subjectName" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="col-span-3" />
-            </div>
-            {error && <p className="text-sm text-destructive text-center col-span-4">{error}</p>}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" className="button-gradient" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Subject'}
+    <>
+      <div className="flex flex-col rounded-lg border bg-card overflow-hidden">
+        <div className="p-4 sm:p-6">
+          <PageHeader
+            title={pageTitle}
+            description={pageDescription}
+          >
+            <Button onClick={() => setIsAddModalOpen(true)} className="button-gradient">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New {userType === 'student' ? 'Student' : 'Teacher'}
             </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </PageHeader>
+        </div>
+
+        <div className="overflow-x-auto">
+          {isLoading && !data && <UserTableSkeleton type={userType} items={itemsPerPage} />}
+          {error && (
+            <Alert variant="destructive" className="glass-card m-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>Failed to load {userType}s. Please try again.</AlertDescription>
+            </Alert>
+          )}
+          {data && !data.users.length && <p className="py-10 text-center text-muted-foreground">No {userType}s found.</p>}
+          {data?.users && data.users.length > 0 && (
+            <UserTable
+              users={data.users}
+              type={userType}
+              onUserUpdate={handleUserUpdate}
+              onViewUser={handleViewUser}
+              onDeleteUser={promptDeleteUser}
+            />
+          )}
+        </div>
+
+        {!totalLoading && data && data.users.length > 0 && (
+          <div className="p-4 border-t">
+            <TablePaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              totalItems={totalCount ?? 0}
+              itemType={`${userType}s`}
+            />
+          </div>
+        )}
+      </div>
+
+      {isViewModalOpen && (
+        <UserPreviewModal
+            isOpen={isViewModalOpen}
+            onOpenChange={setIsViewModalOpen}
+            user={selectedUser}
+        />
+      )}
+
+      <AddUserModal
+        isOpen={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onUserAdded={handleUserAdded}
+        userType={userType}
+        addUserApi={addUser}
+      />
+
+      <ConfirmationDialog
+        isOpen={!!userToDelete}
+        onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}
+        onConfirm={() => {
+          if (userToDelete) {
+            handleDeleteUser(userToDelete.id);
+          }
+        }}
+        title={`Delete ${userType}?`}
+        description={`Are you sure you want to delete ${userToDelete?.firstName} ${userToDelete?.lastName}? All of their data will be removed.`}
+        confirmText={`Yes, delete ${userType}`}
+      />
+    </>
   );
 }
 ```

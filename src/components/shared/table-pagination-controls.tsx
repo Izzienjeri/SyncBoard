@@ -28,7 +28,7 @@ export function TablePaginationControls({
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <div className="text-sm text-muted-foreground">
         {totalItems > 0 ? `Showing ${startItem}-${endItem} of ${totalItems} ${itemType}` : `No ${itemType} found`}
       </div>

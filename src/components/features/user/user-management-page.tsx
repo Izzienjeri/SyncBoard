@@ -101,52 +101,58 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     globalMutate(swrKey);
   };
 
-  const renderContent = () => {
-    if (isLoading && !data) return <UserTableSkeleton type={userType} items={itemsPerPage} />;
-    if (error) return (
-      <Alert variant="destructive" className="glass-card">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>Failed to load {userType}s. Please try again.</AlertDescription>
-      </Alert>
-    );
-    if (!data?.users.length) return <p className="py-10 text-center text-muted-foreground">No {userType}s found.</p>;
-    
-    return <UserTable
-      users={data.users}
-      type={userType}
-      onUserUpdate={handleUserUpdate}
-      onViewUser={handleViewUser}
-      onDeleteUser={promptDeleteUser}
-    />
-  };
-
   const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={pageTitle}
-        description={pageDescription}
-      >
-        <Button onClick={() => setIsAddModalOpen(true)} className="button-gradient">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New {userType === 'student' ? 'Student' : 'Teacher'}
-        </Button>
-      </PageHeader>
-      {renderContent()}
+    <>
+      <div className="flex flex-col rounded-lg border bg-card overflow-hidden">
+        <div className="p-4 sm:p-6">
+          <PageHeader
+            title={pageTitle}
+            description={pageDescription}
+          >
+            <Button onClick={() => setIsAddModalOpen(true)} className="button-gradient">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New {userType === 'student' ? 'Student' : 'Teacher'}
+            </Button>
+          </PageHeader>
+        </div>
 
-      {!totalLoading && (
-         <TablePaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            totalItems={totalCount ?? 0}
-            itemType={`${userType}s`}
-         />
-      )}
+        <div className="overflow-x-auto">
+          {isLoading && !data && <UserTableSkeleton type={userType} items={itemsPerPage} />}
+          {error && (
+            <Alert variant="destructive" className="glass-card m-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>Failed to load {userType}s. Please try again.</AlertDescription>
+            </Alert>
+          )}
+          {data && !data.users.length && <p className="py-10 text-center text-muted-foreground">No {userType}s found.</p>}
+          {data?.users && data.users.length > 0 && (
+            <UserTable
+              users={data.users}
+              type={userType}
+              onUserUpdate={handleUserUpdate}
+              onViewUser={handleViewUser}
+              onDeleteUser={promptDeleteUser}
+            />
+          )}
+        </div>
+
+        {!totalLoading && data && data.users.length > 0 && (
+          <div className="p-4 border-t">
+            <TablePaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              totalItems={totalCount ?? 0}
+              itemType={`${userType}s`}
+            />
+          </div>
+        )}
+      </div>
 
       {isViewModalOpen && (
         <UserPreviewModal
@@ -176,6 +182,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
         description={`Are you sure you want to delete ${userToDelete?.firstName} ${userToDelete?.lastName}? All of their data will be removed.`}
         confirmText={`Yes, delete ${userType}`}
       />
-    </div>
+    </>
   );
 }
