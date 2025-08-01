@@ -13,26 +13,26 @@ export function UserTableSkeleton({ type, items = 10 }: UserTableSkeletonProps) 
     <Table className="min-w-full">
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[80px]">User ID</TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Phone</TableHead>
-          {type === 'student' && <TableHead>Grade</TableHead>}
-          {type === 'teacher' && <TableHead>Subject</TableHead>}
-          {type === 'teacher' && <TableHead>Mean Grade</TableHead>}
-          <TableHead className="w-[50px] text-right">Actions</TableHead>
+          <TableHead className="w-[70px] px-3 py-2">User ID</TableHead>
+          <TableHead className="px-3 py-2">Name</TableHead>
+          <TableHead className="px-3 py-2">Email</TableHead>
+          <TableHead className="px-3 py-2">Phone</TableHead>
+          {type === 'student' && <TableHead className="px-3 py-2">Grade</TableHead>}
+          {type === 'teacher' && <TableHead className="px-3 py-2">Subject</TableHead>}
+          {type === 'teacher' && <TableHead className="px-3 py-2">Mean Grade</TableHead>}
+          <TableHead className="w-[50px] px-3 py-2 text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {skeletonRows.map((_, index) => (
           <TableRow key={index}>
-            <TableCell><Skeleton className="h-4 w-12" /></TableCell>
-            <TableCell><Skeleton className="h-4 w-32" /></TableCell>
-            <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-            <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-            <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-            {type === 'teacher' && <TableCell><Skeleton className="h-4 w-24" /></TableCell>}
-            <TableCell className="text-right"><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
+            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-12" /></TableCell>
+            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-32" /></TableCell>
+            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-48" /></TableCell>
+            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-40" /></TableCell>
+            <TableCell className="px-3 py-2"><Skeleton className="h-4 w-24" /></TableCell>
+            {type === 'teacher' && <TableCell className="px-3 py-2"><Skeleton className="h-4 w-24" /></TableCell>}
+            <TableCell className="text-right px-3 py-2"><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
           </TableRow>
         ))}
       </TableBody>

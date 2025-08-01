@@ -1,80 +1,109 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useSWR, { useSWRConfig, MutatorCallback } from "swr";
 import { toast } from "sonner";
 import { User, UsersApiResponse } from "@/types/api.types";
-import { updateUser } from "@/lib/api";
+import { addUser, updateUser, deleteUser as deleteUserApi } from "@/lib/api";
+import { UserFormValues } from "@/lib/schemas";
 
-// Mocking deletion as dummyjson doesn't support it on all records
-const deleteUser = async (id: number) => Promise.resolve({ id, isDeleted: true });
-
-interface UseUserManagementProps<T> {
-  fetcher: (key: string) => Promise<T>;
-  swrKey: string;
-  entityName: 'Student' | 'Teacher';
+interface UseUserManagementProps {
+  userType: 'student' | 'teacher';
+  itemsPerPage: number;
+  currentPage: number;
 }
 
-export function useUserManagement<T extends UsersApiResponse>({ fetcher, swrKey, entityName }: UseUserManagementProps<T>) {
-  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+export function useUserManagement({ userType, itemsPerPage, currentPage }: UseUserManagementProps) {
+  const [userToEdit, setUserToEdit] = useState<User | undefined>(undefined);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  
+  const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
-  const { data, error, isLoading, mutate } = useSWR(swrKey, fetcher);
+  const skip = userType === 'student'
+    ? (currentPage - 1) * itemsPerPage
+    : 100 + (currentPage - 1) * itemsPerPage;
+  const swrKey = `https://dummyjson.com/users?limit=${itemsPerPage}&skip=${skip}`;
+  
+  const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, url => fetch(url).then(res => res.json()), { keepPreviousData: true });
   const { mutate: globalMutate } = useSWRConfig();
 
-  const handleUserUpdate = async (id: number, userData: Partial<User>) => {
-    const optimisticData: MutatorCallback<T> = (currentData) => {
+  const handleFormSubmit = async (formData: UserFormValues, userId?: number) => {
+    const optimisticDataCallback: MutatorCallback<UsersApiResponse> = (currentData) => {
       if (!currentData) return currentData;
-      const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
-      return { ...currentData, users: updatedUsers } as T;
+      
+      if (userId) {
+        const updatedUsers = currentData.users.map(u => u.id === userId ? { ...u, ...formData } : u);
+        return { ...currentData, users: updatedUsers };
+      } else {
+        return currentData;
+      }
     };
-    await mutate(optimisticData, { revalidate: false });
+    await mutate(optimisticDataCallback, { revalidate: false });
 
     try {
-      await updateUser(id, userData);
-      toast.success(`${entityName} updated successfully!`);
-    } catch {
-      toast.error(`Failed to update ${entityName.toLowerCase()}.`);
+      if (userId) {
+        await updateUser(userId, formData);
+        toast.success(`${entityName} updated successfully!`);
+      } else {
+        await addUser(formData);
+        toast.success(`${entityName} added successfully.`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : `Failed to save ${entityName.toLowerCase()}.`;
+      toast.error(message);
     } finally {
       globalMutate(swrKey);
     }
   };
-
-  const handleViewUser = (user: User) => {
-    setSelectedUser(user);
-    setIsViewModalOpen(true);
-  };
-
+  
   const handleDeleteUser = async (userId: number) => {
-    const optimisticData: MutatorCallback<T> = (currentData) => {
+    const optimisticData: MutatorCallback<UsersApiResponse> = (currentData) => {
       if (!currentData) return currentData;
-      const updatedUsers = currentData.users.filter(u => u.id !== userId);
-      return { ...currentData, users: updatedUsers } as T;
+      return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
     };
     await mutate(optimisticData, { revalidate: false });
 
     try {
-      await deleteUser(userId);
+      await deleteUserApi(userId);
       toast.success(`${entityName} deleted successfully.`);
     } catch {
       toast.error(`Failed to delete ${entityName.toLowerCase()}.`);
       globalMutate(swrKey);
+    } finally {
+      setUserToDelete(null);
     }
   };
-
-  const closeViewModal = () => {
-    setIsViewModalOpen(false);
-    // Add a small delay to allow the modal to animate out before clearing the user
-    setTimeout(() => setSelectedUser(undefined), 300);
+  
+  const openCreateModal = () => {
+    setUserToEdit(undefined);
+    setIsFormModalOpen(true);
   };
+  
+  const openEditModal = (user: User) => {
+    setUserToEdit(user);
+    setIsFormModalOpen(true);
+  };
+  
+  const openDeleteDialog = (user: User) => {
+    setUserToDelete(user);
+  };
+
+  const closeFormModal = () => setIsFormModalOpen(false);
+  const closeDeleteDialog = () => setUserToDelete(null);
 
   return {
     data,
     error,
     isLoading,
-    selectedUser,
-    isViewModalOpen,
-    handleUserUpdate,
-    handleViewUser,
+    swrKey,
+    isFormModalOpen,
+    userToEdit,
+    openCreateModal,
+    openEditModal,
+    closeFormModal,
+    handleFormSubmit,
+    userToDelete,
+    openDeleteDialog,
+    closeDeleteDialog,
     handleDeleteUser,
-    setIsViewModalOpen: closeViewModal,
   };
 }
