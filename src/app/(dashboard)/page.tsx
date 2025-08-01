@@ -55,7 +55,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Student Dashboard">
+      <PageHeader title="Analytics">
         <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
           <SelectContent><SelectItem value="this_term">This Term</SelectItem><SelectItem value="last_term">Last Term</SelectItem><SelectItem value="full_year">Full Year</SelectItem></SelectContent>

@@ -4,16 +4,19 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Rectangle } from 'recharts/lib/shape/Rectangle';
 import type { RectangleProps } from 'recharts';
 
-import { Bar } from 'recharts/lib/cartesian/Bar';
-import { XAxis } from 'recharts/lib/cartesian/XAxis';
-import { YAxis } from 'recharts/lib/cartesian/YAxis';
-import { BarChart } from 'recharts/lib/chart/BarChart';
-import { Cell } from 'recharts/lib/component/Cell';
-import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
-import { Tooltip } from 'recharts/lib/component/Tooltip';
+import {
+  Rectangle,
+  Bar,
+  XAxis,
+  YAxis,
+  BarChart,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
+
 
 import type { GradeDistribution, SubjectScore } from "@/lib/mock-data";
 import { subjectScoreData } from "@/lib/mock-data";

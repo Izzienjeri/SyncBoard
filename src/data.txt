@@ -1,6 +1,6 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 20:32:20
-# Files Included: 37
+# Date and Time: 2025-08-01 20:41:15
+# Files Included: 36
 
 # === lib/mock-db.ts ===
 ```ts
@@ -998,9 +998,10 @@ import type { Student } from '@/lib/schemas';
 
 export async function PUT(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const studentId = parseInt(context.params.id);
+  const { id } = await params;
+  const studentId = parseInt(id);
   const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
 
   if (studentIndex === -1) {
@@ -1014,9 +1015,10 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const studentId = parseInt(context.params.id);
+  const { id } = await params;
+  const studentId = parseInt(id);
   const studentIndex = db.students.findIndex((s: Student) => s.id === studentId);
 
   if (studentIndex === -1) {
@@ -1100,8 +1102,12 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import type { Teacher } from '@/lib/schemas';
 
-export async function PUT(request: Request, context: { params: { id: string } }) {
-  const teacherId = parseInt(context.params.id);
+export async function PUT(
+  request: Request, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const teacherId = parseInt(id);
   const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
 
   if (teacherIndex === -1) {
@@ -1112,8 +1118,12 @@ export async function PUT(request: Request, context: { params: { id: string } })
   return NextResponse.json(db.teachers[teacherIndex]);
 }
 
-export async function DELETE(request: Request, context: { params: { id: string } }) {
-  const teacherId = parseInt(context.params.id);
+export async function DELETE(
+  request: Request, 
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const teacherId = parseInt(id);
   const teacherIndex = db.teachers.findIndex((t: Teacher) => t.id === teacherId);
 
   if (teacherIndex === -1) {
@@ -1176,8 +1186,12 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
 import type { Teacher } from '@/lib/schemas';
 
-export async function PUT(request: Request, context: { params: { name: string } }) {
-  const oldSubjectName = decodeURIComponent(context.params.name);
+export async function PUT(
+  request: Request, 
+  { params }: { params: Promise<{ name: string }> }
+) {
+  const { name } = await params;
+  const oldSubjectName = decodeURIComponent(name);
   const { newSubjectName, teacherIds } = await request.json();
 
   const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === oldSubjectName.toLowerCase());
@@ -1214,23 +1228,27 @@ export async function PUT(request: Request, context: { params: { name: string } 
   return NextResponse.json({ message: "Subject updated successfully." });
 }
 
-export async function DELETE(request: Request, context: { params: { name: string } }) {
-    const subjectNameToDelete = decodeURIComponent(context.params.name);
-    const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
+export async function DELETE(
+  request: Request, 
+  { params }: { params: Promise<{ name: string }> }
+) {
+  const { name } = await params;
+  const subjectNameToDelete = decodeURIComponent(name);
+  const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === subjectNameToDelete.toLowerCase());
 
-    if (subjectIndex === -1) {
-        return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
-    }
+  if (subjectIndex === -1) {
+      return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
+  }
 
-    db.subjects.splice(subjectIndex, 1);
+  db.subjects.splice(subjectIndex, 1);
 
-    db.teachers.forEach((teacher: Teacher) => {
-        if (teacher.subject.toLowerCase() === subjectNameToDelete.toLowerCase()) {
-            teacher.subject = 'Unassigned';
-        }
-    });
-    
-    return NextResponse.json({ message: `Subject "${subjectNameToDelete}" deleted successfully.` });
+  db.teachers.forEach((teacher: Teacher) => {
+      if (teacher.subject.toLowerCase() === subjectNameToDelete.toLowerCase()) {
+          teacher.subject = 'Unassigned';
+      }
+  });
+  
+  return NextResponse.json({ message: `Subject "${subjectNameToDelete}" deleted successfully.` });
 }
 ```
 
@@ -1323,24 +1341,6 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
     userToEdit, userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser,
   };
 }
-```
-
-# === types/recharts.d.ts ===
-```ts
-declare module 'recharts/lib/chart/LineChart';
-declare module 'recharts/lib/chart/BarChart';
-
-declare module 'recharts/lib/component/ResponsiveContainer';
-declare module 'recharts/lib/component/Tooltip';
-declare module 'recharts/lib/component/Cell';
-
-declare module 'recharts/lib/cartesian/XAxis';
-declare module 'recharts/lib/cartesian/YAxis';
-declare module 'recharts/lib/cartesian/Area';
-declare module 'recharts/lib/cartesian/Line';
-declare module 'recharts/lib/cartesian/Bar';
-
-declare module 'recharts/lib/shape/Rectangle';
 ```
 
 # === types/api.types.ts ===
@@ -1552,13 +1552,16 @@ export function StatCard({ title, value, change, isNegative = false, className }
 # === components/dashboard/attendance-chart.tsx ===
 ```tsx
 "use client";
-import { Area } from 'recharts/lib/cartesian/Area';
-import { Line } from 'recharts/lib/cartesian/Line';
-import { XAxis } from 'recharts/lib/cartesian/XAxis';
-import { YAxis } from 'recharts/lib/cartesian/YAxis';
-import { LineChart } from 'recharts/lib/chart/LineChart';
-import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
-import { Tooltip } from 'recharts/lib/component/Tooltip';
+import {
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
+
 
 import { StudentAttendance } from "@/lib/mock-data";
 
@@ -1711,16 +1714,19 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Rectangle } from 'recharts/lib/shape/Rectangle';
 import type { RectangleProps } from 'recharts';
 
-import { Bar } from 'recharts/lib/cartesian/Bar';
-import { XAxis } from 'recharts/lib/cartesian/XAxis';
-import { YAxis } from 'recharts/lib/cartesian/YAxis';
-import { BarChart } from 'recharts/lib/chart/BarChart';
-import { Cell } from 'recharts/lib/component/Cell';
-import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
-import { Tooltip } from 'recharts/lib/component/Tooltip';
+import {
+  Rectangle,
+  Bar,
+  XAxis,
+  YAxis,
+  BarChart,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
+
 
 import type { GradeDistribution, SubjectScore } from "@/lib/mock-data";
 import { subjectScoreData } from "@/lib/mock-data";

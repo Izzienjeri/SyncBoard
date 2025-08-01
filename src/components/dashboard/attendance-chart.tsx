@@ -1,11 +1,14 @@
 "use client";
-import { Area } from 'recharts/lib/cartesian/Area';
-import { Line } from 'recharts/lib/cartesian/Line';
-import { XAxis } from 'recharts/lib/cartesian/XAxis';
-import { YAxis } from 'recharts/lib/cartesian/YAxis';
-import { LineChart } from 'recharts/lib/chart/LineChart';
-import { ResponsiveContainer } from 'recharts/lib/component/ResponsiveContainer';
-import { Tooltip } from 'recharts/lib/component/Tooltip';
+import {
+  Area,
+  Line,
+  XAxis,
+  YAxis,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
+
 
 import { StudentAttendance } from "@/lib/mock-data";
 
@@ -38,7 +41,6 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              // FIX: Explicitly type 'value' as number
               tickFormatter={(value: number) => `${value}%`}
             />
             <Tooltip
@@ -47,7 +49,6 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
                 border: "1px solid #e2e8f0",
                 borderRadius: "0.5rem",
               }}
-              // FIX: Explicitly type 'value' as number (already done here, but good practice to confirm)
               formatter={(value: number) => [`${value}%`, "Attendance"]}
             />
             <Area
