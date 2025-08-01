@@ -5,40 +5,61 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Teacher } from "@/lib/fake-generators";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface EditSubjectModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   subjectName: string;
-  onSubjectUpdated: (oldName: string, newName: string) => Promise<void>;
+  allTeachers: Teacher[];
+  assignedTeacherIds: number[];
+  onSubjectUpdate: (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => Promise<void>;
 }
 
-export function EditSubjectModal({ isOpen, onOpenChange, subjectName, onSubjectUpdated }: EditSubjectModalProps) {
-  const [newSubjectName, setNewSubjectName] = useState(subjectName);
+export function EditSubjectModal({ isOpen, onOpenChange, subjectName, allTeachers, assignedTeacherIds, onSubjectUpdate }: EditSubjectModalProps) {
+  const [newName, setNewName] = useState(subjectName);
+  const [selectedTeacherIds, setSelectedTeacherIds] = useState(new Set(assignedTeacherIds));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setNewSubjectName(subjectName);
+      setNewName(subjectName);
+      setSelectedTeacherIds(new Set(assignedTeacherIds));
+      setError(null);
     }
-  }, [isOpen, subjectName]);
+  }, [isOpen, subjectName, assignedTeacherIds]);
+
+  const handleToggleTeacher = (teacherId: number) => {
+    setSelectedTeacherIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(teacherId)) {
+        newSet.delete(teacherId);
+      } else {
+        newSet.add(teacherId);
+      }
+      return newSet;
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!newSubjectName.trim() || newSubjectName === subjectName) {
-      setError("Please enter a new name for the subject.");
+    if (!newName.trim()) {
+      setError("Subject name cannot be empty.");
       return;
     }
     setIsSubmitting(true);
     try {
-      await onSubjectUpdated(subjectName, newSubjectName);
+      await onSubjectUpdate(subjectName, {
+        newSubjectName: newName,
+        teacherIds: Array.from(selectedTeacherIds)
+      });
       onOpenChange(false);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      }
+      if (err instanceof Error) setError(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,17 +70,32 @@ export function EditSubjectModal({ isOpen, onOpenChange, subjectName, onSubjectU
       <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle>Edit Subject</DialogTitle>
-          <DialogDescription>
-            Rename the subject from <span className="font-semibold">{subjectName}</span>.
-          </DialogDescription>
+          <DialogDescription>Update the subject details and assign instructors.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="pt-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="subjectName" className="text-right">New Name</Label>
-            <Input id="subjectName" value={newSubjectName} onChange={(e) => setNewSubjectName(e.target.value)} className="col-span-3" />
+        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+          <div>
+            <Label htmlFor="subjectName">Subject Name</Label>
+            <Input id="subjectName" value={newName} onChange={(e) => setNewName(e.target.value)} className="mt-2" />
           </div>
-          {error && <p className="text-sm text-destructive text-center col-span-4 pt-2">{error}</p>}
-          <DialogFooter className="pt-6">
+          <div>
+            <Label>Assign Instructors ({selectedTeacherIds.size} selected)</Label>
+            <ScrollArea className="h-48 mt-2 border rounded-md p-4">
+              <div className="space-y-3">
+                {allTeachers.map(teacher => (
+                  <div key={teacher.id} className="flex items-center gap-3">
+                    <Checkbox
+                      id={`teacher-${teacher.id}`}
+                      checked={selectedTeacherIds.has(teacher.id)}
+                      onCheckedChange={() => handleToggleTeacher(teacher.id)}
+                    />
+                    <Label htmlFor={`teacher-${teacher.id}`} className="font-normal">{teacher.firstName} {teacher.lastName}</Label>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
             <Button type="submit" className="button-gradient" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Changes'}

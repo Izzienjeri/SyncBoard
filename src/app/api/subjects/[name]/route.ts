@@ -4,26 +4,40 @@ import { Teacher } from '@/lib/fake-generators';
 
 export async function PUT(request: Request, { params }: { params: { name: string } }) {
   const oldSubjectName = decodeURIComponent(params.name);
-  const { newSubjectName } = await request.json();
-
-  if (!newSubjectName) {
-    return NextResponse.json({ message: 'New subject name is required.' }, { status: 400 });
-  }
+  const { newSubjectName, teacherIds } = await request.json();
 
   const subjectIndex = db.subjects.findIndex(s => s.toLowerCase() === oldSubjectName.toLowerCase());
   if (subjectIndex === -1) {
     return NextResponse.json({ message: 'Subject not found' }, { status: 404 });
   }
-  
-  db.subjects[subjectIndex] = newSubjectName;
 
-  db.teachers.forEach((teacher: Teacher) => {
-    if (teacher.subject.toLowerCase() === oldSubjectName.toLowerCase()) {
-      teacher.subject = newSubjectName;
-    }
-  });
+  const finalName = newSubjectName || oldSubjectName;
 
-  return NextResponse.json({ oldName: oldSubjectName, newName: newSubjectName });
+  if (newSubjectName && newSubjectName !== oldSubjectName) {
+    db.subjects[subjectIndex] = newSubjectName;
+    db.teachers.forEach((teacher: Teacher) => {
+      if (teacher.subject.toLowerCase() === oldSubjectName.toLowerCase()) {
+        teacher.subject = finalName;
+      }
+    });
+  }
+
+  if (teacherIds && Array.isArray(teacherIds)) {
+    db.teachers.forEach((teacher: Teacher) => {
+        if (teacher.subject.toLowerCase() === finalName.toLowerCase() && !teacherIds.includes(teacher.id)) {
+            teacher.subject = 'Unassigned';
+        }
+    });
+    
+    teacherIds.forEach((id: number) => {
+      const teacher = db.teachers.find(t => t.id === id);
+      if (teacher) {
+        teacher.subject = finalName;
+      }
+    });
+  }
+
+  return NextResponse.json({ message: "Subject updated successfully." });
 }
 
 export async function DELETE(request: Request, { params }: { params: { name: string } }) {

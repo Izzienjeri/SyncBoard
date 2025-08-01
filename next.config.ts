@@ -4,14 +4,14 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'dummyjson.com',
-        pathname: '/icon/**',
+        protocol: "https",
+        hostname: "avatars.githubusercontent.com",
+        pathname: "/**",
       },
       {
-        protocol: 'https',
-        hostname: 'cdn.dummyjson.com',
-        pathname: '/product-images/**',
+        protocol: "https",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/gh/faker-js/assets-person-portrait/**",
       },
     ],
   },

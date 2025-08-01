@@ -124,16 +124,16 @@ export async function addSubject(subjectName: string): Promise<{ name: string }>
 }
 
 /**
- * Updates a subject's name.
+ * Updates a subject's details (name and/or assigned teachers).
  * @param oldName - The current name of the subject.
- * @param newName - The new name for the subject.
- * @returns A confirmation object.
+ * @param data - An object containing the new name and an array of teacher IDs.
+ * @returns A confirmation message.
  */
-export async function updateSubject(oldName: string, newName: string): Promise<{ oldName: string, newName: string }> {
+export async function updateSubject(oldName: string, data: { newSubjectName: string, teacherIds: number[] }): Promise<{ message: string }> {
     const res = await fetch(`/api/subjects/${encodeURIComponent(oldName)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newSubjectName: newName }),
+        body: JSON.stringify(data),
     });
     if (!res.ok) {
         const error = await res.json();
