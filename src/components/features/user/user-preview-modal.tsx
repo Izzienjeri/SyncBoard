@@ -46,7 +46,6 @@ export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModa
             />
           </div>
           <div className="flex-1 space-y-1 text-center sm:text-left">
-            {/* FIX: Removed text-gradient class */}
             <h3 className="text-2xl font-bold text-foreground">{`${user.firstName} ${user.lastName}`}</h3>
             <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
               <AtSign className="h-4 w-4" />

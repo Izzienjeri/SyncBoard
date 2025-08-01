@@ -3,9 +3,9 @@
 import { useState } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
-import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, Pencil, PlusCircle, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getSubjects } from "@/lib/api";
+import { addSubject, getSubjects } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { User } from "@/types/api.types";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
 import type { UserPreviewModalProps } from "@/components/features/user/user-preview-modal";
+import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 const ManageInstructorsModal = dynamic(() => import("@/components/features/subject/manage-instructors-modal").then(mod => mod.ManageInstructorsModal));
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
@@ -34,8 +36,9 @@ const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
 export default function SubjectsPage() {
   const [period, setPeriod] = useState<Period>("this_term");
   const [currentPage, setCurrentPage] = useState(1);
-  // FIX: Default items per page is now 6.
   const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState<string | null>(null);
   
   const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
   const { data: allUsers } = useSWR<User[]>(`https://dummyjson.com/users?limit=200`, async (url: string) => (await fetch(url)).json().then(res => res.users));
@@ -49,7 +52,16 @@ export default function SubjectsPage() {
   
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
+  };
+
+  const handleSubjectAdded = (newSubject: string) => {
+    const capitalizedSubject = newSubject.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    toast.success(`Subject "${capitalizedSubject}" added successfully.`);
+    mutate(currentSubjects => {
+      if (!currentSubjects) return [newSubject];
+      return [...currentSubjects, newSubject].sort();
+    }, false);
   };
 
   const handleDeleteSubject = (subjectToDelete: string) => {
@@ -116,7 +128,7 @@ export default function SubjectsPage() {
             <Card key={subject} className="glass-card flex flex-col">
               <CardHeader className="flex-row items-center justify-between">
                 <CardTitle className="capitalize text-lg">{subject.replace(/-/g, ' ')}</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject)}>
+                <Button variant="ghost" size="icon" onClick={() => setSubjectToDelete(subject)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </CardHeader>
@@ -156,6 +168,10 @@ export default function SubjectsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Subjects Overview" description="View details for each subject offered.">
+        <Button onClick={() => setIsAddModalOpen(true)} className="button-gradient">
+          <PlusCircle className="h-4 w-4 mr-2"/>
+          Add Subject
+        </Button>
         <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
           <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
           <SelectContent>
@@ -199,6 +215,26 @@ export default function SubjectsPage() {
           user={modalState.teacher}
         />
       )}
+      
+      <ConfirmationDialog
+        isOpen={!!subjectToDelete}
+        onOpenChange={(isOpen) => !isOpen && setSubjectToDelete(null)}
+        onConfirm={() => {
+          if (subjectToDelete) {
+            handleDeleteSubject(subjectToDelete);
+          }
+        }}
+        title="Are you sure?"
+        description={`This will permanently delete the subject "${subjectToDelete?.replace(/-/g, ' ')}". This action cannot be undone.`}
+        confirmText="Yes, delete"
+      />
+
+      <AddSubjectModal
+        isOpen={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onSubjectAdded={handleSubjectAdded}
+        addSubjectApi={addSubject}
+      />
     </div>
   );
 }

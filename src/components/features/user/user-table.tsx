@@ -1,3 +1,4 @@
+// === components/features/user/user-table.tsx ===
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -76,7 +77,7 @@ interface UserTableProps {
   type: 'student' | 'teacher';
   onUserUpdate: (id: number, data: Partial<User>) => void;
   onViewUser: (user: User) => void;
-  onDeleteUser: (userId: number) => void;
+  onDeleteUser: (user: User) => void;
 }
 
 export function UserTable({ users, type, onUserUpdate, onViewUser, onDeleteUser }: UserTableProps) {
@@ -91,13 +92,11 @@ export function UserTable({ users, type, onUserUpdate, onViewUser, onDeleteUser 
   }
 
   return (
-    // FIX: This two-div structure is a robust way to handle overflow clipping within rounded borders.
     <div className="rounded-lg border bg-card backdrop-blur-xl overflow-hidden">
       <div className="overflow-x-auto">
         <Table className="min-w-full">
           <TableHeader>
             <TableRow className="border-b hover:bg-transparent">
-              {/* FIX: Header text style matches screenshot */}
               <TableHead className="w-[80px] font-semibold text-foreground">User ID</TableHead>
               <TableHead className="font-semibold text-foreground">Name</TableHead>
               <TableHead className="font-semibold text-foreground">Email</TableHead>
@@ -111,7 +110,6 @@ export function UserTable({ users, type, onUserUpdate, onViewUser, onDeleteUser 
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id} className="hover:bg-muted/50">
-                {/* FIX: Removed font-mono for a cleaner look */}
                 <TableCell className="text-muted-foreground">{user.id}</TableCell>
                 <TableCell className="font-medium text-foreground">
                   <EditableCell 
@@ -143,7 +141,7 @@ export function UserTable({ users, type, onUserUpdate, onViewUser, onDeleteUser 
                         <DropdownMenuItem onClick={() => onViewUser(user)}>
                           <Eye className="mr-2 h-4 w-4" /> View
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDeleteUser(user.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                        <DropdownMenuItem onClick={() => onDeleteUser(user)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                           <Trash2 className="mr-2 h-4 w-4" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>

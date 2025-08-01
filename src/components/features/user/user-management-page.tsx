@@ -4,16 +4,19 @@ import useSWR, { useSWRConfig } from "swr";
 import { useState } from "react";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, PlusCircle } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
 import { UserTable } from "@/components/features/user/user-table";
 import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { TablePaginationControls } from "@/components/shared/table-pagination-controls"; // NEW
-import { getUsers, updateUser, deleteUser, getTotalStudents, getTotalTeachers } from "@/lib/api";
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
+import { getUsers, updateUser, deleteUser, getTotalStudents, getTotalTeachers, addUser } from "@/lib/api";
 import { User, UsersApiResponse } from "@/types/api.types";
 import type { UserPreviewModalProps } from "./user-preview-modal";
+import { Button } from "@/components/ui/button";
+import { AddUserModal } from "./add-user-modal";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 
 const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
@@ -25,28 +28,28 @@ interface UserManagementPageProps {
 
 export function UserManagementPage({ userType, pageTitle, pageDescription }: UserManagementPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  // IMPROVEMENT: Added state for items per page
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   
   const { mutate: globalMutate } = useSWRConfig();
 
-  // Updated to use itemsPerPage state
   const skip = userType === 'student' 
     ? (currentPage - 1) * itemsPerPage 
     : 100 + (currentPage - 1) * itemsPerPage;
   const swrKey = `https://dummyjson.com/users?limit=${itemsPerPage}&skip=${skip}`;
   
   const { data, error, isLoading, mutate } = useSWR(swrKey, getUsers, { keepPreviousData: true });
-  const { data: totalCount, isLoading: totalLoading } = useSWR(
+  const { data: totalCount, isLoading: totalLoading, mutate: mutateTotalCount } = useSWR(
     userType === 'student' ? 'totalStudents' : 'totalTeachers',
     userType === 'student' ? getTotalStudents : getTotalTeachers
   );
 
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page to avoid invalid page numbers
+    setCurrentPage(1);
   };
   
   const handleUserUpdate = async (id: number, userData: Partial<User>) => {
@@ -70,11 +73,17 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     setIsViewModalOpen(true);
   };
 
+  const promptDeleteUser = (user: User) => {
+    setUserToDelete(user);
+  };
+
   const handleDeleteUser = async (userId: number) => {
     await mutate(async (currentData?: UsersApiResponse) => {
       if (!currentData) return currentData;
       return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
     }, { revalidate: false });
+
+    mutateTotalCount((count) => (count ? count - 1 : 0), false);
 
     try {
       await deleteUser(userId);
@@ -82,7 +91,14 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     } catch {
       toast.error(`Failed to delete ${userType}.`);
       globalMutate(swrKey);
+      mutateTotalCount();
     }
+  };
+
+  const handleUserAdded = (newUser: User) => {
+    toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} "${newUser.firstName} ${newUser.lastName}" added successfully.`);
+    mutateTotalCount((count) => (count ? count + 1 : 1), false);
+    globalMutate(swrKey);
   };
 
   const renderContent = () => {
@@ -101,7 +117,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       type={userType}
       onUserUpdate={handleUserUpdate}
       onViewUser={handleViewUser}
-      onDeleteUser={handleDeleteUser}
+      onDeleteUser={promptDeleteUser}
     />
   };
 
@@ -112,10 +128,14 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       <PageHeader
         title={pageTitle}
         description={pageDescription}
-      />
+      >
+        <Button onClick={() => setIsAddModalOpen(true)} className="button-gradient">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add New {userType === 'student' ? 'Student' : 'Teacher'}
+        </Button>
+      </PageHeader>
       {renderContent()}
 
-      {/* IMPROVEMENT: Replaced old pagination with the new comprehensive controls component */}
       {!totalLoading && (
          <TablePaginationControls
             currentPage={currentPage}
@@ -135,6 +155,27 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
             user={selectedUser}
         />
       )}
+
+      <AddUserModal
+        isOpen={isAddModalOpen}
+        onOpenChange={setIsAddModalOpen}
+        onUserAdded={handleUserAdded}
+        userType={userType}
+        addUserApi={addUser}
+      />
+
+      <ConfirmationDialog
+        isOpen={!!userToDelete}
+        onOpenChange={(isOpen) => !isOpen && setUserToDelete(null)}
+        onConfirm={() => {
+          if (userToDelete) {
+            handleDeleteUser(userToDelete.id);
+          }
+        }}
+        title={`Delete ${userType}?`}
+        description={`Are you sure you want to delete ${userToDelete?.firstName} ${userToDelete?.lastName}? All of their data will be removed.`}
+        confirmText={`Yes, delete ${userType}`}
+      />
     </div>
   );
 }
