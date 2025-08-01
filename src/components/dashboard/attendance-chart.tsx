@@ -6,7 +6,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  defs,
   Area,
 } from "recharts";
 import { attendanceData } from "@/lib/mock-data";

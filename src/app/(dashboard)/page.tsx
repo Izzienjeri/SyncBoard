@@ -2,12 +2,13 @@ import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { AttendanceChart } from "@/components/dashboard/attendance-chart";
 import { StudentPerformanceSummary } from "@/components/dashboard/student-performance-summary";
-import { getTotalStudents } from "@/lib/api";
+import { getTotalStudents, getTotalTeachers } from "@/lib/api";
 import { Bell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default async function DashboardPage() {
   const totalStudents = await getTotalStudents();
+  const totalTeachers = await getTotalTeachers();
 
   return (
     <>
@@ -32,10 +33,10 @@ export default async function DashboardPage() {
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-         <StatCard title="Total Students" value={totalStudents.toString()} change="+5%" />
-         <StatCard title="Pass Rate" value="85.3%" change="-1.2%" isNegative />
-         <StatCard title="Assignments Completed" value="76%" change="+3.4%" />
-         <StatCard title="Avg. Attendance" value="91%" change="This Term" />
+         <StatCard title="Total Students" value={totalStudents.toString()} change="+5%" className="bg-[--color-chart-1]/20 border border-[--color-chart-1]/50" />
+         <StatCard title="Total Teachers" value={totalTeachers.toString()} change="+2" className="bg-[--color-chart-2]/20 border border-[--color-chart-2]/50" />
+         <StatCard title="Pass Rate" value="85.3%" change="-1.2%" isNegative className="bg-[--color-chart-3]/20 border border-[--color-chart-3]/50" />
+         <StatCard title="Avg. Attendance" value="91%" change="This Term" className="bg-[--color-chart-4]/20 border border-[--color-chart-4]/50" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">

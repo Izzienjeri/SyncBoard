@@ -1,4 +1,4 @@
-import { CartsApiResponse, UsersApiResponse } from "@/types/api.types";
+import { CartsApiResponse, User, UsersApiResponse } from "@/types/api.types";
 import { Course } from "@/types/course.types";
 import { CourseSchema } from "@/validators/course.schema";
 
@@ -17,20 +17,53 @@ export async function getUsers(url: string): Promise<UsersApiResponse> {
   }
 }
 
+export async function updateUser(userId: number, userData: Partial<User>): Promise<User> {
+  try {
+    const res = await fetch(`${DUMMY_JSON_URL}/users/${userId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
+    if (!res.ok) throw new Error("Failed to update user");
+    return await res.json();
+  } catch {
+    throw new Error("Could not update the user.");
+  }
+}
+
 
 export async function getTotalStudents(): Promise<number> {
+  // Based on app structure where teachers are users after the first 100
+  return 100;
+}
+
+export async function getTotalTeachers(): Promise<number> {
   try {
     const res = await fetch(`${DUMMY_JSON_URL}/users?limit=0`);
     if (!res.ok) {
-      return 152;
+      return 50; // Fallback
     }
     const data: UsersApiResponse = await res.json();
-    return data.total;
+    // Assuming teachers are users after the first 100
+    return data.total > 100 ? data.total - 100 : 0;
   } catch (e) {
-    console.error("Failed to get total students:", e);
-    return 152;
+    console.error("Failed to get total teachers:", e);
+    return 50;
   }
 }
+
+export async function getSubjects(): Promise<string[]> {
+  try {
+    const res = await fetch(`${DUMMY_JSON_URL}/products/categories`);
+    if (!res.ok) {
+      throw new Error("Failed to fetch subjects");
+    }
+    return await res.json();
+  } catch {
+    throw new Error("Could not retrieve subjects. Please try again later.");
+  }
+}
+
 
 export async function getTotalCourses(): Promise<number> {
   try {
@@ -105,12 +138,4 @@ export async function deleteCourse(courseId: number): Promise<Course> {
   }
 }
 
-export async function getEnrollments(url: string): Promise<CartsApiResponse> {
-    try {
-        const res = await fetch(url);
-        if(!res.ok) throw new Error("Failed to fetch enrollments");
-        return await res.json();
-    } catch {
-        throw new Error("Could not retrieve enrollments. Please try again later.");
-    }
-}
+

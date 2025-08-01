@@ -32,7 +32,6 @@ const navLinks: NavLink[] = [
   { href: "/students", label: "Students", icon: Users },
   { href: "/teachers", label: "Teachers", icon: UserSquare },
   { href: "/courses", label: "Courses", icon: BookOpen },
-  { href: "/enrollments", label: "Enrollments", icon: ClipboardCheck },
 ];
 
 export function Sidebar() {
