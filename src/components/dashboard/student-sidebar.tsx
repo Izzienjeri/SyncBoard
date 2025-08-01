@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, UserSquare, BookOpen, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -39,15 +39,7 @@ export function StudentDashboardSidebar() {
           </Link>
         )})}
       </nav>
-      <div className="mt-auto">
-         <Link
-            href="#"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-          >
-            <LifeBuoy className="h-5 w-5" />
-            Support
-          </Link>
-      </div>
+     
     </aside>
   );
 }

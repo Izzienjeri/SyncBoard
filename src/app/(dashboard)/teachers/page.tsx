@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { PageHeader } from "@/components/shared/page-header";
 import { CustomerTable } from "@/components/features/customer/customer-table";
 import { CustomerTableSkeleton } from "@/components/features/customer/customer-table-skeleton";
@@ -10,26 +10,60 @@ import { AlertTriangle } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { useState } from "react";
 import { toast } from "sonner";
-import { User } from "@/types/api.types";
+import { User, UsersApiResponse } from "@/types/api.types";
+import { UserPreviewModal } from "@/components/features/customer/user-preview-modal";
 
 const ITEMS_PER_PAGE = 10;
 
+// This would be in lib/api.ts in a real app
+const deleteUser = async (id: number) => {
+  // Mocking deletion as dummyjson doesn't support it on all records
+  return Promise.resolve({ id, isDeleted: true });
+}
+
 export default function TeachersPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const { data, error, isLoading, mutate } = useSWR(
-    `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${100 + (currentPage - 1) * ITEMS_PER_PAGE}`,
-    getUsers
-  );
+  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
+  const swrKey = `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${100 + (currentPage - 1) * ITEMS_PER_PAGE}`;
+  const { data, error, isLoading, mutate } = useSWR(swrKey, getUsers);
+  const { mutate: globalMutate } = useSWRConfig();
 
   const handleUserUpdate = async (id: number, userData: Partial<User>) => {
-    const optimisticData = { ...data!, users: data!.users.map(u => u.id === id ? { ...u, ...userData } : u) };
-    await mutate(optimisticData, false);
+    await mutate(async (currentData?: UsersApiResponse) => {
+      if (!currentData) return currentData;
+      const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
+      return { ...currentData, users: updatedUsers };
+    }, { revalidate: false });
+
     try {
       await updateUser(id, userData);
       toast.success("Teacher updated successfully!");
     } catch {
       toast.error("Failed to update teacher.");
-      mutate(); // Revalidate to get original data
+    } finally {
+        globalMutate(swrKey);
+    }
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+     await mutate(async (currentData?: UsersApiResponse) => {
+        if (!currentData) return currentData;
+        return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
+    }, { revalidate: false });
+
+    try {
+        await deleteUser(userId);
+        toast.success("Teacher deleted successfully.");
+    } catch {
+        toast.error("Failed to delete teacher.");
+        globalMutate(swrKey);
     }
   };
 
@@ -49,6 +83,8 @@ export default function TeachersPage() {
       type="teacher"
       startIndex={100 + (currentPage - 1) * ITEMS_PER_PAGE}
       onUserUpdate={handleUserUpdate}
+      onViewUser={handleViewUser}
+      onDeleteUser={handleDeleteUser}
     />
   };
 
@@ -66,6 +102,11 @@ export default function TeachersPage() {
             onPageChange={setCurrentPage}
         />
       )}
+       <UserPreviewModal
+        isOpen={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+        user={selectedUser}
+      />
     </div>
   );
 }

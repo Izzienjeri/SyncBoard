@@ -17,7 +17,7 @@ export function CustomerTableSkeleton({ type }: CustomerTableSkeletonProps) {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Parent Phone</TableHead>
-            {type === 'student' && <TableHead>This Term's Grade</TableHead>}
+            {type === 'student' && <TableHead>This Term&apos;s Grade</TableHead>}
             {type === 'teacher' && <TableHead>Subject</TableHead>}
             {type === 'teacher' && <TableHead>Mean Grade</TableHead>}
           </TableRow>

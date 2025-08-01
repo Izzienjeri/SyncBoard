@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { AttendanceChart } from "@/components/dashboard/attendance-chart";
@@ -51,8 +52,8 @@ export default function DashboardPage() {
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-         {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-[--color-chart-1]/20 border border-[--color-chart-1]/50" />}
-         {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-[--color-chart-2]/20 border border-[--color-chart-2]/50" />}
+         {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/students"><StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-[--color-chart-1]/20 border border-[--color-chart-1]/50 hover:border-[--color-chart-1] transition-colors" /></Link>}
+         {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/teachers"><StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-[--color-chart-2]/20 border border-[--color-chart-2]/50 hover:border-[--color-chart-2] transition-colors" /></Link>}
          <StatCard title="Pass Rate" value={currentStats.passRate} change={currentStats.passRateChange} isNegative={currentStats.isPassRateNegative} className="bg-[--color-chart-3]/20 border border-[--color-chart-3]/50" />
          <StatCard title="Avg. Attendance" value={currentStats.avgAttendance} change={currentStats.changeLabel} className="bg-[--color-chart-4]/20 border border-[--color-chart-4]/50" />
       </div>

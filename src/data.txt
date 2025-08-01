@@ -1,6 +1,6 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 03:34:11
-# Files Included: 30
+# Date and Time: 2025-08-01 04:06:24
+# Files Included: 25
 
 # === lib/mock-data.ts ===
 ```ts
@@ -486,6 +486,7 @@ export default function DashboardLayout({
 
 import { useState } from "react";
 import useSWR from "swr";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { AttendanceChart } from "@/components/dashboard/attendance-chart";
@@ -535,8 +536,8 @@ export default function DashboardPage() {
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-         {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-[--color-chart-1]/20 border border-[--color-chart-1]/50" />}
-         {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-[--color-chart-2]/20 border border-[--color-chart-2]/50" />}
+         {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/students"><StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-[--color-chart-1]/20 border border-[--color-chart-1]/50 hover:border-[--color-chart-1] transition-colors" /></Link>}
+         {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/teachers"><StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-[--color-chart-2]/20 border border-[--color-chart-2]/50 hover:border-[--color-chart-2] transition-colors" /></Link>}
          <StatCard title="Pass Rate" value={currentStats.passRate} change={currentStats.passRateChange} isNegative={currentStats.isPassRateNegative} className="bg-[--color-chart-3]/20 border border-[--color-chart-3]/50" />
          <StatCard title="Avg. Attendance" value={currentStats.avgAttendance} change={currentStats.changeLabel} className="bg-[--color-chart-4]/20 border border-[--color-chart-4]/50" />
       </div>
@@ -558,7 +559,7 @@ export default function DashboardPage() {
 ```tsx
 "use client";
 
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { PageHeader } from "@/components/shared/page-header";
 import { CustomerTable } from "@/components/features/customer/customer-table";
 import { CustomerTableSkeleton } from "@/components/features/customer/customer-table-skeleton";
@@ -568,27 +569,61 @@ import { AlertTriangle } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { useState } from "react";
 import { toast } from "sonner";
-import { User } from "@/types/api.types";
+import { User, UsersApiResponse } from "@/types/api.types";
+import { UserPreviewModal } from "@/components/features/customer/user-preview-modal";
 
 const ITEMS_PER_PAGE = 10;
 const STUDENT_COUNT = 100;
 
+// This would be in lib/api.ts in a real app
+const deleteUser = async (id: number) => {
+  // Mocking deletion as dummyjson doesn't support it on all records
+  return Promise.resolve({ id, isDeleted: true });
+}
+
 export default function StudentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const { data, error, isLoading, mutate } = useSWR(
-    `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${(currentPage - 1) * ITEMS_PER_PAGE}`,
-    getUsers
-  );
+  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
+  const swrKey = `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${(currentPage - 1) * ITEMS_PER_PAGE}`;
+  const { data, error, isLoading, mutate } = useSWR(swrKey, getUsers);
+  const { mutate: globalMutate } = useSWRConfig();
 
   const handleUserUpdate = async (id: number, userData: Partial<User>) => {
-    const optimisticData = { ...data!, users: data!.users.map(u => u.id === id ? { ...u, ...userData } : u) };
-    await mutate(optimisticData, false);
+    await mutate(async (currentData?: UsersApiResponse) => {
+      if (!currentData) return currentData;
+      const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
+      return { ...currentData, users: updatedUsers };
+    }, { revalidate: false });
+
     try {
       await updateUser(id, userData);
       toast.success("Student updated successfully!");
     } catch {
       toast.error("Failed to update student.");
-      mutate(); // Revalidate to get original data
+    } finally {
+        globalMutate(swrKey);
+    }
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+    await mutate(async (currentData?: UsersApiResponse) => {
+        if (!currentData) return currentData;
+        return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
+    }, { revalidate: false });
+
+    try {
+        await deleteUser(userId);
+        toast.success("Student deleted successfully.");
+    } catch {
+        toast.error("Failed to delete student.");
+        globalMutate(swrKey);
     }
   };
 
@@ -608,6 +643,8 @@ export default function StudentsPage() {
       type="student" 
       startIndex={(currentPage - 1) * ITEMS_PER_PAGE}
       onUserUpdate={handleUserUpdate}
+      onViewUser={handleViewUser}
+      onDeleteUser={handleDeleteUser}
     />
   };
 
@@ -625,6 +662,11 @@ export default function StudentsPage() {
             onPageChange={setCurrentPage}
         />
       )}
+      <UserPreviewModal
+        isOpen={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+        user={selectedUser}
+      />
     </>
   );
 }
@@ -634,7 +676,7 @@ export default function StudentsPage() {
 ```tsx
 "use client";
 
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { PageHeader } from "@/components/shared/page-header";
 import { CustomerTable } from "@/components/features/customer/customer-table";
 import { CustomerTableSkeleton } from "@/components/features/customer/customer-table-skeleton";
@@ -644,26 +686,60 @@ import { AlertTriangle } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { useState } from "react";
 import { toast } from "sonner";
-import { User } from "@/types/api.types";
+import { User, UsersApiResponse } from "@/types/api.types";
+import { UserPreviewModal } from "@/components/features/customer/user-preview-modal";
 
 const ITEMS_PER_PAGE = 10;
 
+// This would be in lib/api.ts in a real app
+const deleteUser = async (id: number) => {
+  // Mocking deletion as dummyjson doesn't support it on all records
+  return Promise.resolve({ id, isDeleted: true });
+}
+
 export default function TeachersPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const { data, error, isLoading, mutate } = useSWR(
-    `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${100 + (currentPage - 1) * ITEMS_PER_PAGE}`,
-    getUsers
-  );
+  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
+  const swrKey = `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${100 + (currentPage - 1) * ITEMS_PER_PAGE}`;
+  const { data, error, isLoading, mutate } = useSWR(swrKey, getUsers);
+  const { mutate: globalMutate } = useSWRConfig();
 
   const handleUserUpdate = async (id: number, userData: Partial<User>) => {
-    const optimisticData = { ...data!, users: data!.users.map(u => u.id === id ? { ...u, ...userData } : u) };
-    await mutate(optimisticData, false);
+    await mutate(async (currentData?: UsersApiResponse) => {
+      if (!currentData) return currentData;
+      const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
+      return { ...currentData, users: updatedUsers };
+    }, { revalidate: false });
+
     try {
       await updateUser(id, userData);
       toast.success("Teacher updated successfully!");
     } catch {
       toast.error("Failed to update teacher.");
-      mutate(); // Revalidate to get original data
+    } finally {
+        globalMutate(swrKey);
+    }
+  };
+
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleDeleteUser = async (userId: number) => {
+     await mutate(async (currentData?: UsersApiResponse) => {
+        if (!currentData) return currentData;
+        return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
+    }, { revalidate: false });
+
+    try {
+        await deleteUser(userId);
+        toast.success("Teacher deleted successfully.");
+    } catch {
+        toast.error("Failed to delete teacher.");
+        globalMutate(swrKey);
     }
   };
 
@@ -683,6 +759,8 @@ export default function TeachersPage() {
       type="teacher"
       startIndex={100 + (currentPage - 1) * ITEMS_PER_PAGE}
       onUserUpdate={handleUserUpdate}
+      onViewUser={handleViewUser}
+      onDeleteUser={handleDeleteUser}
     />
   };
 
@@ -700,6 +778,11 @@ export default function TeachersPage() {
             onPageChange={setCurrentPage}
         />
       )}
+       <UserPreviewModal
+        isOpen={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+        user={selectedUser}
+      />
     </div>
   );
 }
@@ -711,7 +794,7 @@ export default function TeachersPage() {
 
 import { useState } from "react";
 import useSWR from "swr";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getSubjects } from "@/lib/api";
 import { PageHeader } from "@/components/shared/page-header";
@@ -719,15 +802,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockTeachers, subjectTeacherMapping, subjectScoreData, Teacher } from "@/lib/mock-data";
+import { Button } from "@/components/ui/button";
+import { ManageInstructorsModal } from "@/components/features/subject/manage-instructors-modal";
+import { toast } from "sonner";
+import { User } from "@/types/api.types";
+import { UserPreviewModal } from "@/components/features/customer/user-preview-modal";
 
 type Period = "this_term" | "last_term" | "full_year";
 
 const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
-  const initials = teacherName
-    .split(' ')
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('');
+  const initials = teacherName.split(' ').map((n) => n[0]).slice(0, 2).join('');
   return (
     <div className="h-8 w-8 rounded-full bg-muted flex-shrink-0 flex items-center justify-center">
       <span className="text-xs font-semibold text-muted-foreground">{initials}</span>
@@ -737,23 +821,52 @@ const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
 
 export default function SubjectsPage() {
   const [period, setPeriod] = useState<Period>("this_term");
-  const { data: subjects, error, isLoading } = useSWR("subjects", getSubjects);
+  const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
+  const { data: allUsers } = useSWR<User[]>(`https://dummyjson.com/users?limit=200`, async (url: string) => (await fetch(url)).json().then(res => res.users));
+
+  const [modalState, setModalState] = useState<{
+    manageInstructors: boolean;
+    viewTeacher: boolean;
+    subject: string | null;
+    teacher: User | null;
+  }>({ manageInstructors: false, viewTeacher: false, subject: null, teacher: null });
+
+  const handleDeleteSubject = (subjectToDelete: string) => {
+    mutate(subjects?.filter(s => s !== subjectToDelete), false);
+    toast.success(`Subject "${subjectToDelete.replace(/-/g, ' ')}" deleted.`);
+  };
+
+  const handleManageInstructors = (subject: string) => {
+    setModalState({ ...modalState, manageInstructors: true, subject });
+  };
+  
+  const handleViewTeacher = (teacherId: number) => {
+    const teacherUser = allUsers?.find(u => u.id === teacherId);
+    if(teacherUser) {
+        setModalState({ ...modalState, viewTeacher: true, teacher: teacherUser });
+    } else {
+        toast.warning("Could not find full details for this teacher.");
+    }
+  };
+
+  const handleSaveInstructors = (subject: string, newTeacherIds: number[]) => {
+    subjectTeacherMapping[subject] = newTeacherIds;
+    mutate(subjects);
+    toast.success(`Instructors for "${subject.replace(/-/g, ' ')}" updated.`);
+  };
 
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <Skeleton key={i} className="h-48 rounded-lg" />
-          ))}
+          {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
         </div>
       );
     }
     if (error) {
       return (
         <Alert variant="destructive" className="glass-card">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
           <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
         </Alert>
       );
@@ -775,8 +888,11 @@ export default function SubjectsPage() {
 
           return (
             <Card key={subject} className="glass-card flex flex-col">
-              <CardHeader>
+              <CardHeader className="flex-row items-center justify-between">
                 <CardTitle className="capitalize">{subject.replace(/-/g, ' ')}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
               </CardHeader>
               <CardContent className="flex flex-col flex-grow justify-between gap-4">
                 <div>
@@ -784,11 +900,16 @@ export default function SubjectsPage() {
                   <p className="text-3xl font-bold text-primary">{meanGradeData?.averageScore.toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-2">Instructors</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm font-medium text-muted-foreground">Instructors</p>
+                    <Button variant="outline" size="sm" onClick={() => handleManageInstructors(subject)}>
+                        <Pencil className="h-3 w-3 mr-1.5" /> Manage
+                    </Button>
+                  </div>
                   <div className="flex flex-col gap-2">
                     {teachers.length > 0 ? (
                       teachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center gap-3">
+                        <div key={teacher.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-1 rounded-md" onClick={() => handleViewTeacher(teacher.id)}>
                           <TeacherAvatar teacherName={teacher.name} />
                           <span className="font-medium text-sm">{teacher.name}</span>
                         </div>
@@ -810,9 +931,7 @@ export default function SubjectsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Subjects Overview" description="View details for each subject offered.">
         <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter period" />
-          </SelectTrigger>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="this_term">This Term</SelectItem>
             <SelectItem value="last_term">Last Term</SelectItem>
@@ -821,6 +940,23 @@ export default function SubjectsPage() {
         </Select>
       </PageHeader>
       {renderContent()}
+      
+      {modalState.manageInstructors && modalState.subject && (
+        <ManageInstructorsModal
+          isOpen={modalState.manageInstructors}
+          onOpenChange={(isOpen) => setModalState({ ...modalState, manageInstructors: isOpen })}
+          subjectName={modalState.subject}
+          allTeachers={mockTeachers}
+          assignedTeacherIds={subjectTeacherMapping[modalState.subject] || []}
+          onSave={(newIds) => handleSaveInstructors(modalState.subject!, newIds)}
+        />
+      )}
+
+      <UserPreviewModal 
+        isOpen={modalState.viewTeacher}
+        onOpenChange={(isOpen) => setModalState({ ...modalState, viewTeacher: isOpen, teacher: null })}
+        user={modalState.teacher!}
+      />
     </div>
   );
 }
@@ -956,33 +1092,6 @@ export interface UsersApiResponse {
     skip: number;
     limit: number;
 }
-
-
-export interface Cart {
-    id: number;
-    products: {
-        id: number;
-        title: string;
-        price: number;
-        quantity: number;
-        total: number;
-        discountPercentage: number;
-        discountedPrice: number;
-        thumbnail: string;
-    }[];
-    total: number;
-    discountedTotal: number;
-    userId: number;
-    totalProducts: number;
-    totalQuantity: number;
-}
-
-export interface CartsApiResponse {
-    carts: Cart[];
-    total: number;
-    skip: number;
-    limit: number;
-}
 ```
 
 # === components/theme-provider.tsx ===
@@ -1027,50 +1136,6 @@ export function PageHeader({
       </div>
       {children && <div className="flex items-center gap-4 w-full md:w-auto justify-end">{children}</div>}
     </div>
-  );
-}
-```
-
-# === components/shared/theme-toggle.tsx ===
-```tsx
-"use client";
-
-import * as React from "react";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
-export function ThemeToggle() {
-  const { setTheme } = useTheme();
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 ```
@@ -1185,7 +1250,7 @@ export function AttendanceChart({ data }: { data: StudentAttendance[] }) {
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, UserSquare, BookOpen, LifeBuoy } from "lucide-react";
+import { LayoutDashboard, Users, UserSquare, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -1223,15 +1288,7 @@ export function StudentDashboardSidebar() {
           </Link>
         )})}
       </nav>
-      <div className="mt-auto">
-         <Link
-            href="#"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-          >
-            <LifeBuoy className="h-5 w-5" />
-            Support
-          </Link>
-      </div>
+     
     </aside>
   );
 }
@@ -1388,7 +1445,7 @@ export function CustomerTableSkeleton({ type }: CustomerTableSkeletonProps) {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Parent Phone</TableHead>
-            {type === 'student' && <TableHead>This Term's Grade</TableHead>}
+            {type === 'student' && <TableHead>This Term&apos;s Grade</TableHead>}
             {type === 'teacher' && <TableHead>Subject</TableHead>}
             {type === 'teacher' && <TableHead>Mean Grade</TableHead>}
           </TableRow>
@@ -1411,6 +1468,92 @@ export function CustomerTableSkeleton({ type }: CustomerTableSkeletonProps) {
 }
 ```
 
+# === components/features/customer/user-preview-modal.tsx ===
+```tsx
+"use client";
+
+import Image from "next/image";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { User } from "@/types/api.types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AtSign, MapPin, Phone } from "lucide-react";
+
+interface UserPreviewModalProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  user?: User;
+}
+
+export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModalProps) {
+  const renderContent = () => {
+    if (!user) {
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row gap-6 items-center">
+            <Skeleton className="h-[120px] w-[120px] rounded-full" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-5 w-64" />
+              <Skeleton className="h-5 w-32" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-3/4" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-4 space-y-6">
+        <div className="flex flex-col sm:flex-row gap-6 items-center">
+          <div className="relative h-[120px] w-[120px] flex-shrink-0">
+            <Image
+              src={user.image}
+              alt={`${user.firstName} ${user.lastName}`}
+              fill
+              sizes="120px"
+              className="rounded-full object-cover border-4 border-primary/20"
+            />
+          </div>
+          <div className="flex-1 space-y-1 text-center sm:text-left">
+            <h3 className="text-2xl font-bold text-gradient">{`${user.firstName} ${user.lastName}`}</h3>
+            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
+              <AtSign className="h-4 w-4" />
+              <span>{user.email}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground justify-center sm:justify-start">
+              <Phone className="h-4 w-4" />
+              <span>{user.phone}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h4 className="font-semibold text-lg mb-2">Address</h4>
+          <div className="flex items-start gap-3 text-muted-foreground">
+            <MapPin className="h-5 w-5 mt-1 flex-shrink-0 text-primary" />
+            <p>{`${user.address.address}, ${user.address.city}, ${user.address.state} ${user.address.postalCode}`}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
+        <DialogHeader>
+          <DialogTitle>User Details</DialogTitle>
+        </DialogHeader>
+        {renderContent()}
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
 # === components/features/customer/customer-table.tsx ===
 ```tsx
 "use client";
@@ -1419,8 +1562,11 @@ import { useState, useRef, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User } from "@/types/api.types";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { Pencil } from "lucide-react";
+import { Pencil, Eye, Trash2, MoreHorizontal } from "lucide-react";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const SUBJECTS = ['mathematics', 'physics', 'history', 'english', 'computer-science', 'biology', 'chemistry'];
 const GRADES = ['A', 'B', 'C', 'B', 'A', 'C', 'D', 'B', 'F'];
@@ -1428,12 +1574,20 @@ const GRADES = ['A', 'B', 'C', 'B', 'A', 'C', 'D', 'B', 'F'];
 interface EditableCellProps {
   value: string;
   onSave: (newValue: string) => void;
+  isEditable?: boolean;
 }
 
-const EditableCell = ({ value, onSave }: EditableCellProps) => {
+const EditableCell = ({ value, onSave, isEditable = true }: EditableCellProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debouncedValue = useDebounce(currentValue, 500);
+
+  useEffect(() => {
+    if (isEditing && debouncedValue !== value && debouncedValue.trim() !== '') {
+      onSave(debouncedValue);
+    }
+  }, [debouncedValue, isEditing, value, onSave]);
 
   useEffect(() => {
     if (isEditing) {
@@ -1447,7 +1601,7 @@ const EditableCell = ({ value, onSave }: EditableCellProps) => {
     if (currentValue.trim() !== '' && currentValue !== value) {
       onSave(currentValue);
     } else {
-      setCurrentValue(value); // Reset if empty or unchanged
+      setCurrentValue(value);
     }
   };
 
@@ -1458,6 +1612,10 @@ const EditableCell = ({ value, onSave }: EditableCellProps) => {
       setIsEditing(false);
     }
   };
+
+  if (!isEditable) {
+    return <span>{value}</span>;
+  }
 
   return (
     <div onClick={() => !isEditing && setIsEditing(true)} className="cursor-pointer group">
@@ -1486,17 +1644,25 @@ interface CustomerTableProps {
   type: 'student' | 'teacher';
   startIndex: number;
   onUserUpdate: (id: number, data: Partial<User>) => void;
+  onViewUser: (user: User) => void;
+  onDeleteUser: (userId: number) => void;
 }
 
-export function CustomerTable({ customers, type, startIndex, onUserUpdate }: CustomerTableProps) {
+export function CustomerTable({ customers, type, startIndex, onUserUpdate, onViewUser, onDeleteUser }: CustomerTableProps) {
   
   const getDerivedData = (user: User, field: string) => {
     switch(field) {
         case 'grade': return GRADES[user.id % GRADES.length];
         case 'subject': return SUBJECTS[user.id % SUBJECTS.length].replace(/-/g, ' ');
-        case 'meanGrade': return `${(user.id % 35) + 60}.0`; // e.g. 60.0 - 94.0
+        case 'meanGrade': return `${(user.id % 35) + 60}.0%`;
         default: return '';
     }
+  }
+
+  const handleDerivedDataSave = () => {
+      toast.info("This field is derived and cannot be edited directly.", {
+          description: "Changes to this field are for demonstration only."
+      })
   }
 
   return (
@@ -1507,16 +1673,17 @@ export function CustomerTable({ customers, type, startIndex, onUserUpdate }: Cus
               <TableHead className="w-[50px]">ID</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Parent Phone</TableHead>
-              {type === 'student' && <TableHead>This Term's Grade</TableHead>}
+              <TableHead>Phone</TableHead>
+              {type === 'student' && <TableHead>Grade</TableHead>}
               {type === 'teacher' && <TableHead>Subject</TableHead>}
               {type === 'teacher' && <TableHead>Mean Grade</TableHead>}
+              <TableHead className="w-[50px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {customers.map((user, index) => (
               <TableRow key={user.id} className="hover:bg-muted/50">
-                <TableCell>{startIndex + index + 1}</TableCell>
+                <TableCell className="text-muted-foreground">{startIndex + index + 1}</TableCell>
                 <TableCell className="font-medium">
                   <EditableCell 
                     value={`${user.firstName} ${user.lastName}`} 
@@ -1532,9 +1699,27 @@ export function CustomerTable({ customers, type, startIndex, onUserUpdate }: Cus
                 <TableCell>
                   <EditableCell value={user.phone} onSave={(newValue) => onUserUpdate(user.id, { phone: newValue })} />
                 </TableCell>
-                 {type === 'student' && <TableCell>{getDerivedData(user, 'grade')}</TableCell>}
-                 {type === 'teacher' && <TableCell className="capitalize">{getDerivedData(user, 'subject')}</TableCell>}
-                 {type === 'teacher' && <TableCell>{getDerivedData(user, 'meanGrade')}</TableCell>}
+                 {type === 'student' && <TableCell><EditableCell value={getDerivedData(user, 'grade')} onSave={handleDerivedDataSave} /></TableCell>}
+                 {type === 'teacher' && <TableCell className="capitalize"><EditableCell value={getDerivedData(user, 'subject')} onSave={handleDerivedDataSave} /></TableCell>}
+                 {type === 'teacher' && <TableCell><EditableCell value={getDerivedData(user, 'meanGrade')} onSave={handleDerivedDataSave} /></TableCell>}
+                 <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onViewUser(user)}>
+                          <Eye className="mr-2 h-4 w-4" /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDeleteUser(user.id)} className="text-destructive focus:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -1544,593 +1729,85 @@ export function CustomerTable({ customers, type, startIndex, onUserUpdate }: Cus
 }
 ```
 
-# === components/features/course/course-table-skeleton.tsx ===
-```tsx
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-
-export function CourseTableSkeleton() {
-  const skeletonRows = Array.from({ length: 10 });
-
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]"><span className="sr-only">Drag</span></TableHead>
-            <TableHead className="w-[80px]">Image</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right w-[120px]">Tuition</TableHead>
-            <TableHead className="text-right w-[120px]">Slots</TableHead>
-            <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {skeletonRows.map((_, index) => (
-            <TableRow key={index}>
-              <TableCell><Skeleton className="h-5 w-5" /></TableCell>
-              <TableCell><Skeleton className="h-12 w-12 rounded-md" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-48" /></TableCell>
-              <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
-              <TableCell><Skeleton className="h-8 w-8 rounded-md" /></TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-```
-
-# === components/features/course/course-form-modal.tsx ===
+# === components/features/subject/manage-instructors-modal.tsx ===
 ```tsx
 "use client";
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
-
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Course } from "@/types/course.types";
-import { CourseSchema, courseSchema } from "@/validators/course.schema";
-import { createCourse, updateCourse } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Teacher } from "@/lib/mock-data";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface CourseFormModalProps {
+interface ManageInstructorsModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  course?: Course;
-  onSuccess: () => void;
+  subjectName: string;
+  allTeachers: Teacher[];
+  assignedTeacherIds: number[];
+  onSave: (newTeacherIds: number[]) => void;
 }
 
-const defaultValues: CourseSchema = {
-  title: "",
-  description: "",
-  price: 0,
-};
+export function ManageInstructorsModal({
+  isOpen,
+  onOpenChange,
+  subjectName,
+  allTeachers,
+  assignedTeacherIds,
+  onSave,
+}: ManageInstructorsModalProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set(assignedTeacherIds));
 
-export function CourseFormModal({ isOpen, onOpenChange, course, onSuccess }: CourseFormModalProps) {
-  const isEditMode = !!course;
-
-  const form = useForm({
-    resolver: zodResolver(courseSchema),
-    defaultValues,
-    mode: "onChange",
-  });
-
-  const { formState: { isSubmitting }, reset } = form;
-
-  useEffect(() => {
-    if (isOpen) {
-      if (isEditMode && course) {
-        reset({
-          title: course.title,
-          description: course.description || "",
-          price: course.price,
-        });
+  const handleToggle = (teacherId: number) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(teacherId)) {
+        newSet.delete(teacherId);
       } else {
-        reset(defaultValues);
+        newSet.add(teacherId);
       }
-    }
-  }, [isOpen, course, isEditMode, reset]);
+      return newSet;
+    });
+  };
 
-  const onSubmit = async (data: CourseSchema): Promise<void> => {
-    try {
-      if (isEditMode && course) {
-        await updateCourse(course.id, data);
-        toast.success("Course updated successfully!");
-      } else {
-        await createCourse(data);
-        toast.success("Course created successfully!");
-      }
-      onSuccess();
-      onOpenChange(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unknown error occurred.");
-    }
+  const handleSaveChanges = () => {
+    onSave(Array.from(selectedIds));
+    onOpenChange(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-card/90 backdrop-blur-xl">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit Course" : "Add New Course"}</DialogTitle>
+          <DialogTitle>Manage Instructors</DialogTitle>
           <DialogDescription>
-            {isEditMode ? "Make changes to the course details." : "Fill in the details for a new course."}
+            Assign or un-assign instructors for <span className="font-bold capitalize">{subjectName.replace(/-/g, ' ')}</span>.
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Introduction to Physics" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Course description..." 
-                      {...field} 
-                      value={field.value || ""} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tuition Fee</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="499.99"
-                      {...field}
-                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : Number(e.target.value))}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting} className="button-gradient">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : isEditMode ? (
-                  "Save Changes"
-                ) : (
-                  "Create Course"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/features/course/course-table.tsx ===
-```tsx
-"use client";
-
-import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Pencil, Trash2, GripVertical, Eye } from "lucide-react";
-import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Course } from "@/types/course.types";
-import { CourseSchema } from "@/validators/course.schema";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils";
-
-// Sortable Row Component for a Course
-function SortableCourseRow({ course, onEdit, onDelete, onPreview, onInlineUpdate }: { course: Course; onEdit: (c: Course) => void; onDelete: (c: Course) => void; onPreview: (c: Course) => void; onInlineUpdate: (id: number, data: Partial<CourseSchema>) => void; }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: course.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : 'auto' };
-
-  const [editingCell, setEditingCell] = useState<{ field: "title" | "price"; value: string } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (editingCell) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [editingCell]);
-
-  const handleSave = () => {
-    if (!editingCell) return;
-    const { field, value } = editingCell;
-
-    if (field === 'title' && value.trim() !== '' && value.trim() !== course.title) {
-        onInlineUpdate(course.id, { title: value.trim() });
-    } else if (field === 'price') {
-      const newPrice = parseFloat(value);
-      if (!isNaN(newPrice) && newPrice > 0 && newPrice !== course.price) {
-        onInlineUpdate(course.id, { price: newPrice });
-      }
-    }
-    setEditingCell(null);
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') handleSave();
-    if (e.key === 'Escape') setEditingCell(null);
-  };
-
-  const renderEditableCell = (field: "title" | "price") => {
-    const isEditing = editingCell?.field === field;
-    const value = field === 'title' ? course.title : course.price;
-
-    return (
-      <div onClick={() => !isDragging && !editingCell && setEditingCell({ field, value: String(value) })} className="cursor-pointer">
-        {isEditing ? (
-          <Input
-            ref={inputRef} type={field === 'price' ? 'number' : 'text'} value={editingCell.value}
-            onChange={(e) => setEditingCell({ ...editingCell, value: e.target.value })}
-            onBlur={handleSave} onKeyDown={handleKeyDown}
-            className={cn("h-8 bg-transparent", field === 'price' && 'text-right')}
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <span className="flex items-center gap-2">
-            {field === 'title' ? course.title : formatCurrency(course.price)}
-            <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-          </span>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <tr ref={setNodeRef} style={style} className={cn("group bg-transparent hover:bg-muted/50 transition-colors", isDragging && "bg-primary/20 shadow-xl")}>
-      <TableCell className="w-[50px] pl-2"><div {...attributes} {...listeners} className="cursor-grab py-4"><GripVertical className="h-5 w-5 text-muted-foreground" /></div></TableCell>
-      <TableCell className="w-[80px]"><div className="relative h-12 w-12"><Image src={course.thumbnail} alt={course.title} fill sizes="48px" className="rounded-md object-cover" /></div></TableCell>
-      <TableCell className="font-medium">{renderEditableCell('title')}</TableCell>
-      <TableCell><Badge variant="secondary">{course.category}</Badge></TableCell>
-      <TableCell className="text-right w-[120px]">{renderEditableCell('price')}</TableCell>
-      <TableCell className="text-right w-[120px]">{course.stock} Slots</TableCell>
-      <TableCell className="w-[50px]">
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onSelect={() => onPreview(course)}><Eye className="mr-2 h-4 w-4" />View Details</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onEdit(course)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onDelete(course)} className="text-destructive focus:text-destructive focus:bg-destructive/10"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-      </TableCell>
-    </tr>
-  );
-}
-
-export function CourseTable({ courses, onEdit, onDelete, onInlineUpdate, onPreview }: { courses: Course[]; onEdit: (c: Course) => void; onDelete: (c: Course) => void; onInlineUpdate: (id: number, data: Partial<CourseSchema>) => void; onPreview: (c: Course) => void; }) {
-  
-  return (
-    <div className="rounded-lg border bg-card backdrop-blur-xl overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]"><span className="sr-only">Drag</span></TableHead>
-            <TableHead className="w-[80px]">Image</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right w-[120px]">Tuition</TableHead>
-            <TableHead className="text-right w-[120px]">Slots</TableHead>
-            <TableHead className="w-[50px]"><span className="sr-only">Actions</span></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <SortableContext items={courses.map(c => c.id)} strategy={verticalListSortingStrategy}>
-            {courses.length > 0 ? (
-              courses.map((course) => <SortableCourseRow key={course.id} course={course} onEdit={onEdit} onDelete={onDelete} onPreview={onPreview} onInlineUpdate={onInlineUpdate} />)
-            ) : (
-              <TableRow><TableCell colSpan={7} className="h-24 text-center">No courses to display.</TableCell></TableRow>
-            )}
-          </SortableContext>
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-```
-
-# === components/features/course/course-preview-modal.tsx ===
-```tsx
-"use client";
-
-import Image from "next/image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Course } from "@/types/course.types";
-import { formatCurrency } from "@/lib/utils";
-
-interface CoursePreviewModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  course?: Course;
-}
-
-export function CoursePreviewModal({ isOpen, onOpenChange, course }: CoursePreviewModalProps) {
-  if (!course) return null;
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>Course Details</DialogTitle>
-        </DialogHeader>
-        <div className="mt-4 space-y-6">
-          <div className="flex flex-col sm:flex-row gap-6">
-            <div className="flex-shrink-0">
-              <div className="relative h-[150px] w-[150px] p-1 bg-gradient-to-br from-primary to-secondary rounded-xl">
-                <Image
-                  src={course.thumbnail}
-                  alt={course.title}
-                  fill
-                  sizes="150px"
-                  className="rounded-lg object-cover"
+        <ScrollArea className="max-h-80 pr-4">
+          <div className="space-y-4 py-2">
+            {allTeachers.map(teacher => (
+              <div key={teacher.id} className="flex items-center space-x-3">
+                <Checkbox
+                  id={`teacher-${teacher.id}`}
+                  checked={selectedIds.has(teacher.id)}
+                  onCheckedChange={() => handleToggle(teacher.id)}
                 />
+                <Label htmlFor={`teacher-${teacher.id}`} className="font-medium">
+                  {teacher.name}
+                </Label>
               </div>
-            </div>
-            <div className="flex-1 space-y-2">
-              <h3 className="text-2xl font-bold">{course.title}</h3>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{course.category}</Badge>
-                <span className="text-sm text-muted-foreground">
-                  Rating: {course.rating.toFixed(1)}
-                </span>
-              </div>
-              <p className="text-3xl font-light">{formatCurrency(course.price)}</p>
-            </div>
+            ))}
           </div>
-          
-          <div>
-            <h4 className="font-semibold text-lg mb-2">Description</h4>
-            <p className="text-muted-foreground">{course.description}</p>
-          </div>
-        </div>
+        </ScrollArea>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={handleSaveChanges} className="button-gradient">Save Changes</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-```
-
-# === components/layout/header.tsx ===
-```tsx
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, LayoutDashboard, Users, BookOpen, UserSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
-import { useSidebar } from "@/hooks/use-sidebar";
-import { cn } from "@/lib/utils";
-
-const navLinks = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/students", label: "Students", icon: Users },
-  { href: "/teachers", label: "Teachers", icon: UserSquare },
-  { href: "/courses", label: "Courses", icon: BookOpen },
-];
-
-
-
-export function Header() {
-  const { toggle } = useSidebar();
-  const pathname = usePathname();
-
-  return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/50 px-4 backdrop-blur-lg sm:px-6">
-      <Button variant="outline" size="icon" className="shrink-0 hidden lg:flex" onClick={toggle}>
-        <Menu className="h-5 w-5" />
-        <span className="sr-only">Toggle sidebar</span>
-      </Button>
-
-      <Sheet>
-        <SheetTrigger asChild>
-             <Button variant="outline" size="icon" className="shrink-0 lg:hidden" >
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
-            </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="flex flex-col p-0">
-             <div className="flex h-16 items-center justify-between border-b px-6">
-                <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-                    <BookOpen className="h-7 w-7 text-primary" />
-                    <span className="text-xl">EduDash</span>
-                </Link>
-            </div>
-            
-            <nav className="flex-1 space-y-2 p-4">
-              {navLinks.map((link) => {
-                const isActive = (link.href === "/" && pathname === "/") || (link.href !== "/" && pathname.startsWith(link.href));
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted",
-                      isActive && "bg-primary/10 text-primary"
-                    )}
-                  >
-                    <link.icon className="h-5 w-5" />
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
-        </SheetContent>
-      </Sheet>
-      
-     
-    </header>
-  );
-}
-```
-
-# === components/layout/sidebar.tsx ===
-```tsx
-"use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  Users,
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  LucideProps,
-  UserSquare,
-} from "lucide-react";
-import { useSidebar } from "@/hooks/use-sidebar";
-import { cn } from "@/lib/utils";
-import { Button } from "../ui/button";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "../ui/tooltip";
-import { ForwardRefExoticComponent, RefAttributes } from "react";
-
-type NavLink = 
-  | { label: string; isHeader: true }
-  | { 
-      href: string; 
-      label: string; 
-      icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
-    };
-
-const navLinks: NavLink[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { label: "Management", isHeader: true },
-  { href: "/students", label: "Students", icon: Users },
-  { href: "/teachers", label: "Teachers", icon: UserSquare },
-  { href: "/subjects", label: "Subjects", icon: BookOpen },
-];
-
-export function Sidebar() {
-  const { isOpen, toggle } = useSidebar();
-  const pathname = usePathname();
-
-  return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-10 hidden flex-col border-r bg-background/50 backdrop-blur-lg transition-all duration-300 ease-in-out lg:flex",
-        isOpen ? "w-64" : "w-20"
-      )}
-    >
-      <div className="flex h-16 items-center justify-between border-b px-6">
-        <Link href="/" className={cn("flex items-center gap-2 font-bold tracking-tight", !isOpen && "justify-center")}>
-          <BookOpen className="h-7 w-7 text-primary" />
-          <span className={cn("text-xl", !isOpen && "hidden")}>EduDash</span>
-        </Link>
-        <Button variant="ghost" size="icon" className="hidden lg:flex" onClick={toggle}>
-            {isOpen ? <ChevronLeft className="h-5 w-5"/> : <ChevronRight className="h-5 w-5"/>}
-        </Button>
-      </div>
-      <nav className="flex-1 space-y-1 p-2">
-        <TooltipProvider delayDuration={0}>
-          {navLinks.map((link) => {
-            if ("isHeader" in link) {
-              return (
-                <div key={link.label} className={cn(
-                    "px-3 pt-4 pb-2 text-xs font-semibold uppercase text-muted-foreground/80 tracking-wider",
-                    !isOpen && "hidden"
-                )}>
-                    {link.label}
-                </div>
-              );
-            } else {
-              const isActive = (link.href === "/" && pathname === "/") || (link.href !== "/" && pathname.startsWith(link.href));
-              const LinkIcon = link.icon;
-              
-              const content = (
-                  <Link
-                    href={link.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted",
-                      isActive && "bg-primary/10 text-primary",
-                      !isOpen && "justify-center"
-                    )}
-                  >
-                    <LinkIcon className="h-5 w-5" />
-                    <span className={cn("font-medium", !isOpen && "hidden")}>{link.label}</span>
-                  </Link>
-              );
-
-              return (
-                <div key={link.href}>
-                  {isOpen ? (
-                      content
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>{content}</TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p>{link.label}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              );
-            }
-          })}
-        </TooltipProvider>
-      </nav>
-    </aside>
   );
 }
 ```
