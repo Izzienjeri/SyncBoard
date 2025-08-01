@@ -1,31 +1,13 @@
 "use client"
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  Rectangle,
-  type RectangleProps,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, type RectangleProps,
 } from "recharts";
-import {
-  GradeDistribution,
-  SubjectScore,
-  gradeDistributionData,
-  subjectScoreData
-} from "@/lib/mock-data";
+import { GradeDistribution, SubjectScore, subjectScoreData } from "@/lib/mock-data";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const GRADE_COLORS = ['#2dd4bf', '#3b82f6', '#fbbd23', '#f87171', '#ef4444'];
@@ -50,7 +32,6 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 
 const ActiveBar = (props: RectangleProps) => {
   const { x = 0, y = 0, width = 0, height = 0, ...rest } = props;
-  
   return <Rectangle {...rest} x={x} width={width} height={height + 5} y={y - 5} />;
 };
 
@@ -61,10 +42,7 @@ const GradeDistributionChart = ({ data }: { data: GradeDistribution[] }) => (
       <BarChart data={data} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
         <XAxis dataKey="grade" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
-        <Tooltip
-          cursor={false}
-          content={<CustomTooltip />}
-        />
+        <Tooltip cursor={false} content={<CustomTooltip />} />
         <Bar dataKey="count" radius={[6, 6, 0, 0]} activeBar={<ActiveBar />}>
           {data.map((_entry, index) => (
             <Cell key={`cell-${index}`} fill={GRADE_COLORS[index % GRADE_COLORS.length]} />
@@ -77,43 +55,27 @@ const GradeDistributionChart = ({ data }: { data: GradeDistribution[] }) => (
 
 const TopSubjectsList = ({ data }: { data: SubjectScore[] }) => (
   <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>Subject</TableHead>
-        <TableHead className="text-right">Avg. Score</TableHead>
-      </TableRow>
-    </TableHeader>
+    <TableHeader><TableRow><TableHead>Subject</TableHead><TableHead className="text-right">Avg. Score</TableHead></TableRow></TableHeader>
     <TableBody>
       {data.sort((a, b) => b.averageScore - a.averageScore).slice(0, 5).map((subject) => (
         <TableRow key={subject.name} className="hover:bg-muted/50 text-sm">
           <TableCell className="font-medium capitalize">{subject.name.replace(/-/g, ' ')}</TableCell>
-          <TableCell className="text-right">
-            <Badge variant="secondary" className={
-                subject.averageScore >= 90 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" :
-                subject.averageScore >= 80 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" :
-                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
-            }>
-                {subject.averageScore.toFixed(1)}%
-            </Badge>
-          </TableCell>
+          <TableCell className="text-right"><Badge variant="secondary" className={subject.averageScore >= 90 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" : subject.averageScore >= 80 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}>{subject.averageScore.toFixed(1)}%</Badge></TableCell>
         </TableRow>
       ))}
     </TableBody>
   </Table>
 );
 
-type Period = "this_term" | "last_term" | "full_year";
-
-export function StudentPerformanceSummary({ period }: { period: Period }) {
-  const currentGradeData = gradeDistributionData[period];
-  const currentTopSubjectsData = subjectScoreData[period];
-
+export function StudentPerformanceSummary({ gradeDistribution }: { gradeDistribution?: GradeDistribution[] }) {
+  // Top subjects data can remain static for this exercise
+  const currentTopSubjectsData = subjectScoreData["full_year"];
 
   return (
     <div className="rounded-lg border bg-card p-4 h-full flex flex-col gap-4">
       <div>
         <h3 className="font-semibold text-lg mb-2">Grade Distribution</h3>
-        <GradeDistributionChart data={currentGradeData} />
+        {gradeDistribution ? <GradeDistributionChart data={gradeDistribution} /> : <p className="text-center text-muted-foreground p-8">Loading stats...</p>}
       </div>
       <div className="border-t pt-2">
         <h3 className="font-semibold text-lg mb-2">Top Subjects</h3>

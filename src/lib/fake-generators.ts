@@ -1,13 +1,35 @@
 import { faker } from '@faker-js/faker';
-import { User } from '@/types/api.types';
 
-export interface Student extends User {
+// Base user properties shared by all user types
+export interface BaseUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  image: string;
+  address: {
+    address: string;
+    city: string;
+    postalCode: string;
+    state: string;
+  };
+}
+
+// Student type with a unique 'type' property and 'grade'
+export interface Student extends BaseUser {
+  type: 'student';
   grade: string;
 }
 
-export interface Teacher extends User {
+// Teacher type with a unique 'type' property and 'subject'
+export interface Teacher extends BaseUser {
+  type: 'teacher';
   subject: string;
 }
+
+// The Discriminated Union type
+export type AppUser = Student | Teacher;
 
 const allSubjects = [
     'Mathematics', 'Physics', 'History', 'English', 'Computer Science', 
@@ -18,6 +40,7 @@ export const createRandomStudent = (): Student => {
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
   return {
+    type: 'student', // Add discriminator
     id: faker.number.int({ min: 1, max: 100000 }),
     firstName,
     lastName,
@@ -38,6 +61,7 @@ export const createRandomTeacher = (): Teacher => {
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
   return {
+    type: 'teacher', // Add discriminator
     id: faker.number.int({ min: 100001, max: 200000 }),
     firstName,
     lastName,

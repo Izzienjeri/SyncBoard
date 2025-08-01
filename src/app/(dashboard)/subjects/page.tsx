@@ -15,11 +15,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
 import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
+import { SubjectFormModal } from "@/components/features/subject/SubjectFormModal";
 import { Input } from "@/components/ui/input";
+import { SubjectFormValues } from "@/lib/schemas";
 
 type SubjectDetails = {
   name: string;
@@ -47,11 +47,11 @@ export default function SubjectsPage() {
   const [sortOption, setSortOption] = useState("name-asc");
   
   const [modalState, setModalState] = useState<{
-    add: boolean;
-    edit: string | null;
+    formOpen: boolean;
+    editingSubjectName: string | null;
     delete: string | null;
     view: SubjectDetails | null;
-  }>({ add: false, edit: null, delete: null, view: null });
+  }>({ formOpen: false, editingSubjectName: null, delete: null, view: null });
 
   const { data: subjects, error: subjectsError, isLoading: subjectsLoading, mutate: mutateSubjects } = useSWR("/api/subjects", getSubjects);
   const { data: allTeachers, isLoading: teachersLoading, mutate: mutateTeachers } = useSWR("/api/teachers/all", getAllTeachers);
@@ -103,11 +103,15 @@ export default function SubjectsPage() {
     return subjectsToProcess;
   }, [subjects, searchQuery, sortOption, subjectDetailsMap]);
 
-
-  const handleSubjectAdded = async (data: { newSubjectName: string; teacherIds: number[] }) => {
+  const handleSubjectSubmit = async (data: SubjectFormValues) => {
     try {
-      const newSubject = await addSubject({ subjectName: data.newSubjectName, teacherIds: data.teacherIds });
-      toast.success(`Subject "${newSubject.name}" added successfully.`);
+      if (modalState.editingSubjectName) {
+        await updateSubject(modalState.editingSubjectName, { newSubjectName: data.name, teacherIds: data.teacherIds });
+        toast.success(`Subject "${data.name}" updated successfully.`);
+      } else {
+        const newSubject = await addSubject({ subjectName: data.name, teacherIds: data.teacherIds });
+        toast.success(`Subject "${newSubject.name}" added successfully.`);
+      }
       await Promise.all([mutateSubjects(), mutateTeachers()]);
     } catch (e: unknown) {
       if (e instanceof Error) toast.error(e.message);
@@ -125,17 +129,6 @@ export default function SubjectsPage() {
     }
   };
 
-  const handleSubjectUpdate = async (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => {
-    try {
-        await updateSubject(oldName, data);
-        toast.success(`Subject "${data.newSubjectName}" updated successfully.`);
-        await Promise.all([mutateSubjects(), mutateTeachers()]);
-    } catch(e: unknown) {
-        if (e instanceof Error) toast.error(e.message);
-        throw e;
-    }
-  };
-
   const totalPages = sortedSubjects ? Math.ceil(sortedSubjects.length / itemsPerPage) : 0;
 
   const renderContent = () => {
@@ -146,19 +139,9 @@ export default function SubjectsPage() {
         </div>
       );
     }
-    if (subjectsError) {
-      return ( <Alert variant="destructive" className="glass-card">
-          <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
-        </Alert> );
-    }
-    if (!sortedSubjects || sortedSubjects.length === 0) {
-      return ( <div className="text-center py-10 glass-card rounded-lg">
-          <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
-        </div> );
-    }
-
+    if (subjectsError) return ( <Alert variant="destructive" className="glass-card"><AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle><AlertDescription>Failed to load subjects. Please try again.</AlertDescription></Alert> );
+    if (!sortedSubjects || sortedSubjects.length === 0) return ( <div className="text-center py-10 glass-card rounded-lg"><h3 className="text-xl font-medium">No Subjects Found</h3><p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p></div> );
+    
     const paginatedSubjects = sortedSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
@@ -174,38 +157,20 @@ export default function SubjectsPage() {
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
                   <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, edit: details.name})}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}> <Eye className="h-4 w-4" /> </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, editingSubjectName: details.name, formOpen: true})}> <Pencil className="h-4 w-4" /> </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}> <Trash2 className="h-4 w-4" /> </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p className="text-muted-foreground">Students</p>
-                    <p className="font-semibold text-xl">{details.studentCount}</p>
-                </div>
-                <div>
-                    <p className="text-muted-foreground">Avg. Grade</p>
-                    <p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p>
-                </div>
+                <div><p className="text-muted-foreground">Students</p><p className="font-semibold text-xl">{details.studentCount}</p></div>
+                <div><p className="text-muted-foreground">Avg. Grade</p><p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p></div>
               </CardContent>
               <CardFooter className="pt-4">
                 <div className="w-full">
                   <p className="text-xs font-semibold text-muted-foreground mb-2">INSTRUCTORS ({details.teachers.length})</p>
-                  {details.teachers.length > 0 ? (
-                    <div className="flex -space-x-2">
-                      {details.teachers.slice(0, 6).map(teacher => <TeacherAvatar key={teacher.id} teacher={teacher} />)}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">No instructors assigned.</p>
-                  )}
+                  {details.teachers.length > 0 ? (<div className="flex -space-x-2">{details.teachers.slice(0, 6).map(teacher => <TeacherAvatar key={teacher.id} teacher={teacher} />)}</div>) : (<p className="text-xs text-muted-foreground italic">No instructors assigned.</p>)}
                 </div>
               </CardFooter>
             </Card>
@@ -215,79 +180,37 @@ export default function SubjectsPage() {
     );
   };
 
-  const assignedTeacherIdsForEdit = useMemo(() => {
-      if (!modalState.edit || !allTeachers) return [];
-      return allTeachers.filter(t => t.subject === modalState.edit).map(t => t.id);
-  }, [modalState.edit, allTeachers]);
+  const formInitialData = useMemo(() => {
+    if (!modalState.editingSubjectName || !allTeachers) return null;
+    const assignedTeacherIds = allTeachers.filter(t => t.subject === modalState.editingSubjectName).map(t => t.id);
+    return { name: modalState.editingSubjectName, teacherIds: assignedTeacherIds };
+  }, [modalState.editingSubjectName, allTeachers]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Subjects Overview" description="View and manage all subjects offered.">
-        <Button onClick={() => setModalState({...modalState, add: true})} className="button-gradient">
+        <Button onClick={() => setModalState({...modalState, editingSubjectName: null, formOpen: true})} className="button-gradient">
           <PlusCircle className="h-4 w-4 mr-2"/> Add Subject
         </Button>
       </PageHeader>
       
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search subjects..."
-            value={searchQuery}
-            onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-            }}
-            className="pl-9"
-          />
-        </div>
-        <Select value={sortOption} onValueChange={setSortOption}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Sort by..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-            <SelectItem value="students-desc">Most Students</SelectItem>
-            <SelectItem value="students-asc">Fewest Students</SelectItem>
-            <SelectItem value="grade-desc">Highest Grade</SelectItem>
-            <SelectItem value="grade-asc">Lowest Grade</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative w-full sm:w-64"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search subjects..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} className="pl-9"/></div>
+        <Select value={sortOption} onValueChange={setSortOption}><SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Sort by..." /></SelectTrigger><SelectContent><SelectItem value="name-asc">Name (A-Z)</SelectItem><SelectItem value="name-desc">Name (Z-A)</SelectItem><SelectItem value="students-desc">Most Students</SelectItem><SelectItem value="students-asc">Fewest Students</SelectItem><SelectItem value="grade-desc">Highest Grade</SelectItem><SelectItem value="grade-asc">Lowest Grade</SelectItem></SelectContent></Select>
       </div>
 
       {renderContent()}
       
       {sortedSubjects && sortedSubjects.length > 0 && (
-        <TablePaginationControls
-          currentPage={currentPage} totalPages={totalPages}
-          onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
-          onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-          totalItems={sortedSubjects.length} itemType="subjects"
-          itemsPerPageOptions={[6, 9, 12, 18]}
-        />
+        <TablePaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} itemsPerPage={itemsPerPage} onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }} totalItems={sortedSubjects.length} itemType="subjects" itemsPerPageOptions={[6, 9, 12, 18]} />
       )}
       
-      <ConfirmationDialog
-        isOpen={!!modalState.delete}
-        onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, delete: null})}
-        onConfirm={() => { if (modalState.delete) handleDeleteSubject(modalState.delete); }}
-        title="Are you sure?"
-        description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`}
-        confirmText="Yes, delete"
-      />
-      {allTeachers && <AddSubjectModal isOpen={modalState.add} onOpenChange={(isOpen) => setModalState({...modalState, add: isOpen})} onSubjectAdded={handleSubjectAdded} allTeachers={allTeachers} />}
+      <ConfirmationDialog isOpen={!!modalState.delete} onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, delete: null})} onConfirm={() => { if (modalState.delete) handleDeleteSubject(modalState.delete); }} title="Are you sure?" description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`} confirmText="Yes, delete" />
       
-      {modalState.edit && allTeachers && (
-        <EditSubjectModal
-            isOpen={!!modalState.edit}
-            onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, edit: null})}
-            subjectName={modalState.edit}
-            allTeachers={allTeachers}
-            assignedTeacherIds={assignedTeacherIdsForEdit}
-            onSubjectUpdate={handleSubjectUpdate}
-        />
+      {allTeachers && (
+        <SubjectFormModal isOpen={modalState.formOpen} onOpenChange={(isOpen) => setModalState({ ...modalState, formOpen: isOpen })} onSubmit={handleSubjectSubmit} allTeachers={allTeachers} initialData={formInitialData} />
       )}
+
       <SubjectDetailsModal isOpen={!!modalState.view} onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, view: null})} subjectDetails={modalState.view} />
     </div>
   );

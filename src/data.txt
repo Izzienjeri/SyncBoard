@@ -1,5 +1,5 @@
 # Extracted Code (.ts, .tsx, .css)
-# Date and Time: 2025-08-01 17:42:23
+# Date and Time: 2025-08-01 18:04:31
 # Files Included: 38
 
 # === lib/mock-db.ts ===
@@ -61,17 +61,9 @@ export type Teacher = {
   name:string;
 }
 
-export const periodStats = {
-  this_term: { passRate: "85.3%", passRateChange: "-1.2%", isPassRateNegative: true, avgAttendance: "91%", changeLabel: "This Term" },
-  last_term: { passRate: "86.5%", passRateChange: "+0.5%", isPassRateNegative: false, avgAttendance: "89%", changeLabel: "Last Term" },
-  full_year: { passRate: "85.9%", passRateChange: "+2.1%", isPassRateNegative: false, avgAttendance: "90%", changeLabel: "Full Year" },
-};
+// REMOVED: periodStats object
 
-export const gradeDistributionData: Record<string, GradeDistribution[]> = {
-  this_term: [ { grade: "A", count: 23 }, { grade: "B", count: 40 }, { grade: "C", count: 25 }, { grade: "D", count: 8 }, { grade: "F", count: 4 } ],
-  last_term: [ { grade: "A", count: 25 }, { grade: "B", count: 45 }, { grade: "C", count: 20 }, { grade: "D", count: 7 }, { grade: "F", count: 3 } ],
-  full_year: [ { grade: "A", count: 24 }, { grade: "B", count: 42 }, { grade: "C", count: 22 }, { grade: "D", count: 8 }, { grade: "F", count: 4 } ],
-};
+// REMOVED: gradeDistributionData object
 
 export const subjectScoreData: Record<string, SubjectScore[]> = {
   this_term: [ { name: "computer-science", averageScore: 95.1 }, { name: "physics", averageScore: 90.2 }, { name: "history", averageScore: 84.0 }, { name: "english", averageScore: 88.8 }, { name: "mathematics", averageScore: 89.5 } ],
@@ -97,24 +89,12 @@ export function cn(...inputs: ClassValue[]) {
 
 # === lib/api.ts ===
 ```ts
-import { User } from "@/types/api.types";
+import { AppUser } from "@/lib/fake-generators"; // Use AppUser
 import { Teacher } from "./fake-generators";
 
-/**
- * A generic fetcher function for use with SWR.
- * @param url The URL to fetch.
- * @returns The JSON response.
- */
-export const fetcher = (url: string) => fetch(url).then(res => res.json());
+// ... (fetcher remains the same)
 
-
-/**
- * Adds a new student or teacher to the database.
- * @param userType - The type of user to add ('student' or 'teacher').
- * @param userData - The form data for the new user.
- * @returns The newly created user object.
- */
-export async function addUser(userType: 'student' | 'teacher', userData: Partial<User>): Promise<User> {
+export async function addUser(userType: 'student' | 'teacher', userData: Partial<AppUser>): Promise<AppUser> {
   const res = await fetch(`/api/${userType}s`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -127,14 +107,7 @@ export async function addUser(userType: 'student' | 'teacher', userData: Partial
   return res.json();
 }
 
-/**
- * Updates an existing student or teacher in the database.
- * @param userType - The type of user to update ('student' or 'teacher').
- * @param userId - The ID of the user to update.
- * @param userData - The updated form data.
- * @returns The updated user object.
- */
-export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<User>): Promise<User> {
+export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<AppUser>): Promise<AppUser> {
   const res = await fetch(`/api/${userType}s/${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -147,121 +120,14 @@ export async function updateUser(userType: 'student' | 'teacher', userId: number
   return res.json();
 }
 
-/**
- * Deletes a student or teacher from the database.
- * @param userType - The type of user to delete ('student' or 'teacher').
- * @param userId - The ID of the user to delete.
- * @returns A confirmation object.
- */
-export async function deleteUser(userType: 'student' | 'teacher', userId: number): Promise<{ id: number, isDeleted: boolean }> {
-  const res = await fetch(`/api/${userType}s/${userId}`, { method: "DELETE" });
-  if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || `Failed to delete ${userType}`);
-  }
-  return res.json();
-}
-
-
-
-/**
- * Gets the total number of students.
- * @returns The total count of students.
- */
-export async function getTotalStudents(): Promise<number> {
-    const res = await fetch('/api/students?limit=0');
-    if (!res.ok) return 0;
-    const data = await res.json();
-    return data.total;
-}
-
-/**
- * Gets the total number of teachers.
- * @returns The total count of teachers.
- */
-export async function getTotalTeachers(): Promise<number> {
-    const res = await fetch('/api/teachers?limit=0');
-    if (!res.ok) return 0;
-    const data = await res.json();
-    return data.total;
-}
-
-/**
- * Gets the complete list of all teachers (not paginated).
- * @returns An array of all teacher objects.
- */
-export async function getAllTeachers(): Promise<Teacher[]> {
-    return fetcher('/api/teachers/all');
-}
-
-
-
-/**
- * Gets the list of all available subjects.
- * @returns An array of subject names.
- */
-export async function getSubjects(): Promise<string[]> {
-    return fetcher('/api/subjects');
-}
-
-/**
- * Adds a new subject to the database.
- * @param data - The data for the new subject including name and assigned teacher IDs.
- * @returns The newly created subject object.
- */
-export async function addSubject(data: { subjectName: string; teacherIds: number[] }): Promise<{ name: string }> {
-    const res = await fetch('/api/subjects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to add subject');
-    }
-    return res.json();
-}
-
-/**
- * Updates a subject's details (name and/or assigned teachers).
- * @param oldName - The current name of the subject.
- * @param data - An object containing the new name and an array of teacher IDs.
- * @returns A confirmation message.
- */
-export async function updateSubject(oldName: string, data: { newSubjectName: string, teacherIds: number[] }): Promise<{ message: string }> {
-    const res = await fetch(`/api/subjects/${encodeURIComponent(oldName)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to update subject');
-    }
-    return res.json();
-}
-
-/**
- * Deletes a subject from the database.
- * @param subjectName - The name of the subject to delete.
- * @returns A confirmation message.
- */
-export async function deleteSubject(subjectName: string): Promise<{ message: string }> {
-    const res = await fetch(`/api/subjects/${encodeURIComponent(subjectName)}`, {
-        method: 'DELETE',
-    });
-    if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to delete subject');
-    }
-    return res.json();
-}
+// ... (Rest of the file remains the same)
 ```
 
 # === lib/schemas.ts ===
 ```ts
 import { z } from "zod";
 
+// --- UNCHANGED ---
 export const userSchema = z.object({
   firstName: z.string().min(2, { message: "First name must be at least 2 characters." }),
   lastName: z.string().min(2, { message: "Last name must be at least 2 characters." }),
@@ -270,20 +136,51 @@ export const userSchema = z.object({
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
+
+
+// --- NEW ---
+export const subjectSchema = z.object({
+  name: z.string().min(2, { message: "Subject name must be at least 2 characters." }),
+  teacherIds: z.array(z.number()),
+});
+
+export type SubjectFormValues = z.infer<typeof subjectSchema>;
 ```
 
 # === lib/fake-generators.ts ===
 ```ts
 import { faker } from '@faker-js/faker';
-import { User } from '@/types/api.types';
 
-export interface Student extends User {
+// Base user properties shared by all user types
+export interface BaseUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  image: string;
+  address: {
+    address: string;
+    city: string;
+    postalCode: string;
+    state: string;
+  };
+}
+
+// Student type with a unique 'type' property and 'grade'
+export interface Student extends BaseUser {
+  type: 'student';
   grade: string;
 }
 
-export interface Teacher extends User {
+// Teacher type with a unique 'type' property and 'subject'
+export interface Teacher extends BaseUser {
+  type: 'teacher';
   subject: string;
 }
+
+// The Discriminated Union type
+export type AppUser = Student | Teacher;
 
 const allSubjects = [
     'Mathematics', 'Physics', 'History', 'English', 'Computer Science', 
@@ -294,6 +191,7 @@ export const createRandomStudent = (): Student => {
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
   return {
+    type: 'student', // Add discriminator
     id: faker.number.int({ min: 1, max: 100000 }),
     firstName,
     lastName,
@@ -314,6 +212,7 @@ export const createRandomTeacher = (): Teacher => {
   const firstName = faker.person.firstName();
   const lastName = faker.person.lastName();
   return {
+    type: 'teacher', // Add discriminator
     id: faker.number.int({ min: 100001, max: 200000 }),
     firstName,
     lastName,
@@ -502,10 +401,11 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { getTotalStudents, getTotalTeachers } from "@/lib/api";
+import { getTotalStudents, getTotalTeachers, fetcher } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { attendanceData, periodStats } from "@/lib/mock-data";
+import { attendanceData } from "@/lib/mock-data";
 import { Skeleton } from "@/components/ui/skeleton";
+import { GradeDistribution } from "@/lib/mock-data";
 
 const AttendanceChart = dynamic(() => import("@/components/dashboard/attendance-chart").then(mod => mod.AttendanceChart), {
   ssr: false,
@@ -518,24 +418,32 @@ const StudentPerformanceSummary = dynamic(() => import("@/components/dashboard/s
 
 
 type Period = "this_term" | "last_term" | "full_year";
+type StatsData = {
+  passRate: string;
+  gradeDistribution: GradeDistribution[];
+};
+
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>("this_term");
 
   const { data: totalStudents, isLoading: studentsLoading } = useSWR('totalStudents', getTotalStudents);
   const { data: totalTeachers, isLoading: teachersLoading } = useSWR('totalTeachers', getTotalTeachers);
+  const { data: statsData, isLoading: statsLoading } = useSWR<StatsData>('/api/stats', fetcher);
 
-  const currentStats = periodStats[period];
+
+  const periodAvgAttendance = {
+    this_term: { avgAttendance: "91%", changeLabel: "This Term" },
+    last_term: { avgAttendance: "89%", changeLabel: "Last Term" },
+    full_year: { avgAttendance: "90%", changeLabel: "Full Year" },
+  };
+  const currentAvgAttendance = periodAvgAttendance[period];
 
   const getAttendanceDataForPeriod = () => {
     switch (period) {
-      case "this_term":
-        return attendanceData.slice(8, 12);
-      case "last_term":
-        return attendanceData.slice(4, 8);
-      case "full_year":
-      default:
-        return attendanceData;
+      case "this_term": return attendanceData.slice(8, 12);
+      case "last_term": return attendanceData.slice(4, 8);
+      case "full_year": default: return attendanceData;
     }
   };
   const currentAttendanceData = getAttendanceDataForPeriod();
@@ -544,22 +452,16 @@ export default function DashboardPage() {
     <>
       <PageHeader title="Student Dashboard">
         <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Filter period" />
-          </SelectTrigger>
-          <SelectContent>
-             <SelectItem value="this_term">This Term</SelectItem>
-            <SelectItem value="last_term">Last Term</SelectItem>
-            <SelectItem value="full_year">Full Year</SelectItem>
-          </SelectContent>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
+          <SelectContent><SelectItem value="this_term">This Term</SelectItem><SelectItem value="last_term">Last Term</SelectItem><SelectItem value="full_year">Full Year</SelectItem></SelectContent>
         </Select>
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
          {studentsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/students"><StatCard title="Total Students" value={totalStudents?.toString() ?? '0'} change="+5%" className="bg-chart-1/20 border-chart-1/50 hover:border-chart-1 transition-colors" /></Link>}
          {teachersLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <Link href="/teachers"><StatCard title="Total Teachers" value={totalTeachers?.toString() ?? '0'} change="+2" className="bg-chart-2/20 border-chart-2/50 hover:border-chart-2 transition-colors" /></Link>}
-         <StatCard title="Pass Rate" value={currentStats.passRate} change={currentStats.passRateChange} isNegative={currentStats.isPassRateNegative} className="bg-chart-3/20 border-chart-3/50" />
-         <StatCard title="Avg. Attendance" value={currentStats.avgAttendance} change={currentStats.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
+         {statsLoading ? <Skeleton className="h-[108px] rounded-lg" /> : <StatCard title="Pass Rate" value={statsData?.passRate ?? 'N/A'} change="Calculated" className="bg-chart-3/20 border-chart-3/50" />}
+         <StatCard title="Avg. Attendance" value={currentAvgAttendance.avgAttendance} change={currentAvgAttendance.changeLabel} className="bg-chart-4/20 border-chart-4/50" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
@@ -567,7 +469,10 @@ export default function DashboardPage() {
           <AttendanceChart data={currentAttendanceData} />
         </div>
         <div className="xl:col-span-2">
-          <StudentPerformanceSummary period={period} />
+          {statsLoading 
+            ? <Skeleton className="h-full min-h-[400px] rounded-lg" /> 
+            : <StudentPerformanceSummary gradeDistribution={statsData?.gradeDistribution} />
+          }
         </div>
       </div>
     </>
@@ -624,11 +529,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AddSubjectModal } from "@/components/features/subject/add-subject-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
-import { EditSubjectModal } from "@/components/features/subject/EditSubjectModal";
 import { SubjectDetailsModal } from "@/components/features/subject/SubjectDetailsModal";
+import { SubjectFormModal } from "@/components/features/subject/SubjectFormModal";
 import { Input } from "@/components/ui/input";
+import { SubjectFormValues } from "@/lib/schemas";
 
 type SubjectDetails = {
   name: string;
@@ -656,11 +561,11 @@ export default function SubjectsPage() {
   const [sortOption, setSortOption] = useState("name-asc");
   
   const [modalState, setModalState] = useState<{
-    add: boolean;
-    edit: string | null;
+    formOpen: boolean;
+    editingSubjectName: string | null;
     delete: string | null;
     view: SubjectDetails | null;
-  }>({ add: false, edit: null, delete: null, view: null });
+  }>({ formOpen: false, editingSubjectName: null, delete: null, view: null });
 
   const { data: subjects, error: subjectsError, isLoading: subjectsLoading, mutate: mutateSubjects } = useSWR("/api/subjects", getSubjects);
   const { data: allTeachers, isLoading: teachersLoading, mutate: mutateTeachers } = useSWR("/api/teachers/all", getAllTeachers);
@@ -712,11 +617,15 @@ export default function SubjectsPage() {
     return subjectsToProcess;
   }, [subjects, searchQuery, sortOption, subjectDetailsMap]);
 
-
-  const handleSubjectAdded = async (data: { newSubjectName: string; teacherIds: number[] }) => {
+  const handleSubjectSubmit = async (data: SubjectFormValues) => {
     try {
-      const newSubject = await addSubject({ subjectName: data.newSubjectName, teacherIds: data.teacherIds });
-      toast.success(`Subject "${newSubject.name}" added successfully.`);
+      if (modalState.editingSubjectName) {
+        await updateSubject(modalState.editingSubjectName, { newSubjectName: data.name, teacherIds: data.teacherIds });
+        toast.success(`Subject "${data.name}" updated successfully.`);
+      } else {
+        const newSubject = await addSubject({ subjectName: data.name, teacherIds: data.teacherIds });
+        toast.success(`Subject "${newSubject.name}" added successfully.`);
+      }
       await Promise.all([mutateSubjects(), mutateTeachers()]);
     } catch (e: unknown) {
       if (e instanceof Error) toast.error(e.message);
@@ -734,17 +643,6 @@ export default function SubjectsPage() {
     }
   };
 
-  const handleSubjectUpdate = async (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => {
-    try {
-        await updateSubject(oldName, data);
-        toast.success(`Subject "${data.newSubjectName}" updated successfully.`);
-        await Promise.all([mutateSubjects(), mutateTeachers()]);
-    } catch(e: unknown) {
-        if (e instanceof Error) toast.error(e.message);
-        throw e;
-    }
-  };
-
   const totalPages = sortedSubjects ? Math.ceil(sortedSubjects.length / itemsPerPage) : 0;
 
   const renderContent = () => {
@@ -755,19 +653,9 @@ export default function SubjectsPage() {
         </div>
       );
     }
-    if (subjectsError) {
-      return ( <Alert variant="destructive" className="glass-card">
-          <AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load subjects. Please try again.</AlertDescription>
-        </Alert> );
-    }
-    if (!sortedSubjects || sortedSubjects.length === 0) {
-      return ( <div className="text-center py-10 glass-card rounded-lg">
-          <h3 className="text-xl font-medium">No Subjects Found</h3>
-          <p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p>
-        </div> );
-    }
-
+    if (subjectsError) return ( <Alert variant="destructive" className="glass-card"><AlertTriangle className="h-4 w-4" /> <AlertTitle>Error</AlertTitle><AlertDescription>Failed to load subjects. Please try again.</AlertDescription></Alert> );
+    if (!sortedSubjects || sortedSubjects.length === 0) return ( <div className="text-center py-10 glass-card rounded-lg"><h3 className="text-xl font-medium">No Subjects Found</h3><p className="text-muted-foreground">{searchQuery ? "Try a different search term." : "Click \"Add Subject\" to get started."}</p></div> );
+    
     const paginatedSubjects = sortedSubjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     return (
@@ -783,38 +671,20 @@ export default function SubjectsPage() {
                 <div className="flex justify-between items-start">
                   <CardTitle className="capitalize text-lg font-bold text-foreground">{details.name}</CardTitle>
                   <div className="flex items-center -mr-2 -mt-2 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}>
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, edit: details.name})}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, view: details})}> <Eye className="h-4 w-4" /> </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setModalState({...modalState, editingSubjectName: details.name, formOpen: true})}> <Pencil className="h-4 w-4" /> </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setModalState({...modalState, delete: details.name})}> <Trash2 className="h-4 w-4" /> </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p className="text-muted-foreground">Students</p>
-                    <p className="font-semibold text-xl">{details.studentCount}</p>
-                </div>
-                <div>
-                    <p className="text-muted-foreground">Avg. Grade</p>
-                    <p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p>
-                </div>
+                <div><p className="text-muted-foreground">Students</p><p className="font-semibold text-xl">{details.studentCount}</p></div>
+                <div><p className="text-muted-foreground">Avg. Grade</p><p className="font-semibold text-xl">{details.avgGrade.toFixed(1)}%</p></div>
               </CardContent>
               <CardFooter className="pt-4">
                 <div className="w-full">
                   <p className="text-xs font-semibold text-muted-foreground mb-2">INSTRUCTORS ({details.teachers.length})</p>
-                  {details.teachers.length > 0 ? (
-                    <div className="flex -space-x-2">
-                      {details.teachers.slice(0, 6).map(teacher => <TeacherAvatar key={teacher.id} teacher={teacher} />)}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">No instructors assigned.</p>
-                  )}
+                  {details.teachers.length > 0 ? (<div className="flex -space-x-2">{details.teachers.slice(0, 6).map(teacher => <TeacherAvatar key={teacher.id} teacher={teacher} />)}</div>) : (<p className="text-xs text-muted-foreground italic">No instructors assigned.</p>)}
                 </div>
               </CardFooter>
             </Card>
@@ -824,82 +694,80 @@ export default function SubjectsPage() {
     );
   };
 
-  const assignedTeacherIdsForEdit = useMemo(() => {
-      if (!modalState.edit || !allTeachers) return [];
-      return allTeachers.filter(t => t.subject === modalState.edit).map(t => t.id);
-  }, [modalState.edit, allTeachers]);
+  const formInitialData = useMemo(() => {
+    if (!modalState.editingSubjectName || !allTeachers) return null;
+    const assignedTeacherIds = allTeachers.filter(t => t.subject === modalState.editingSubjectName).map(t => t.id);
+    return { name: modalState.editingSubjectName, teacherIds: assignedTeacherIds };
+  }, [modalState.editingSubjectName, allTeachers]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Subjects Overview" description="View and manage all subjects offered.">
-        <Button onClick={() => setModalState({...modalState, add: true})} className="button-gradient">
+        <Button onClick={() => setModalState({...modalState, editingSubjectName: null, formOpen: true})} className="button-gradient">
           <PlusCircle className="h-4 w-4 mr-2"/> Add Subject
         </Button>
       </PageHeader>
       
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search subjects..."
-            value={searchQuery}
-            onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-            }}
-            className="pl-9"
-          />
-        </div>
-        <Select value={sortOption} onValueChange={setSortOption}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Sort by..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-            <SelectItem value="students-desc">Most Students</SelectItem>
-            <SelectItem value="students-asc">Fewest Students</SelectItem>
-            <SelectItem value="grade-desc">Highest Grade</SelectItem>
-            <SelectItem value="grade-asc">Lowest Grade</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="relative w-full sm:w-64"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Search subjects..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} className="pl-9"/></div>
+        <Select value={sortOption} onValueChange={setSortOption}><SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Sort by..." /></SelectTrigger><SelectContent><SelectItem value="name-asc">Name (A-Z)</SelectItem><SelectItem value="name-desc">Name (Z-A)</SelectItem><SelectItem value="students-desc">Most Students</SelectItem><SelectItem value="students-asc">Fewest Students</SelectItem><SelectItem value="grade-desc">Highest Grade</SelectItem><SelectItem value="grade-asc">Lowest Grade</SelectItem></SelectContent></Select>
       </div>
 
       {renderContent()}
       
       {sortedSubjects && sortedSubjects.length > 0 && (
-        <TablePaginationControls
-          currentPage={currentPage} totalPages={totalPages}
-          onPageChange={setCurrentPage} itemsPerPage={itemsPerPage}
-          onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-          totalItems={sortedSubjects.length} itemType="subjects"
-          itemsPerPageOptions={[6, 9, 12, 18]}
-        />
+        <TablePaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} itemsPerPage={itemsPerPage} onItemsPerPageChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }} totalItems={sortedSubjects.length} itemType="subjects" itemsPerPageOptions={[6, 9, 12, 18]} />
       )}
       
-      <ConfirmationDialog
-        isOpen={!!modalState.delete}
-        onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, delete: null})}
-        onConfirm={() => { if (modalState.delete) handleDeleteSubject(modalState.delete); }}
-        title="Are you sure?"
-        description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`}
-        confirmText="Yes, delete"
-      />
-      {allTeachers && <AddSubjectModal isOpen={modalState.add} onOpenChange={(isOpen) => setModalState({...modalState, add: isOpen})} onSubjectAdded={handleSubjectAdded} allTeachers={allTeachers} />}
+      <ConfirmationDialog isOpen={!!modalState.delete} onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, delete: null})} onConfirm={() => { if (modalState.delete) handleDeleteSubject(modalState.delete); }} title="Are you sure?" description={`This will permanently delete the subject "${modalState.delete}". This action cannot be undone.`} confirmText="Yes, delete" />
       
-      {modalState.edit && allTeachers && (
-        <EditSubjectModal
-            isOpen={!!modalState.edit}
-            onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, edit: null})}
-            subjectName={modalState.edit}
-            allTeachers={allTeachers}
-            assignedTeacherIds={assignedTeacherIdsForEdit}
-            onSubjectUpdate={handleSubjectUpdate}
-        />
+      {allTeachers && (
+        <SubjectFormModal isOpen={modalState.formOpen} onOpenChange={(isOpen) => setModalState({ ...modalState, formOpen: isOpen })} onSubmit={handleSubjectSubmit} allTeachers={allTeachers} initialData={formInitialData} />
       )}
+
       <SubjectDetailsModal isOpen={!!modalState.view} onOpenChange={(isOpen) => !isOpen && setModalState({...modalState, view: null})} subjectDetails={modalState.view} />
     </div>
   );
+}
+```
+
+# === app/api/stats/route.ts ===
+```ts
+import { NextResponse } from 'next/server';
+import db from '@/lib/mock-db';
+import { Student } from '@/lib/fake-generators';
+
+export async function GET() {
+  const students: Student[] = db.students;
+  const totalStudents = students.length;
+
+  if (totalStudents === 0) {
+    return NextResponse.json({
+      passRate: "0.0%",
+      gradeDistribution: [
+        { grade: "A", count: 0 }, { grade: "B", count: 0 },
+        { grade: "C", count: 0 }, { grade: "D", count: 0 },
+        { grade: "F", count: 0 }
+      ]
+    });
+  }
+
+  // Calculate Grade Distribution
+  const gradeCounts = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+  students.forEach(student => {
+    if (student.grade in gradeCounts) {
+      gradeCounts[student.grade as keyof typeof gradeCounts]++;
+    }
+  });
+  
+  const gradeDistribution = Object.entries(gradeCounts).map(([grade, count]) => ({ grade, count }));
+
+  // Calculate Pass Rate (all grades except 'F' are passing)
+  const failingStudents = gradeCounts.F;
+  const passingStudents = totalStudents - failingStudents;
+  const passRate = ((passingStudents / totalStudents) * 100).toFixed(1) + '%';
+  
+  return NextResponse.json({ passRate, gradeDistribution });
 }
 ```
 
@@ -1121,7 +989,6 @@ export async function GET() {
 ```ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/mock-db';
-import { Teacher } from '@/lib/fake-generators';
 
 export async function GET() {
   return NextResponse.json(db.subjects.sort());
@@ -1225,8 +1092,10 @@ export async function DELETE(request: Request, context: { params: Promise<{ name
 import { useState, useMemo } from "react";
 import useSWR, { MutatorCallback } from "swr";
 import { toast } from "sonner";
-import { User, UsersApiResponse } from "@/types/api.types";
+import { UsersApiResponse } from "@/types/api.types";
 import { addUser, deleteUser as deleteUserApi, fetcher, updateUser } from "@/lib/api";
+import { UserFormValues } from "@/lib/schemas";
+import { AppUser } from "@/lib/fake-generators";
 
 interface UseUserManagementProps {
   userType: 'student' | 'teacher';
@@ -1238,8 +1107,9 @@ interface UseUserManagementProps {
 }
 
 export function useUserManagement({ userType, itemsPerPage, currentPage, searchTerm, sortBy, sortOrder }: UseUserManagementProps) {
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<AppUser | null>(null);
+  const [userToEdit, setUserToEdit] = useState<AppUser | null>(null);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   
   const entityName = useMemo(() => (userType === 'student' ? 'Student' : 'Teacher'), [userType]);
 
@@ -1248,28 +1118,34 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
   
   const { data, error, isLoading, mutate } = useSWR<UsersApiResponse>(swrKey, fetcher, { keepPreviousData: true });
 
-  const handleCreateUser = async (userData: Partial<User>) => {
-    try {
-        await addUser(userType, userData);
-        toast.success(`${entityName} added successfully.`);
-        mutate(); 
-    } catch (err) {
-        const message = err instanceof Error ? err.message : `Failed to save ${entityName.toLowerCase()}.`;
-        toast.error(message);
-        throw err; // Re-throw to keep modal open on error
-    }
+  const handleCreateUser = async (userData: Partial<AppUser>) => {
+    // Add the discriminator type for creation
+    const finalUserData = { ...userData, type: userType };
+    await addUser(userType, finalUserData);
+    toast.success(`${entityName} added successfully.`);
+    mutate(); 
   }
 
-  const handleUpdateUser = async (userId: number, userData: Partial<User>) => {
+  const handleUpdateUser = async (userId: number, userData: Partial<AppUser>) => {
+    await updateUser(userType, userId, userData);
+    toast.success(`${entityName} updated successfully.`);
+    mutate();
+  }
+
+  const handleFormSubmit = async (formData: UserFormValues) => {
     try {
-      await updateUser(userType, userId, userData);
-      toast.success(`${entityName} updated successfully.`);
-      mutate();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Update failed.');
+      if (userToEdit) {
+        await handleUpdateUser(userToEdit.id, formData);
+      } else {
+        await handleCreateUser(formData);
+      }
+      closeFormModal();
+    } catch(err) {
+      const message = err instanceof Error ? err.message : `Failed to save ${entityName.toLowerCase()}.`;
+      toast.error(message);
       throw err;
     }
-  }
+  };
   
   const handleDeleteUser = async (userId: number) => {
     const optimisticData: MutatorCallback<UsersApiResponse> = (currentData) => {
@@ -1289,31 +1165,24 @@ export function useUserManagement({ userType, itemsPerPage, currentPage, searchT
     }
   };
   
-  const openCreateModal = () => setIsCreateModalOpen(true);
-  const closeCreateModal = () => setIsCreateModalOpen(false);
-  const openDeleteDialog = (user: User) => setUserToDelete(user);
+  const openCreateModal = () => { setUserToEdit(null); setIsFormModalOpen(true); };
+  const openEditModal = (user: AppUser) => { setUserToEdit(user); setIsFormModalOpen(true); };
+  const closeFormModal = () => setIsFormModalOpen(false);
+  const openDeleteDialog = (user: AppUser) => setUserToDelete(user);
   const closeDeleteDialog = () => setUserToDelete(null);
 
   return {
-    data,
-    error,
-    isLoading,
-    mutate,
-    isCreateModalOpen,
-    openCreateModal,
-    closeCreateModal,
-    handleCreateUser,
-    handleUpdateUser,
-    userToDelete,
-    openDeleteDialog,
-    closeDeleteDialog,
-    handleDeleteUser,
+    data, error, isLoading, isFormModalOpen,
+    openCreateModal, openEditModal, closeFormModal, handleFormSubmit,
+    userToEdit, userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser,
   };
 }
 ```
 
 # === types/api.types.ts ===
 ```ts
+import { AppUser } from "@/lib/fake-generators";
+
 export interface Product {
   id: number;
   title: string;
@@ -1335,25 +1204,10 @@ export interface ProductsApiResponse {
   limit: number;
 }
 
-
-export interface User {
-    id: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    image: string;
-    address: {
-        address: string;
-        city: string;
-        postalCode: string;
-        state: string;
-    },
-    subject?: string;
-}
-
+// The old User interface is removed.
+// All API responses will now use the AppUser discriminated union.
 export interface UsersApiResponse {
-    users: User[];
+    users: AppUser[];
     total: number;
     skip: number;
     limit: number;
@@ -1669,7 +1523,7 @@ export function StudentDashboardSidebar() {
         <div className="p-2 bg-primary rounded-lg">
           <BookOpen className="h-6 w-6 text-primary-foreground" />
         </div>
-        <span className="text-xl font-bold">EduDash</span>
+        <span className="text-xl font-bold">SyncBoard</span>
       </div>
       <nav className="flex flex-row lg:flex-col gap-2 flex-grow overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
         {navItems.map((item) => {
@@ -1680,7 +1534,6 @@ export function StudentDashboardSidebar() {
             href={item.href}
             className={cn(
               "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-secondary hover:text-primary",
-              // FIX: Updated active state to better match the screenshot
               isActive && "bg-secondary text-primary font-semibold"
             )}
           >
@@ -1699,31 +1552,13 @@ export function StudentDashboardSidebar() {
 "use client"
 
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  Rectangle,
-  type RectangleProps,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Rectangle, type RectangleProps,
 } from "recharts";
-import {
-  GradeDistribution,
-  SubjectScore,
-  gradeDistributionData,
-  subjectScoreData
-} from "@/lib/mock-data";
+import { GradeDistribution, SubjectScore, subjectScoreData } from "@/lib/mock-data";
 import { ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const GRADE_COLORS = ['#2dd4bf', '#3b82f6', '#fbbd23', '#f87171', '#ef4444'];
@@ -1748,7 +1583,6 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 
 const ActiveBar = (props: RectangleProps) => {
   const { x = 0, y = 0, width = 0, height = 0, ...rest } = props;
-  
   return <Rectangle {...rest} x={x} width={width} height={height + 5} y={y - 5} />;
 };
 
@@ -1759,10 +1593,7 @@ const GradeDistributionChart = ({ data }: { data: GradeDistribution[] }) => (
       <BarChart data={data} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
         <XAxis dataKey="grade" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
         <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
-        <Tooltip
-          cursor={false}
-          content={<CustomTooltip />}
-        />
+        <Tooltip cursor={false} content={<CustomTooltip />} />
         <Bar dataKey="count" radius={[6, 6, 0, 0]} activeBar={<ActiveBar />}>
           {data.map((_entry, index) => (
             <Cell key={`cell-${index}`} fill={GRADE_COLORS[index % GRADE_COLORS.length]} />
@@ -1775,43 +1606,27 @@ const GradeDistributionChart = ({ data }: { data: GradeDistribution[] }) => (
 
 const TopSubjectsList = ({ data }: { data: SubjectScore[] }) => (
   <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>Subject</TableHead>
-        <TableHead className="text-right">Avg. Score</TableHead>
-      </TableRow>
-    </TableHeader>
+    <TableHeader><TableRow><TableHead>Subject</TableHead><TableHead className="text-right">Avg. Score</TableHead></TableRow></TableHeader>
     <TableBody>
       {data.sort((a, b) => b.averageScore - a.averageScore).slice(0, 5).map((subject) => (
         <TableRow key={subject.name} className="hover:bg-muted/50 text-sm">
           <TableCell className="font-medium capitalize">{subject.name.replace(/-/g, ' ')}</TableCell>
-          <TableCell className="text-right">
-            <Badge variant="secondary" className={
-                subject.averageScore >= 90 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" :
-                subject.averageScore >= 80 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" :
-                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"
-            }>
-                {subject.averageScore.toFixed(1)}%
-            </Badge>
-          </TableCell>
+          <TableCell className="text-right"><Badge variant="secondary" className={subject.averageScore >= 90 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300" : subject.averageScore >= 80 ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300" : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300"}>{subject.averageScore.toFixed(1)}%</Badge></TableCell>
         </TableRow>
       ))}
     </TableBody>
   </Table>
 );
 
-type Period = "this_term" | "last_term" | "full_year";
-
-export function StudentPerformanceSummary({ period }: { period: Period }) {
-  const currentGradeData = gradeDistributionData[period];
-  const currentTopSubjectsData = subjectScoreData[period];
-
+export function StudentPerformanceSummary({ gradeDistribution }: { gradeDistribution?: GradeDistribution[] }) {
+  // Top subjects data can remain static for this exercise
+  const currentTopSubjectsData = subjectScoreData["full_year"];
 
   return (
     <div className="rounded-lg border bg-card p-4 h-full flex flex-col gap-4">
       <div>
         <h3 className="font-semibold text-lg mb-2">Grade Distribution</h3>
-        <GradeDistributionChart data={currentGradeData} />
+        {gradeDistribution ? <GradeDistributionChart data={gradeDistribution} /> : <p className="text-center text-muted-foreground p-8">Loading stats...</p>}
       </div>
       <div className="border-t pt-2">
         <h3 className="font-semibold text-lg mb-2">Top Subjects</h3>
@@ -1829,41 +1644,18 @@ export function StudentPerformanceSummary({ period }: { period: Period }) {
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { User } from "@/types/api.types";
-import { Student, Teacher } from "@/lib/fake-generators";
-import { Trash2, Pencil, Check, X } from "lucide-react";
+import { AppUser } from "@/lib/fake-generators";
+import { Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface UserTableProps {
-  users: User[];
+  users: AppUser[];
   type: 'student' | 'teacher';
-  onDeleteUser: (user: User) => void;
-  // Inline editing props
-  editingUserId: number | null;
-  editedUserData: Partial<User & Student & Teacher>;
-  onStartEdit: (user: User) => void;
-  onCancelEdit: () => void;
-  onSaveEdit: (userId: number) => Promise<void>;
-  onEditDataChange: (field: keyof (User & Student & Teacher), value: string) => void;
-  allSubjects?: string[];
+  onDelete: (user: AppUser) => void;
+  onEdit: (user: AppUser) => void;
 }
 
-const gradeOptions = ['A', 'B', 'C', 'D', 'F'];
-
-export function UserTable({
-  users,
-  type,
-  onDeleteUser,
-  editingUserId,
-  editedUserData,
-  onStartEdit,
-  onCancelEdit,
-  onSaveEdit,
-  onEditDataChange,
-  allSubjects = [],
-}: UserTableProps) {
+export function UserTable({ users, type, onDelete, onEdit }: UserTableProps) {
   return (
     <Table className="min-w-full">
       <TableHeader>
@@ -1878,82 +1670,39 @@ export function UserTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users.map((user) => {
-          const isEditing = editingUserId === user.id;
+        {users.map((user) => (
+          <TableRow key={user.id} className="hover:bg-muted/50">
+            <TableCell className="px-3 py-2 text-muted-foreground">{user.id}</TableCell>
+            <TableCell className="px-3 py-2 font-medium text-foreground">
+              {`${user.firstName} ${user.lastName}`}
+            </TableCell>
+            <TableCell className="px-3 py-2">{user.email}</TableCell>
+            <TableCell className="px-3 py-2">{user.phone}</TableCell>
+            
+            {/* TYPE-SAFE: No more casting! TypeScript understands the properties based on user.type */}
+            {user.type === 'student' && (
+              <TableCell className="px-3 py-2 font-medium text-center">
+                {user.grade}
+              </TableCell>
+            )}
+            {user.type === 'teacher' && (
+              <TableCell className="capitalize px-3 py-2">
+                {user.subject}
+              </TableCell>
+            )}
 
-          return (
-            <TableRow key={user.id} className={isEditing ? "bg-secondary" : "hover:bg-muted/50"}>
-              <TableCell className="px-3 py-1 text-muted-foreground">{user.id}</TableCell>
-              <TableCell className="px-3 py-1 font-medium text-foreground">
-                {isEditing ? (
-                  <div className="flex gap-2">
-                    <Input placeholder="First Name" value={editedUserData.firstName || ''} onChange={(e) => onEditDataChange('firstName', e.target.value)} />
-                    <Input placeholder="Last Name" value={editedUserData.lastName || ''} onChange={(e) => onEditDataChange('lastName', e.target.value)} />
-                  </div>
-                ) : (
-                  `${user.firstName} ${user.lastName}`
-                )}
-              </TableCell>
-              <TableCell className="px-3 py-1">
-                {isEditing ? <Input type="email" placeholder="Email" value={editedUserData.email || ''} onChange={(e) => onEditDataChange('email', e.target.value)} /> : user.email}
-              </TableCell>
-              <TableCell className="px-3 py-1">
-                {isEditing ? <Input placeholder="Phone" value={editedUserData.phone || ''} onChange={(e) => onEditDataChange('phone', e.target.value)} /> : user.phone}
-              </TableCell>
-              
-              {type === 'student' && (
-                <TableCell className="px-3 py-1 font-medium text-center">
-                  {isEditing ? (
-                    <Select value={(editedUserData as Student).grade} onValueChange={(value) => onEditDataChange('grade', value)}>
-                      <SelectTrigger><SelectValue placeholder="Grade" /></SelectTrigger>
-                      <SelectContent>
-                        {gradeOptions.map(grade => <SelectItem key={grade} value={grade}>{grade}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    (user as Student).grade
-                  )}
-                </TableCell>
-              )}
-              {type === 'teacher' && (
-                <TableCell className="capitalize px-3 py-1">
-                  {isEditing ? (
-                     <Select value={(editedUserData as Teacher).subject} onValueChange={(value) => onEditDataChange('subject', value)}>
-                      <SelectTrigger><SelectValue placeholder="Subject" /></SelectTrigger>
-                      <SelectContent>
-                        {allSubjects.map(subject => <SelectItem key={subject} value={subject}>{subject}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    (user as Teacher).subject
-                  )}
-                </TableCell>
-              )}
-
-              <TableCell className="text-right px-3 py-1">
-                {isEditing ? (
-                  <div className="flex justify-end gap-2">
-                    <Button onClick={() => onSaveEdit(user.id)} size="icon" className="h-8 w-8 bg-green-500 hover:bg-green-600">
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={onCancelEdit} variant="ghost" size="icon" className="h-8 w-8">
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex justify-end gap-2">
-                    <Button onClick={() => onStartEdit(user)} variant="ghost" size="icon" className="h-8 w-8">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button onClick={() => onDeleteUser(user)} variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          )
-        })}
+            <TableCell className="text-right px-3 py-2">
+              <div className="flex justify-end gap-2">
+                <Button onClick={() => onEdit(user)} variant="ghost" size="icon" className="h-8 w-8">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button onClick={() => onDelete(user)} variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
       </TableBody>
     </Table>
   );
@@ -1971,18 +1720,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema, UserFormValues } from "@/lib/schemas";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { User } from "@/types/api.types";
+import { useEffect, useState } from "react";
+import { AppUser } from "@/lib/fake-generators"; // Use AppUser
 
 interface UserFormModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   userType: 'student' | 'teacher';
-  onSubmit: (data: Partial<User>) => Promise<void>;
+  onSubmit: (data: UserFormValues) => Promise<void>;
+  initialData?: AppUser | null; // Use AppUser
 }
 
-export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit }: UserFormModalProps) {
+export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit, initialData }: UserFormModalProps) {
+  // ... rest of the component logic remains the same
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = !!initialData;
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -1994,90 +1746,52 @@ export function UserFormModal({ isOpen, onOpenChange, userType, onSubmit }: User
     },
   });
 
+  useEffect(() => {
+    if (isOpen) {
+      if (isEditMode && initialData) {
+        form.reset({
+          firstName: initialData.firstName,
+          lastName: initialData.lastName,
+          email: initialData.email,
+          phone: initialData.phone || "",
+        });
+      } else {
+        form.reset();
+      }
+    }
+  }, [isOpen, isEditMode, initialData, form]);
+
   const handleFormSubmit = async (data: UserFormValues) => {
     setIsSubmitting(true);
     try {
       await onSubmit(data);
-      onOpenChange(false);
-      form.reset();
     } catch {
-      // Error is handled by the hook, which re-throws to keep the modal open
+      // Error is handled by the hook
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  const handleModalOpenChange = (open: boolean) => {
-    if (!open) {
-      form.reset();
-    }
-    onOpenChange(open);
-  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleModalOpenChange}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>Add New {userType}</DialogTitle>
+          <DialogTitle>{isEditMode ? `Edit ${userType}` : `Add New ${userType}`}</DialogTitle>
           <DialogDescription>
-            Enter the details for the new {userType}. Click save when you&apos;re done.
+            {isEditMode ? `Update the details for this ${userType}.` : `Enter the details for the new ${userType}.`}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
+              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
             </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone (Optional)</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem> )}/>
+            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" className="button-gradient" disabled={isSubmitting || !form.formState.isValid}>
-                {isSubmitting ? 'Saving...' : 'Save User'}
-              </Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}> Cancel </Button>
+              <Button type="submit" className="button-gradient" disabled={isSubmitting || !form.formState.isDirty}> {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : `Save ${userType}`)} </Button>
             </div>
           </form>
         </Form>
@@ -2230,15 +1944,11 @@ import { UserTable } from "@/components/features/user/user-table";
 import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import { User } from "@/types/api.types";
-import { Student, Teacher } from "@/lib/fake-generators";
 import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import useSWR from "swr";
-import { getSubjects } from "@/lib/api";
 
 interface UserManagementPageProps {
   userType: 'student' | 'teacher';
@@ -2252,12 +1962,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('name-asc');
-
-  // State for inline editing
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [editedUserData, setEditedUserData] = useState<Partial<User & Student & Teacher>>({});
-  
-  const { data: allSubjects } = useSWR(userType === 'teacher' ? '/api/subjects' : null, getSubjects);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [by, order] = sortOption.split('-');
@@ -2273,8 +1977,8 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   }, [searchTerm]);
 
   const {
-    data, error, isLoading, handleCreateUser, handleUpdateUser,
-    isCreateModalOpen, openCreateModal, closeCreateModal,
+    data, error, isLoading, handleFormSubmit,
+    isFormModalOpen, openCreateModal, openEditModal, closeFormModal, userToEdit,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
   } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm, sortBy, sortOrder });
   
@@ -2283,30 +1987,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
-  };
-
-  // Inline editing handlers
-  const handleStartEdit = (user: User) => {
-    setEditingUserId(user.id);
-    setEditedUserData(user);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingUserId(null);
-    setEditedUserData({});
-  };
-
-  const handleEditDataChange = (field: keyof (User & Student & Teacher), value: string) => {
-    setEditedUserData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveEdit = async (userId: number) => {
-    try {
-      await handleUpdateUser(userId, editedUserData);
-      handleCancelEdit();
-    } catch {
-      // Error is shown via toast in the hook, so we just stay in edit mode
-    }
   };
 
   const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
@@ -2365,14 +2045,8 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
             <UserTable
               users={data.users}
               type={userType}
-              onDeleteUser={openDeleteDialog}
-              editingUserId={editingUserId}
-              editedUserData={editedUserData}
-              onStartEdit={handleStartEdit}
-              onCancelEdit={handleCancelEdit}
-              onSaveEdit={handleSaveEdit}
-              onEditDataChange={handleEditDataChange}
-              allSubjects={allSubjects}
+              onDelete={openDeleteDialog}
+              onEdit={openEditModal}
             />
           )}
         </div>
@@ -2393,10 +2067,11 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       </div>
 
       <UserFormModal
-        isOpen={isCreateModalOpen}
-        onOpenChange={closeCreateModal}
+        isOpen={isFormModalOpen}
+        onOpenChange={closeFormModal}
         userType={userType}
-        onSubmit={handleCreateUser}
+        onSubmit={handleFormSubmit}
+        initialData={userToEdit}
       />
       
       <ConfirmationDialog
@@ -2485,191 +2160,54 @@ export function SubjectDetailsModal({ isOpen, onOpenChange, subjectDetails }: Su
 }
 ```
 
-# === components/features/subject/add-subject-modal.tsx ===
+# === components/features/subject/SubjectFormModal.tsx ===
 ```tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Teacher } from "@/lib/fake-generators";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { subjectSchema, SubjectFormValues } from "@/lib/schemas";
+import { toast } from "sonner";
 
-interface AddSubjectModalProps {
+interface SubjectFormModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSubjectAdded: (data: { newSubjectName: string; teacherIds: number[] }) => Promise<void>;
+  onSubmit: (data: SubjectFormValues) => Promise<void>;
   allTeachers: Teacher[];
+  initialData?: SubjectFormValues | null;
 }
 
-export function AddSubjectModal({ isOpen, onOpenChange, onSubjectAdded, allTeachers }: AddSubjectModalProps) {
-  const [subjectName, setSubjectName] = useState("");
-  const [selectedTeacherIds, setSelectedTeacherIds] = useState(new Set<number>());
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function SubjectFormModal({ isOpen, onOpenChange, onSubmit, allTeachers, initialData }: SubjectFormModalProps) {
+  const isEditMode = !!initialData;
 
-  const handleToggleTeacher = (teacherId: number) => {
-    setSelectedTeacherIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(teacherId)) {
-        newSet.delete(teacherId);
-      } else {
-        newSet.add(teacherId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!subjectName.trim()) {
-      setError("Subject name cannot be empty.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onSubjectAdded({
-        newSubjectName: subjectName,
-        teacherIds: Array.from(selectedTeacherIds)
-      });
-      onOpenChange(false);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "An unknown error occurred.");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const form = useForm<SubjectFormValues>({
+    resolver: zodResolver(subjectSchema),
+  });
   
-  const handleOpenChange = (open: boolean) => {
-      if (!open) {
-          setSubjectName("");
-          setSelectedTeacherIds(new Set());
-          setError(null);
-          setIsSubmitting(false);
-      }
-      onOpenChange(open);
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
-        <DialogHeader>
-          <DialogTitle>Add New Subject</DialogTitle>
-          <DialogDescription>
-            Enter the name for the new subject and optionally assign instructors.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-          <div>
-            <Label htmlFor="subjectName">Subject Name</Label>
-            <Input id="subjectName" value={subjectName} onChange={(e) => setSubjectName(e.target.value)} className="mt-2" />
-          </div>
-
-          <div>
-            <Label>Assign Instructors ({selectedTeacherIds.size} selected)</Label>
-            <ScrollArea className="h-48 mt-2 border rounded-md p-4">
-              <div className="space-y-3">
-                {allTeachers.map(teacher => (
-                  <div key={teacher.id} className="flex items-center gap-3">
-                    <Checkbox
-                      id={`add-teacher-${teacher.id}`}
-                      checked={selectedTeacherIds.has(teacher.id)}
-                      onCheckedChange={() => handleToggleTeacher(teacher.id)}
-                    />
-                    <Label htmlFor={`add-teacher-${teacher.id}`} className="font-normal">{teacher.firstName} {teacher.lastName}</Label>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-
-          {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" className="button-gradient" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Subject'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-```
-
-# === components/features/subject/EditSubjectModal.tsx ===
-```tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Teacher } from "@/lib/fake-generators";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface EditSubjectModalProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  subjectName: string;
-  allTeachers: Teacher[];
-  assignedTeacherIds: number[];
-  onSubjectUpdate: (oldName: string, data: { newSubjectName: string, teacherIds: number[] }) => Promise<void>;
-}
-
-export function EditSubjectModal({ isOpen, onOpenChange, subjectName, allTeachers, assignedTeacherIds, onSubjectUpdate }: EditSubjectModalProps) {
-  const [newName, setNewName] = useState(subjectName);
-  const [selectedTeacherIds, setSelectedTeacherIds] = useState(new Set(assignedTeacherIds));
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { isSubmitting } = form.formState;
 
   useEffect(() => {
     if (isOpen) {
-      setNewName(subjectName);
-      setSelectedTeacherIds(new Set(assignedTeacherIds));
-      setError(null);
+      form.reset(isEditMode && initialData ? initialData : { name: "", teacherIds: [] });
     }
-  }, [isOpen, subjectName, assignedTeacherIds]);
+  }, [isOpen, isEditMode, initialData, form]);
 
-  const handleToggleTeacher = (teacherId: number) => {
-    setSelectedTeacherIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(teacherId)) {
-        newSet.delete(teacherId);
-      } else {
-        newSet.add(teacherId);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!newName.trim()) {
-      setError("Subject name cannot be empty.");
-      return;
-    }
-    setIsSubmitting(true);
+  const handleSubmit = async (data: SubjectFormValues) => {
     try {
-      await onSubjectUpdate(subjectName, {
-        newSubjectName: newName,
-        teacherIds: Array.from(selectedTeacherIds)
-      });
+      await onSubmit(data);
       onOpenChange(false);
-    } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+       if (err instanceof Error) {
+        toast.error(err.message || "An unknown error occurred.");
+      }
     }
   };
   
@@ -2677,39 +2215,68 @@ export function EditSubjectModal({ isOpen, onOpenChange, subjectName, allTeacher
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl">
         <DialogHeader>
-          <DialogTitle>Edit Subject</DialogTitle>
-          <DialogDescription>Update the subject details and assign instructors.</DialogDescription>
+          <DialogTitle>{isEditMode ? "Edit Subject" : "Add New Subject"}</DialogTitle>
+          <DialogDescription>
+            {isEditMode 
+              ? "Update the subject details and assign instructors." 
+              : "Enter the name for the new subject and optionally assign instructors."
+            }
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-          <div>
-            <Label htmlFor="subjectName">Subject Name</Label>
-            <Input id="subjectName" value={newName} onChange={(e) => setNewName(e.target.value)} className="mt-2" />
-          </div>
-          <div>
-            <Label>Assign Instructors ({selectedTeacherIds.size} selected)</Label>
-            <ScrollArea className="h-48 mt-2 border rounded-md p-4">
-              <div className="space-y-3">
-                {allTeachers.map(teacher => (
-                  <div key={teacher.id} className="flex items-center gap-3">
-                    <Checkbox
-                      id={`teacher-${teacher.id}`}
-                      checked={selectedTeacherIds.has(teacher.id)}
-                      onCheckedChange={() => handleToggleTeacher(teacher.id)}
-                    />
-                    <Label htmlFor={`teacher-${teacher.id}`} className="font-normal">{teacher.firstName} {teacher.lastName}</Label>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-          {error && <p className="text-sm text-destructive text-center">{error}</p>}
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" className="button-gradient" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pt-4">
+            <FormField
+              control={form.control} name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Subject Name</FormLabel>
+                  <FormControl><Input {...field} placeholder="e.g. Computer Science" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control} name="teacherIds"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Assign Instructors ({form.watch('teacherIds')?.length || 0} selected)</FormLabel>
+                  <ScrollArea className="h-48 mt-2 border rounded-md p-4">
+                    <div className="space-y-3">
+                      {allTeachers.map((teacher) => (
+                        <FormField
+                           key={teacher.id} control={form.control} name="teacherIds"
+                           render={({ field }) => (
+                             <FormItem key={teacher.id} className="flex flex-row items-start space-x-3 space-y-0">
+                               <FormControl>
+                                 <Checkbox
+                                   checked={field.value?.includes(teacher.id)}
+                                   onCheckedChange={(checked) => {
+                                     return checked
+                                       ? field.onChange([...(field.value || []), teacher.id])
+                                       : field.onChange(field.value?.filter((id) => id !== teacher.id));
+                                   }}
+                                 />
+                               </FormControl>
+                               <FormLabel className="font-normal">{`${teacher.firstName} ${teacher.lastName}`}</FormLabel>
+                             </FormItem>
+                           )}
+                         />
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancel</Button>
+              <Button type="submit" className="button-gradient" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Save Subject')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

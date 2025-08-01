@@ -1,5 +1,4 @@
-import { User } from "@/types/api.types";
-import { Teacher } from "./fake-generators";
+import { AppUser, Teacher } from "@/lib/fake-generators";
 
 /**
  * A generic fetcher function for use with SWR.
@@ -15,7 +14,7 @@ export const fetcher = (url: string) => fetch(url).then(res => res.json());
  * @param userData - The form data for the new user.
  * @returns The newly created user object.
  */
-export async function addUser(userType: 'student' | 'teacher', userData: Partial<User>): Promise<User> {
+export async function addUser(userType: 'student' | 'teacher', userData: Partial<AppUser>): Promise<AppUser> {
   const res = await fetch(`/api/${userType}s`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -35,7 +34,7 @@ export async function addUser(userType: 'student' | 'teacher', userData: Partial
  * @param userData - The updated form data.
  * @returns The updated user object.
  */
-export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<User>): Promise<User> {
+export async function updateUser(userType: 'student' | 'teacher', userId: number, userData: Partial<AppUser>): Promise<AppUser> {
   const res = await fetch(`/api/${userType}s/${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -62,8 +61,6 @@ export async function deleteUser(userType: 'student' | 'teacher', userId: number
   }
   return res.json();
 }
-
-
 
 /**
  * Gets the total number of students.
@@ -94,8 +91,6 @@ export async function getTotalTeachers(): Promise<number> {
 export async function getAllTeachers(): Promise<Teacher[]> {
     return fetcher('/api/teachers/all');
 }
-
-
 
 /**
  * Gets the list of all available subjects.

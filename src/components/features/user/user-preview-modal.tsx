@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { User } from "@/types/api.types";
+import { AppUser } from "@/lib/fake-generators";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AtSign, MapPin, Phone } from "lucide-react";
 
 export interface UserPreviewModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  user?: User;
+  user?: AppUser;
 }
 
 export function UserPreviewModal({ isOpen, onOpenChange, user }: UserPreviewModalProps) {

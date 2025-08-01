@@ -8,15 +8,11 @@ import { UserTable } from "@/components/features/user/user-table";
 import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
-import { User } from "@/types/api.types";
-import { Student, Teacher } from "@/lib/fake-generators";
 import { Button } from "@/components/ui/button";
 import { UserFormModal } from "./user-form-modal";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import useSWR from "swr";
-import { getSubjects } from "@/lib/api";
 
 interface UserManagementPageProps {
   userType: 'student' | 'teacher';
@@ -30,12 +26,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState('name-asc');
-
-  // State for inline editing
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [editedUserData, setEditedUserData] = useState<Partial<User & Student & Teacher>>({});
-  
-  const { data: allSubjects } = useSWR(userType === 'teacher' ? '/api/subjects' : null, getSubjects);
 
   const { sortBy, sortOrder } = useMemo(() => {
     const [by, order] = sortOption.split('-');
@@ -51,8 +41,8 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   }, [searchTerm]);
 
   const {
-    data, error, isLoading, handleCreateUser, handleUpdateUser,
-    isCreateModalOpen, openCreateModal, closeCreateModal,
+    data, error, isLoading, handleFormSubmit,
+    isFormModalOpen, openCreateModal, openEditModal, closeFormModal, userToEdit,
     userToDelete, openDeleteDialog, closeDeleteDialog, handleDeleteUser
   } = useUserManagement({ userType, itemsPerPage, currentPage, searchTerm: debouncedSearchTerm, sortBy, sortOrder });
   
@@ -61,30 +51,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(Number(value));
     setCurrentPage(1);
-  };
-
-  // Inline editing handlers
-  const handleStartEdit = (user: User) => {
-    setEditingUserId(user.id);
-    setEditedUserData(user);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingUserId(null);
-    setEditedUserData({});
-  };
-
-  const handleEditDataChange = (field: keyof (User & Student & Teacher), value: string) => {
-    setEditedUserData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveEdit = async (userId: number) => {
-    try {
-      await handleUpdateUser(userId, editedUserData);
-      handleCancelEdit();
-    } catch {
-      // Error is shown via toast in the hook, so we just stay in edit mode
-    }
   };
 
   const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
@@ -143,14 +109,8 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
             <UserTable
               users={data.users}
               type={userType}
-              onDeleteUser={openDeleteDialog}
-              editingUserId={editingUserId}
-              editedUserData={editedUserData}
-              onStartEdit={handleStartEdit}
-              onCancelEdit={handleCancelEdit}
-              onSaveEdit={handleSaveEdit}
-              onEditDataChange={handleEditDataChange}
-              allSubjects={allSubjects}
+              onDelete={openDeleteDialog}
+              onEdit={openEditModal}
             />
           )}
         </div>
@@ -171,10 +131,11 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       </div>
 
       <UserFormModal
-        isOpen={isCreateModalOpen}
-        onOpenChange={closeCreateModal}
+        isOpen={isFormModalOpen}
+        onOpenChange={closeFormModal}
         userType={userType}
-        onSubmit={handleCreateUser}
+        onSubmit={handleFormSubmit}
+        initialData={userToEdit}
       />
       
       <ConfirmationDialog
