@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import dynamic from "next/dynamic";
 import { AlertTriangle, Pencil, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { getSubjects } from "@/lib/api";
@@ -11,10 +12,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockTeachers, subjectTeacherMapping, subjectScoreData, Teacher } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
-import { ManageInstructorsModal } from "@/components/features/subject/manage-instructors-modal";
 import { toast } from "sonner";
 import { User } from "@/types/api.types";
-import { UserPreviewModal } from "@/components/features/customer/user-preview-modal";
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls";
+import type { UserPreviewModalProps } from "@/components/features/user/user-preview-modal";
+
+const ManageInstructorsModal = dynamic(() => import("@/components/features/subject/manage-instructors-modal").then(mod => mod.ManageInstructorsModal));
+const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
 type Period = "this_term" | "last_term" | "full_year";
 
@@ -29,6 +33,10 @@ const TeacherAvatar = ({ teacherName }: { teacherName: string }) => {
 
 export default function SubjectsPage() {
   const [period, setPeriod] = useState<Period>("this_term");
+  // IMPROVEMENT: Added state for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(9); // Default to 9 for a 3x3 grid
+  
   const { data: subjects, error, isLoading, mutate } = useSWR("subjects", getSubjects);
   const { data: allUsers } = useSWR<User[]>(`https://dummyjson.com/users?limit=200`, async (url: string) => (await fetch(url)).json().then(res => res.users));
 
@@ -38,6 +46,11 @@ export default function SubjectsPage() {
     subject: string | null;
     teacher: User | null;
   }>({ manageInstructors: false, viewTeacher: false, subject: null, teacher: null });
+  
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page
+  };
 
   const handleDeleteSubject = (subjectToDelete: string) => {
     mutate(subjects?.filter(s => s !== subjectToDelete), false);
@@ -63,11 +76,13 @@ export default function SubjectsPage() {
     toast.success(`Instructors for "${subject.replace(/-/g, ' ')}" updated.`);
   };
 
+  const totalPages = subjects ? Math.ceil(subjects.length / itemsPerPage) : 0;
+
   const renderContent = () => {
     if (isLoading) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
+          {Array.from({ length: itemsPerPage }).map((_, i) => <Skeleton key={i} className="h-48 rounded-lg" />)}
         </div>
       );
     }
@@ -87,9 +102,12 @@ export default function SubjectsPage() {
         </div>
       );
     }
+
+    const paginatedSubjects = subjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subjects.map((subject) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {paginatedSubjects.map((subject) => {
           const meanGradeData = subjectScoreData[period].find(s => s.name === subject);
           const teacherIds = subjectTeacherMapping[subject] || [];
           const teachers = teacherIds.map(id => mockTeachers.find(t => t.id === id)).filter(Boolean) as Teacher[];
@@ -97,7 +115,7 @@ export default function SubjectsPage() {
           return (
             <Card key={subject} className="glass-card flex flex-col">
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle className="capitalize">{subject.replace(/-/g, ' ')}</CardTitle>
+                <CardTitle className="capitalize text-lg">{subject.replace(/-/g, ' ')}</CardTitle>
                 <Button variant="ghost" size="icon" onClick={() => handleDeleteSubject(subject)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
@@ -117,13 +135,13 @@ export default function SubjectsPage() {
                   <div className="flex flex-col gap-2">
                     {teachers.length > 0 ? (
                       teachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-1 rounded-md" onClick={() => handleViewTeacher(teacher.id)}>
+                        <div key={teacher.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-1 -m-1 rounded-md" onClick={() => handleViewTeacher(teacher.id)}>
                           <TeacherAvatar teacherName={teacher.name} />
                           <span className="font-medium text-sm">{teacher.name}</span>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">No instructors assigned.</p>
+                      <p className="text-sm text-muted-foreground italic">No instructors assigned.</p>
                     )}
                   </div>
                 </div>
@@ -139,7 +157,7 @@ export default function SubjectsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Subjects Overview" description="View details for each subject offered.">
         <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-          <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Filter period" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="this_term">This Term</SelectItem>
             <SelectItem value="last_term">Last Term</SelectItem>
@@ -147,7 +165,22 @@ export default function SubjectsPage() {
           </SelectContent>
         </Select>
       </PageHeader>
+      
       {renderContent()}
+
+      {/* IMPROVEMENT: Added pagination controls */}
+      {subjects && subjects.length > 0 && (
+         <TablePaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            totalItems={subjects.length}
+            itemType="subjects"
+            itemsPerPageOptions={[6, 9, 12, 15]}
+         />
+      )}
       
       {modalState.manageInstructors && modalState.subject && (
         <ManageInstructorsModal
@@ -160,11 +193,13 @@ export default function SubjectsPage() {
         />
       )}
 
-      <UserPreviewModal 
-        isOpen={modalState.viewTeacher}
-        onOpenChange={(isOpen) => setModalState({ ...modalState, viewTeacher: isOpen, teacher: null })}
-        user={modalState.teacher!}
-      />
+      {modalState.viewTeacher && modalState.teacher && (
+        <UserPreviewModal 
+          isOpen={modalState.viewTeacher}
+          onOpenChange={(isOpen) => setModalState({ ...modalState, viewTeacher: isOpen, teacher: null })}
+          user={modalState.teacher}
+        />
+      )}
     </div>
   );
 }

@@ -1,22 +1,21 @@
 "use client";
 
-import useSWR from "swr";
-import { useState, useMemo } from "react";
+import useSWR, { useSWRConfig } from "swr";
+import { useState } from "react";
 import { toast } from "sonner";
+import dynamic from "next/dynamic";
 import { AlertTriangle } from "lucide-react";
 
 import { PageHeader } from "@/components/shared/page-header";
-import { CustomerTable } from "@/components/features/customer/customer-table";
-import { CustomerTableSkeleton } from "@/components/features/customer/customer-table-skeleton";
+import { UserTable } from "@/components/features/user/user-table";
+import { UserTableSkeleton } from "@/components/features/user/user-table-skeleton";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Pagination } from "@/components/ui/pagination";
-import { UserPreviewModal } from "@/components/features/customer/user-preview-modal";
-
+import { TablePaginationControls } from "@/components/shared/table-pagination-controls"; // NEW
 import { getUsers, updateUser, deleteUser, getTotalStudents, getTotalTeachers } from "@/lib/api";
 import { User, UsersApiResponse } from "@/types/api.types";
-import { subjectTeacherMapping } from "@/lib/mock-data";
+import type { UserPreviewModalProps } from "./user-preview-modal";
 
-const ITEMS_PER_PAGE = 10;
+const UserPreviewModal = dynamic<UserPreviewModalProps>(() => import("@/components/features/user/user-preview-modal").then(mod => mod.UserPreviewModal));
 
 interface UserManagementPageProps {
   userType: 'student' | 'teacher';
@@ -26,11 +25,18 @@ interface UserManagementPageProps {
 
 export function UserManagementPage({ userType, pageTitle, pageDescription }: UserManagementPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  // IMPROVEMENT: Added state for items per page
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  
+  const { mutate: globalMutate } = useSWRConfig();
 
-  const skip = userType === 'student' ? (currentPage - 1) * ITEMS_PER_PAGE : 100 + (currentPage - 1) * ITEMS_PER_PAGE;
-  const swrKey = `https://dummyjson.com/users?limit=${ITEMS_PER_PAGE}&skip=${skip}`;
+  // Updated to use itemsPerPage state
+  const skip = userType === 'student' 
+    ? (currentPage - 1) * itemsPerPage 
+    : 100 + (currentPage - 1) * itemsPerPage;
+  const swrKey = `https://dummyjson.com/users?limit=${itemsPerPage}&skip=${skip}`;
   
   const { data, error, isLoading, mutate } = useSWR(swrKey, getUsers, { keepPreviousData: true });
   const { data: totalCount, isLoading: totalLoading } = useSWR(
@@ -38,22 +44,12 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     userType === 'student' ? getTotalStudents : getTotalTeachers
   );
 
-  const teacherSubjects = useMemo(() => {
-    if (userType !== 'teacher') return undefined;
-    const mapping: Record<number, string[]> = {};
-    for (const subject in subjectTeacherMapping) {
-        for (const teacherId of subjectTeacherMapping[subject]) {
-            if (!mapping[teacherId]) {
-                mapping[teacherId] = [];
-            }
-            mapping[teacherId].push(subject);
-        }
-    }
-    return mapping;
-  }, [userType]);
-
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page to avoid invalid page numbers
+  };
+  
   const handleUserUpdate = async (id: number, userData: Partial<User>) => {
-    // Optimistic UI update
     await mutate(async (currentData?: UsersApiResponse) => {
       if (!currentData) return currentData;
       const updatedUsers = currentData.users.map(u => u.id === id ? { ...u, ...userData } : u);
@@ -65,7 +61,7 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} updated successfully!`);
     } catch {
       toast.error(`Failed to update ${userType}.`);
-      mutate(); // Revalidate to get the correct server state
+      globalMutate(swrKey);
     }
   };
 
@@ -75,8 +71,6 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
   };
 
   const handleDeleteUser = async (userId: number) => {
-    const originalData = data;
-    // Optimistic UI update
     await mutate(async (currentData?: UsersApiResponse) => {
       if (!currentData) return currentData;
       return { ...currentData, users: currentData.users.filter(u => u.id !== userId) };
@@ -87,12 +81,12 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
       toast.success(`${userType === 'student' ? 'Student' : 'Teacher'} deleted successfully.`);
     } catch {
       toast.error(`Failed to delete ${userType}.`);
-      mutate(originalData); // Revert on failure
+      globalMutate(swrKey);
     }
   };
 
   const renderContent = () => {
-    if (isLoading && !data) return <CustomerTableSkeleton type={userType} />;
+    if (isLoading && !data) return <UserTableSkeleton type={userType} items={itemsPerPage} />;
     if (error) return (
       <Alert variant="destructive" className="glass-card">
         <AlertTriangle className="h-4 w-4" />
@@ -102,18 +96,16 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
     );
     if (!data?.users.length) return <p className="py-10 text-center text-muted-foreground">No {userType}s found.</p>;
     
-    return <CustomerTable
-      customers={data.users}
+    return <UserTable
+      users={data.users}
       type={userType}
-      startIndex={(currentPage - 1) * ITEMS_PER_PAGE}
       onUserUpdate={handleUserUpdate}
       onViewUser={handleViewUser}
       onDeleteUser={handleDeleteUser}
-      teacherSubjects={teacherSubjects}
     />
   };
 
-  const totalPages = totalCount ? Math.ceil(totalCount / ITEMS_PER_PAGE) : 0;
+  const totalPages = totalCount ? Math.ceil(totalCount / itemsPerPage) : 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -122,18 +114,27 @@ export function UserManagementPage({ userType, pageTitle, pageDescription }: Use
         description={pageDescription}
       />
       {renderContent()}
-      {!totalLoading && totalPages > 1 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
+
+      {/* IMPROVEMENT: Replaced old pagination with the new comprehensive controls component */}
+      {!totalLoading && (
+         <TablePaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            totalItems={totalCount ?? 0}
+            itemType={`${userType}s`}
+         />
+      )}
+
+      {isViewModalOpen && (
+        <UserPreviewModal
+            isOpen={isViewModalOpen}
+            onOpenChange={setIsViewModalOpen}
+            user={selectedUser}
         />
       )}
-      <UserPreviewModal
-        isOpen={isViewModalOpen}
-        onOpenChange={setIsViewModalOpen}
-        user={selectedUser}
-      />
     </div>
   );
 }

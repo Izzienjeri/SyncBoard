@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -88,20 +87,9 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply text-foreground antialiased;
-    background-color: oklch(var(--background));
-    background: linear-gradient(300deg, hsl(var(--primary)/.15), hsl(var(--chart-2)/.15), hsl(var(--chart-4)/.15));
-    background-size: 400% 400%;
-    animation: gradient-animation 25s ease infinite;
+    @apply text-foreground antialiased bg-background;
   }
 }
-
-@keyframes gradient-animation {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
 
 @layer utilities {
   .text-gradient {
@@ -112,5 +100,10 @@
   }
   .glass-card {
     @apply bg-card/80 dark:bg-card/70 backdrop-blur-lg border shadow-lg shadow-black/10 dark:shadow-black/20;
+  }
+  /* IMPROVEMENT: New utility class for the requested background gradient */
+  .background-gradient-custom {
+    background: hsla(191, 75%, 60%, 1);
+    background: linear-gradient(90deg, hsla(191, 75%, 60%, 1) 0%, hsla(248, 87%, 36%, 1) 100%);
   }
 }

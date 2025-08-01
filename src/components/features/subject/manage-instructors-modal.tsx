@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Teacher } from "@/lib/mock-data";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface ManageInstructorsModalProps {
+export interface ManageInstructorsModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   subjectName: string;

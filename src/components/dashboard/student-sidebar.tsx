@@ -11,18 +11,20 @@ const navItems = [
   { href: "/subjects", icon: BookOpen, label: "Subjects" },
 ];
 
+// REVERTED to the original, simpler sidebar component without mobile-specific logic.
+// The responsive behavior is now handled by the layout itself.
 export function StudentDashboardSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex flex-col w-56 flex-shrink-0">
+    <aside className="w-full lg:w-56 lg:flex-shrink-0">
       <div className="flex items-center gap-2 mb-8">
         <div className="p-2 bg-primary rounded-lg">
           <BookOpen className="h-6 w-6 text-primary-foreground" />
         </div>
         <span className="text-xl font-bold">EduDash</span>
       </div>
-      <nav className="flex flex-col gap-2 flex-grow">
+      <nav className="flex flex-row lg:flex-col gap-2 flex-grow overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
         {navItems.map((item) => {
           const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
           return (
@@ -30,7 +32,7 @@ export function StudentDashboardSidebar() {
             key={item.label}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground",
+              "flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground flex-shrink-0",
               isActive && "bg-muted font-semibold text-foreground"
             )}
           >
@@ -39,7 +41,6 @@ export function StudentDashboardSidebar() {
           </Link>
         )})}
       </nav>
-     
     </aside>
   );
 }
